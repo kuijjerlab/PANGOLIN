@@ -1,0 +1,21 @@
+## Bin
+bin: "bin"
+
+clinical_file: "data_all/clinical_curated/NIHMS978596-supplement-1.xlsx"
+cancer_color_file: "data_all/samples/cancer_colors.txt"
+
+# cancer_types: ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "COAD", "DLBC", "ESCA", "GBM",
+#               "HNSC", "KICH", "KIRC", "KIRP", "LAML", "LGG", "LIHC", "LUAD", "LUSC", "MESO",
+#               "OV", "PAAD", "PCPG", "PRAD", "READ", "SARC", "SKCM", "STAD", "TGCT", "THCA",
+#               "THYM", "UCEC", "UCS", "UVM"]
+
+cancer_types: ["ACC"]
+
+output_dir: "data_individual_cancers"
+fig_dir: "figs"
+alpha: 0.3
+number_cores: 5
+number_folds: 5
+number_times: 10
+
+
