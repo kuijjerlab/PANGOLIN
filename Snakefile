@@ -36,6 +36,7 @@ CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
+COX_RESULTS_ALL = os.path.join("data_all", "cox_resuls_all", "PDL1_cox_multivarite_res_all.txt")
 
 ## Parameters ##
 ALPHA = config["alpha"]
@@ -49,7 +50,8 @@ rule all:
         expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         CANCER_LEGEND_PDF,
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
-        expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES)
+        expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
+        COX_RESULTS_ALL
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
@@ -128,3 +130,19 @@ rule run_regularized_cox:
             --output {output.out_file}
         """
 
+
+rule combine_cox_results:
+    input:
+        expand(OUTPUT_CANCER_COX, cancer=CANCER_TYPES)
+    output:
+        COX_RESULTS_ALL
+    message:
+        "Combining all Cox regression results into one table."
+    shell:
+        """
+        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+        for file in {input}; do
+            cancer=$(basename $(dirname $(dirname $file)))
+            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+        done
+        """
