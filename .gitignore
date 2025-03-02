@@ -5,3 +5,4 @@ Snakefile_old
 /bin/remove_files.sh
 /bin/rename_pd1_net_files.R
 /bin/rename_pd1_net_files_fn.R
+/panda_input_primary/

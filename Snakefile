@@ -36,7 +36,7 @@ CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
-COX_RESULTS_ALL = os.path.join("data_all", "cox_resuls_all", "PDL1_cox_multivarite_res_all.txt")
+COX_RESULTS_ALL = os.path.join("data_all", "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
 
 ## Parameters ##
 ALPHA = config["alpha"]
