@@ -29,15 +29,13 @@ CANCER_COLOR_FILE = config["cancer_color_file"]
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
 TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
-#INPUT_CANCER_PD1_NET  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_net_norm_{cancer}.RData")
-#INDEGREE_CANCER_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "indegrees_norm", "indegree_norm_{cancer}.RData")
+
 ## Output Files ##
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
-#OUTPUT_CANCER_PD1_NET_NAME  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_net_norm_named_{cancer}.RData")
 
 ## Parameters ##
 ALPHA = config["alpha"]
@@ -52,32 +50,6 @@ rule all:
         CANCER_LEGEND_PDF,
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES)
-
-
-# rule all:
-#     input:
-#         expand(OUTPUT_CANCER_PD1_NET_NAME, cancer = CANCER_TYPES)
-
-
-# rule rename_pd1_network_file:
-#     input:
-#        path_pd1_network_file = INPUT_CANCER_PD1_NET,
-#        path_to_indegree_file = INDEGREE_CANCER_FILE
-#     output:
-#         out_file = OUTPUT_CANCER_PD1_NET_NAME
-#     params:
-#         bin = config["bin"]
-#     message:
-#         "Renaming files: {wildcards.cancer}"
-#     shell:
-#         """
-#         Rscript {params.bin}/rename_pd1_net_files.R \
-#             --pd1_network_file {input.path_pd1_network_file} \
-#             --path_to_indegree_file {input.path_to_indegree_file} \
-#             --output {output.out_file}
-#         """
-
-
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
