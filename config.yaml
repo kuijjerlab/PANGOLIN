@@ -9,7 +9,7 @@ cancer_color_file: "data_all/samples/cancer_colors.txt"
 #               "OV", "PAAD", "PCPG", "PRAD", "READ", "SARC", "SKCM", "STAD", "TGCT", "THCA",
 #               "THYM", "UCEC", "UCS", "UVM"]
 
-cancer_types: ["ACC", "BLCA", "BRCA"]
+cancer_types: ["ACC"]
 
 output_dir: "data_individual_cancers"
 fig_dir: "figs"
