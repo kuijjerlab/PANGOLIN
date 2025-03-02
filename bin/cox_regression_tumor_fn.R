@@ -34,6 +34,15 @@ make_bcr_code <- function(sample_id) {
         return(bcr_code)
     }
 
+extract_pd1_pathway_individual_scores <- function(individual_scores_file){
+        load(individual_scores_file, data <- new.env())
+        ind_scores <- data[["ind_scores"]]
+        ind_scores <- as.data.frame(ind_scores$REACTOME_PD_1_SIGNALING)
+        rownames(ind_scores) <- make_bcr_code(rownames(ind_scores))
+        colnames(ind_scores) <- c("PC1", "PC2")
+        return(ind_scores)
+        }
+
 
 load_clin_curated_tumor <- function(tumor_clin_file_path) {
         # Validate input: Check if the file exists
