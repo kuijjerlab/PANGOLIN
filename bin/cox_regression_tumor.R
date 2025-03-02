@@ -85,12 +85,27 @@ write.table(res, OUTPUT_FILE, col.names = TRUE,
 
 
 
-# TUMOR_CLIN_FILE <- "data_individual_cancers/ACC/clinical/curated_clinical_ACC.txt"
-# TUMOR_PD1_DIR <- "data_individual_cancers/ACC/pd1_data"
-# NUMBER_FOLDS <- 10
-# NUMBER_CORES <- 5
-# ALPHA <- 0.3
-# NUMBER_TIMES <- 10
-# OUTPUT_FILE <- "data_individual_cancers/ACC/cox/ACC_cox_multivariate_res.txt"
+TUMOR_CLIN_FILE <- "data_individual_cancers/BRCA/clinical/curated_clinical_BRCA.txt"
+TUMOR_PD1_DIR <- "data_individual_cancers/BRCA/pd1_data"
+NUMBER_FOLDS <- 10
+NUMBER_CORES <- 5
+ALPHA <- 0.3
+NUMBER_TIMES <- 10
+OUTPUT_FILE <- "data_individual_cancers/BRCA/cox/BRCA_cox_multivariate_res.txt"
+
+
+
+data <- combine_info_for_cancer(TUMOR_CLIN_FILE, 
+                               TUMOR_PD1_DIR)
 
         
+pd1_links <- load_pd1_generic( TUMOR_PD1_DIR, type = "pd1_links")
+pd1_net <- load_pd1_generic( TUMOR_PD1_DIR, type = "pd1_net")
+            rownames(pd1_net) <- pd1_links
+            data$pd1_net <- pd1_net
+            data$pd1_scores <- load_pd1_generic(tumor_pd1_dir,
+                                type = "pd1_scores")
+
+
+data <- load_pd1_object("/storage/kuijjerarea/tatiana/PANGOLIN/data_individual_cancers/BRCA/pd1_data/pd1_net_norm_BRCA.RData", object_name = "pd1_net")
+data

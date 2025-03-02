@@ -1,3 +1,7 @@
 /data_individual_cancers/
 .snakemake/
 Snakefile_old
+/bin/move_files.sh
+/bin/remove_files.sh
+/bin/rename_pd1_net_files.R
+/bin/rename_pd1_net_files_fn.R

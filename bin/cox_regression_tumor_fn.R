@@ -56,10 +56,6 @@ load_clin_curated_tumor <- function(tumor_clin_file_path) {
         return(clinical)
 }
 
-type = "pd1_links"
-tumor_pd1_dir = "/storage/kuijjerarea/tatiana/PANGOLIN/data_individual_cancers/ACC/pd1_data"
-tumor_clin_file <- "/storage/kuijjerarea/tatiana/PANGOLIN/data_individual_cancers/ACC/clinical/curated_clinical_ACC.txt"
-
 load_pd1_generic <- function(tumor_pd1_dir, type) {
         validate_inputs(tumor_pd1_dir, type)
         file_pattern <- determine_pattern(type)
@@ -74,17 +70,14 @@ validate_inputs <- function(tumor_pd1_dir, type) {
                 stop("`pd1_dir` doesn't exist.")
         }
         if (!type %in% c("pd1_links", "pd1_net", 
-                         "pd1_scores", "cd274_scores",
-                         "cd274_expression")) {
+                         "pd1_scores")) {
                 stop("Invalid `type`. Choose valid type.")
         }
 }
 
 determine_pattern <- function(type) {
         patterns <- list(pd1_links = "pd1_edges", pd1_net = "pd1_net", 
-                         pd1_scores = "pd1_individual_scores", 
-                         cd274_scores = "CD274_individual_scores",
-                         cd274_expression = "pdl1_expression")
+                         pd1_scores = "pd1_individual_scores")
         return(patterns[[type]])
 }
 
@@ -118,13 +111,6 @@ load_process_pd1_data <- function(tumor_pd1_dir, tumor_file, type) {
                 data <- t(scores)
                 colnames(data) <- make_bcr_code(colnames(data))
                 data <- data[1:2, ] # only take 2 PCs
-        } else if (type == "cd274_scores") {
-                scores <- load_pd1_object(file_path, object_name = "ind_scores")
-                data <- t(scores)
-                colnames(data) <- make_bcr_code(colnames(data))
-        } else if (type == "cd274_expression") {
-                data <- load_pd1_object(file_path, object_name = "pdl1_expression")
-                data <- data.frame(data)
         }
         return(data)
 }
@@ -212,12 +198,6 @@ combine_info_for_cancer <- function(tumor_clin_file_path,
             data$pd1_net <- pd1_net
             data$pd1_scores <- load_pd1_generic(tumor_pd1_dir,
                                 type = "pd1_scores")
-            data$cd274_scores <- load_pd1_generic(tumor_pd1_dir, 
-                                type = "cd274_scores")
-            data$cd274_expression <- load_pd1_generic(tumor_pd1_dir, 
-                                type = "cd274_expression")
-            colnames(data$cd274_expression) <- gsub("\\."  , "-", 
-                                colnames(data$cd274_expression))
         } else {
             message("Warning: 'tumor_pd1_dir' missing. PD1 data not included.")
         }
