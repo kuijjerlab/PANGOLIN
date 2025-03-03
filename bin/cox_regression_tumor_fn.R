@@ -362,3 +362,185 @@ run_glmnet_ntimes_pd1 <- function(
     }
     return(selected_genes_all)
 }
+
+
+
+run_univariate_coxph_model <- function(tumor_clin_file_path,
+                                tumor_pd1_dir,
+                                # clin,
+                                # pd1_dir,
+                                covariates,
+                                # ind_scores_dir = NULL,
+                                # pathways = NULL,
+                                # cluster_file = NULL,
+                                datatype = c("pd1_scores"),
+#                               "pd1_net")
+#                                "clusters"),
+                                type_stat = c("full_stats",
+                                "overall_pval")) {
+        data <- combine_info_for_cancer(tumor_clin_file_path, 
+                                tumor_pd1_dir)
+        data_combined <- create_data_combined(data[[datatype]], data$clin)
+        data_cox <- create_cox_data(data_combined)
+        rownames(data_cox) <- data_cox$bcr_patient_barcode
+        if (!is.null(covariates)) {
+                rows_to_include <- rownames(na.omit(data_cox[covariates]))
+                data_cox <- data_cox[rows_to_include, ]
+        } else {
+                data_cox <- data_cox
+        }
+        if (!is.null(covariates)) {
+            exclude_vars <-
+                sapply(data_cox[, covariates, drop = FALSE],
+                    function(x) length(unique(x)) == 1)
+            covariates <- covariates[!exclude_vars]
+        }
+        features <- rownames(data[[datatype]])
+        cox_models <- 
+            purrr::map(features,
+             ~create_univariate_cox_model(.x, covariates, data_cox, type_stat)) 
+        names(cox_models) <- features
+        return(cox_models)
+}
+
+#' Create Univariate Cox Proportional Hazards Model for a Given Feature
+#'
+#' @description Runs a Cox model for a feature with covariates and 
+#' survival data.
+#'
+#' @param feature Character; feature for which the Cox model is created.
+#' @param covariates Character; covariate(s) to include in the model.
+#' @param data_cox Data frame; contains time-to-event and covariate information.
+#'
+#' @return List of Cox model summaries for OS (Overall Survival) 
+#'          and PFI (Progression-Free Interval).
+
+
+create_univariate_cox_model <- function(feature,
+                                        covariates,
+                                        data_cox,
+                                        type_stat = c("full_stats",
+                                                    "overall_pval")) {
+        formulaString <- 
+            paste("Surv(ToF_death, event) ~",
+                    paste(covariates, collapse = " + "))
+        feature <- sprintf("`%s`", feature)
+        # Create the formula
+        formula <- as.formula(paste(formulaString, "+", feature))
+        coxph_model_list <- list()
+        predicted_risk <- NULL
+        types <- c("OS", "PFI")
+        for (i in 1:length(types)){
+            type <- types[i]
+            event_col <- paste0(type, collapse = "")
+            time_col <- paste0(type, ".time", collapse = "")
+            data_cox$event <- as.numeric(data_cox[[event_col]])
+            data_cox$ToF_death <- as.numeric(data_cox[[time_col]])
+            data_cox <- clean_data_cox(data_cox)
+            if (nrow(data_cox) == 0) next
+            m <- "run without warning"
+            coxph_model <- tryCatch(
+                    {
+                        survival::coxph(formula, data = data_cox)
+                    },
+                    warning = function(w) {
+                        # Print the warning message for inspection
+                        message("Warning occurred: ", conditionMessage(w))
+                        m <<- "with warning"
+                        survival::coxph(formula, data = data_cox)
+                    }
+                    )
+            predicted_risk <- 
+                        predict(coxph_model, newdata = data_cox, type = "risk")
+            coxph_model_summary <- unpack_summary_coxph(coxph_model,
+                                                type_stat = type_stat)
+            coxph_model_summary$type <- type
+            coxph_model_summary$m <- m
+            predicted_risk <- as.data.frame(predicted_risk)
+            predicted_risk$bcr_patient_barcode <- rownames(predicted_risk)
+            predicted_risk$type <- type
+            coxph_model_list[[i]] <- list("coxph_model" = coxph_model_summary,
+                                    "predicted_risk" = predicted_risk)
+
+        }
+        return(coxph_model_list)
+}
+
+#' Unpack Summary of Cox Proportional Hazards Model
+#'
+#' This function extracts key statistics from a fitted Cox Proportional Hazards 
+#' model (`coxph` model) and returns either the full statistics for each 
+#' feature or only the overall p-value, depending on the specified output type.
+#'
+#' @param coxph_model A `coxph` model object created by the `coxph` function 
+#'        from the `survival` package. This model should represent a Cox 
+#'        Proportional Hazards regression fit.
+#' @param type_stat A character string indicating the type of statistics to 
+#'        return. Options are `"full_stats"` to return a table with hazard 
+#'        ratios, p-values, and confidence intervals for each feature, or 
+#'        `"overall_pval"` to return only the overall p-value for the model. 
+#'        Default is `"full_stats"`.
+#'
+#' @return A `data.table` object. If `type_stat` is `"full_stats"`, the 
+#'         returned table contains columns `feature`, `pvalue`, `hr` (hazard 
+#'         ratio), `hr_lower` (lower confidence bound), and `hr_upper` (upper 
+#'         confidence bound) for each feature. If `type_stat` is 
+#'         `"overall_pval"`, the table contains a single column `pval`, which 
+#'         is the overall p-value for the model.
+#'
+unpack_summary_coxph <- function(coxph_model, 
+                                 type_stat = c("full_stats", "overall_pval")) {
+        # Validate input arguments
+        if (missing(coxph_model) || class(coxph_model) != "coxph") {
+                stop("coxph_model must be a valid 'coxph' model object.")
+        }
+        type_stat <- match.arg(type_stat)
+
+        # Extract summary details from coxph model
+        coxph_model_summary <- summary(coxph_model)
+        pvalue_res <- coxph_model_summary$coefficients[, "Pr(>|z|)"]
+        hr_lower <- signif(coxph_model_summary$conf.int[, "lower .95"], 5)
+        hr_upper <- signif(coxph_model_summary$conf.int[, "upper .95"], 5)
+        hr <- exp(coef(coxph_model))
+        overall_pvalue <- coxph_model_summary$logtest['pvalue']
+
+        # Output based on the selected type_stat
+        if (type_stat == "full_stats") {
+                res <- data.table::data.table(
+                        feature = names(hr),
+                        pvalue = pvalue_res,
+                        hr = hr,
+                        hr_lower = hr_lower,
+                        hr_upper = hr_upper
+                )
+        } else if (type_stat == "overall_pval") {
+                res <- data.table::data.table(pval = overall_pvalue)
+        }
+
+        return(res)
+}
+
+
+process_pd1_univarite_cox_res <- function(pd1_res, pc_names) {
+  for (pc in pc_names) {
+    for (i in seq_along(pd1_res[[pc]])) {
+      pd1_res[[pc]][[i]]$coxph_model$component <- pc
+      pd1_res[[pc]][[i]]$predicted_risk$component <- pc
+    }
+  }
+  # Combine coxph_model data
+  coxph_model_data <- do.call(rbind, lapply(pc_names, function(pc) {
+    do.call(rbind, lapply(pd1_res[[pc]], function(x) x$coxph_model))
+  }))
+
+  # Combine predicted_risk data
+  predicted_risk_data <- do.call(rbind, lapply(pc_names, function(pc) {
+    do.call(rbind, lapply(pd1_res[[pc]], function(x) x$predicted_risk))
+  }))
+
+  return(list(
+    coxph_model_data = coxph_model_data,
+    predicted_risk_data = predicted_risk_data
+  ))
+}
+
