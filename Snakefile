@@ -24,7 +24,7 @@ FIG_DIR = config["fig_dir"]
 
 ## Input Files ##
 CANCER_TYPES = config["cancer_types"]
-THESHOLD_COX = config["threshold_cox"]
+
 CLINICAL_FILE = config["clinical_file"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -43,13 +43,15 @@ COX_RESULTS_ALL = os.path.join("data_all", "cox_results_all", "PDL1_cox_multivar
 PDL1_CIRCULAR_PLOT = os.path.join(FIG_DIR, "circular_pdl1_plot_{threshold_cox}.pdf")
 OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
 OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_predited_risk_scores.txt")
-
+UNIVARIATE_COX_SUMMARY_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_model_summary_all.txt")
+UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
 
 ## Parameters ##
 ALPHA = config["alpha"]
 NUMBER_FOLDS = config["number_folds"]
 NUMBER_CORES = config["number_cores"]
 NUMBER_TIMES = config["number_times"]
+THESHOLD_COX = config["threshold_cox"]
 
 # Rules ##
 rule all:
@@ -59,6 +61,8 @@ rule all:
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer = CANCER_TYPES),
+        UNIVARIATE_COX_SUMMARY_ALL,
+        UNIVARIATE_COX_PREDICTED_SCORES_ALL,
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
         COX_RESULTS_ALL, 
         expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)
@@ -133,6 +137,37 @@ rule run_univariate_cox_pd1_pathway:
             --cox_model_summary {output.out_file_summary} \
             --cox_predicted_risk {output.out_file_predicted_scores}
         """
+rule combine_pd1_pathway_univariate_summary_results:
+    input:
+        expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer=CANCER_TYPES)
+    output:
+        UNIVARIATE_COX_SUMMARY_ALL
+    message:
+        "Combining all univariate Cox regression results into one table."
+    shell:
+        """
+        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+        for file in {input}; do
+            cancer=$(basename $(dirname $(dirname $file)))
+            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+        done
+        """
+
+rule combine_pd1_pathway_univariate_prediction_scores:
+    input:
+        expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer=CANCER_TYPES)
+    output:
+        UNIVARIATE_COX_PREDICTED_SCORES_ALL
+    message:
+        "Combining all univariate Cox prediction risk results into one table."
+    shell:
+        """
+        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+        for file in {input}; do
+            cancer=$(basename $(dirname $(dirname $file)))
+            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+        done
+        """
 
 ## Run multivariate regularized cox regression on PDL1 edges ##  
 rule run_regularized_cox:
@@ -162,13 +197,13 @@ rule run_regularized_cox:
         """
 ## Combine all multivarite cox results in one table ##  
 
-rule combine_cox_results:
+rule combine_multivarite_cox_results:
     input:
         expand(OUTPUT_CANCER_COX, cancer=CANCER_TYPES)
     output:
         COX_RESULTS_ALL
     message:
-        "Combining all Cox regression results into one table."
+        "Combining all multivariate Cox regression results into one table."
     shell:
         """
         echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
