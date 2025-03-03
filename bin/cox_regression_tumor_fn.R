@@ -34,15 +34,56 @@ make_bcr_code <- function(sample_id) {
         return(bcr_code)
     }
 
-extract_pd1_pathway_individual_scores <- function(individual_scores_file){
-        load(individual_scores_file, data <- new.env())
-        ind_scores <- data[["ind_scores"]]
-        ind_scores <- as.data.frame(ind_scores$REACTOME_PD_1_SIGNALING)
-        rownames(ind_scores) <- make_bcr_code(rownames(ind_scores))
-        colnames(ind_scores) <- c("PC1", "PC2")
-        return(ind_scores)
+#' Extract PD-1 Pathway Individual Scores
+#'
+#' Loads an RData file containing individual scores and extracts
+#' the PD-1 signaling pathway scores.
+#'
+#' @param individual_scores_file Path to the RData file with scores.
+#' @return A data frame with PD-1 pathway scores, columns "PC1" & "PC2".
+#' @export
+extract_pd1_pathway_individual_scores <- function(individual_scores_file) {
+        # Check if file exists
+        if (!file.exists(individual_scores_file)) {
+        stop("Error: File does not exist.")
+        }
+        data_env <- new.env()
+        # Load the RData file
+        tryCatch({
+        load(individual_scores_file, envir = data_env)
+        }, error = function(e) {
+        stop("Error loading file: ", e$message)
+        })
+        # Validate 'ind_scores' presence
+        if (!"ind_scores" %in% ls(data_env)) {
+        stop("Error: 'ind_scores' not found.")
+        }
+        ind_scores <- data_env[["ind_scores"]]
+        # Validate PD-1 signaling pathway presence
+        if (!"REACTOME_PD_1_SIGNALING" %in% names(ind_scores)) {
+        stop("Error: 'REACTOME_PD_1_SIGNALING' missing.")
+        }
+        # Extract and validate scores
+        ind_scores_df <- as.data.frame(ind_scores$REACTOME_PD_1_SIGNALING)
+        if (ncol(ind_scores_df) < 2) {
+        stop("Error: Insufficient columns in data.")
+        }
+        rownames(ind_scores_df) <- make_bcr_code(rownames(ind_scores_df))
+        colnames(ind_scores_df) <- c("PC1", "PC2")
+        return(ind_scores_df)
         }
 
+#' Load Curated Tumor Clinical Data
+#'
+#' This function reads a curated tumor clinical data file and returns it as a
+#' data.table. 
+#'
+#' @param tumor_clin_file_path Character string specifying the path to the 
+#' tumor clinical data file.
+#'
+#' @return A `data.table` containing the clinical data from the specified file.
+#' @import data.table
+#' @export
 
 load_clin_curated_tumor <- function(tumor_clin_file_path) {
         # Validate input: Check if the file exists
@@ -56,6 +97,19 @@ load_clin_curated_tumor <- function(tumor_clin_file_path) {
         return(clinical)
 }
 
+#' Load PD1 Generic Data
+#'
+#' This function loads and processes PD1 pathway data from a specified 
+#' directory based on the provided type.
+#'
+#' @param tumor_pd1_dir Character string specifying the directory containing 
+#' the PD1 data files.
+#' @param type Character string indicating the type of PD1 data to load.
+#'
+#' @return A processed dataset containing PD1 data.
+#' @export
+
+
 load_pd1_generic <- function(tumor_pd1_dir, type) {
         validate_inputs(tumor_pd1_dir, type)
         file_pattern <- determine_pattern(type)
@@ -64,6 +118,17 @@ load_pd1_generic <- function(tumor_pd1_dir, type) {
         return(data)
 }
 
+#' Validate Inputs for PD1 Data Loading
+#'
+#' Ensures that the provided directory exists and that the type argument is 
+#' one of the allowed values.
+#'
+#' @param tumor_pd1_dir Character string specifying the directory to check.
+#' @param type Character string indicating the type of PD1 data.
+#'
+#' @return No return value. Throws an error if validation fails.
+#'
+#' @export
 
 validate_inputs <- function(tumor_pd1_dir, type) {
         if (!dir.exists(tumor_pd1_dir)) {
@@ -75,18 +140,43 @@ validate_inputs <- function(tumor_pd1_dir, type) {
         }
 }
 
+#' Determine the Corresponding Pattern Name
+#'
+#' Maps a given `type` to its corresponding pattern from a predefined list.
+#'
+#' @param type A string. One of `"pd1_links"`, `"pd1_net"`, `"pd1_scores"`.
+#' @return A string with the corresponding pattern or `NULL` if `type` is invalid.
+#'
+#' @examples
+#' determine_pattern("pd1_links")  # Returns "pd1_edges"
+#' determine_pattern("pd1_net")    # Returns "pd1_net"
+#' determine_pattern("pd1_scores") # Returns "pd1_individual_scores"
+#' determine_pattern("invalid")    # Returns NULL
+#'
+#' @export
+#' 
 determine_pattern <- function(type) {
         patterns <- list(pd1_links = "pd1_edges", pd1_net = "pd1_net", 
                          pd1_scores = "pd1_individual_scores")
         return(patterns[[type]])
 }
 
+#' Find a File Matching a Given Pattern
+#'
+#' Searches for a file in `tumor_pd1_dir` that matches the given `pattern`.
+#' If no files or multiple files are found, an error is raised.
+#'
+#' @param tumor_pd1_dir A string. Directory path to search for the file.
+#' @param pattern A string. Regular expression pattern to match filenames.
+#' @return A string. The name of the matched file.
+#' @throws Error if no file or multiple files match the pattern.
+#' @export
 
 find_tumor_file <- function(tumor_pd1_dir, pattern) {
         pattern_files <- list.files(tumor_pd1_dir, pattern = pattern, 
                                 full.names = FALSE)
         if (length(pattern_files) == 0) {
-                stop("No files found in: ", pd1_dir)
+                stop("No files found in: ", tumor_pd1_dir)
         }
 
         if (length(pattern_files) == 0) {
@@ -98,6 +188,17 @@ find_tumor_file <- function(tumor_pd1_dir, pattern) {
         return(pattern_files[1])
 }
 
+#' Load and Process PD1 Data
+#'
+#' Loads a specified PD1 data file and processes it based on the given `type`.
+#'
+#' @param tumor_pd1_dir A string. Directory containing the PD1 data file.
+#' @param tumor_file A string. Filename of the PD1 data file.
+#' @param type A string. One of `"pd1_links"`, `"pd1_net"`, or `"pd1_scores"`.
+#' @return A processed data object based on the selected `type`.
+#' @throws Error if the file cannot be loaded or `type` is invalid.
+#' @export
+#' 
 load_process_pd1_data <- function(tumor_pd1_dir, tumor_file, type) {
         file_path <- file.path(tumor_pd1_dir, tumor_file)
         if (type == "pd1_links") {
@@ -115,6 +216,16 @@ load_process_pd1_data <- function(tumor_pd1_dir, tumor_file, type) {
         return(data)
 }
 
+#' Load an Object from an RData File
+#'
+#' Loads a specified object from an `.RData` file into a new environment.
+#'
+#' @param file A string. Path to the `.RData` file.
+#' @param object_name A string. Name of the object to retrieve from the file.
+#' @return The requested object from the `.RData` file.
+#' @throws Error if the file does not exist or the object is not found.
+#' @export
+#' 
 load_pd1_object <- function(file, object_name) {
         if (!file.exists(file)) {
                 stop("The specified file does not exist: ", file)
@@ -136,10 +247,9 @@ load_pd1_object <- function(file, object_name) {
 #' https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6066282/ and the clinical 
 #' information available with TCGA biolinks package.
 #' 
-#' This function combines clinical information
+#' This function combines clinical information for a tumor type
 #' 
-#' @param tumor The tumor type 
-#' @param clin Clinical data
+#' @param tumor_clin_file_path Path to the clinical data file
 #' @return Combined clinical data with TCGA subtype information
 #' @export
 #' 
@@ -179,6 +289,15 @@ combine_clins <- function(tumor_clin_file_path) {
         return(clin_tumor_all)
 }
 
+#' Combine Clinical and Tumor Data for Analysis
+#'
+#' Merges clinical and tumor data, including PD-1 data if 
+#' `tumor_pd1_dir` is provided.
+#'
+#' @param tumor_clin_file_path A string. Path to the clinical tumor data file.
+#' @param tumor_pd1_dir A string (optional). Directory containing PD-1 data.
+#' @return A list containing combined clinical and tumor data, including 
+#' PD-1 data.
 
 combine_info_for_cancer <- function(tumor_clin_file_path,
                                     tumor_pd1_dir = NULL) {
@@ -253,7 +372,7 @@ create_cox_data <- function(data_all) {
 #' @param data cols are individuals, rows are features
 #' @param clin_data should contain bcr_patient_barcode
 #' @return 
-#' @export 
+#' @export List of features and clinical data combined
 #' 
 #' 
 create_data_combined <- function(data, clin_data) {
@@ -266,6 +385,7 @@ create_data_combined <- function(data, clin_data) {
     data_combined <- list("data" = data, "clin_data" = clin_data)
     return(data_combined)
 }
+
 #' Run multivariate Cox Model with LASSO Regularization
 #'
 #' Fits a Cox model to survival data using LASSO penalty with cross-validation.
@@ -326,20 +446,34 @@ clean_data_cox <- function(data_cox) {
 }
 
 
-
+#' Run GLMNET Cox Regression Multiple Times for PD-1 Data
+#'
+#' Performs Cox regression using GLMNET on PD-1 data, running the model `ntimes`
+#' with cross-validation.
+#'
+#' @param tumor_clin_file_path A string. Path to the clinical tumor data file.
+#' @param tumor_pd1_dir A string. Directory containing PD-1 network data.
+#' @param number_folds An integer. Number of cross-validation folds
+#' (default: 5).
+#' @param ntimes An integer. Number of times to repeat the model
+#' (default: 10).
+#' @param ncores An integer. Number of CPU cores for parallel computing 
+#' (default: 10).
+#' @param alpha A numeric. Alpha Parameter for GLMNET (default: 1).
+#' @return A data frame containing selected genes and 
+#' their associated survival type.
+#' @throws Warning if data is empty or contains fewer than 5 events.
+#'
+#' @export
 run_glmnet_ntimes_pd1 <- function(
-                            tumor_clin_file_path,
-                            tumor_pd1_dir,
-                            # ind_scores_dir = NULL,
-                            # pathways = NULL, 
-                            number_folds = 5,
-                            ntimes = 10,
-                            ncores = 10,
-                            alpha = 1) {
+                        tumor_clin_file_path,
+                        tumor_pd1_dir,
+                        number_folds = 5,
+                        ntimes = 10,
+                        ncores = 10,
+                        alpha = 1) {
     data <- combine_info_for_cancer(tumor_clin_file_path, 
                                 tumor_pd1_dir)
-                                # ind_scores_dir,
-                                # pathways)
     data_combined <- create_data_combined(data$pd1_net, data$clin)
     data_cox <- create_cox_data(data_combined)
     doParallel::registerDoParallel(ncores)
@@ -364,11 +498,23 @@ run_glmnet_ntimes_pd1 <- function(
 }
 
 
-
+#' Run Univariate Cox Proportional Hazards Model
+#'
+#' Performs univariate Cox regression on a selected data type, using specified 
+#' covariates for survival analysis.
+#'
+#' @param tumor_clin_file_path A string. Path to the clinical tumor data file.
+#' @param tumor_pd1_dir A string. Directory containing PD-1 data.
+#' @param covariates A character vector. Covariates to include in the model.
+#' @param datatype A string. Data type to analyze, default: `"pd1_scores"`.
+#' @param type_stat A string. Type of statistic to return, 
+#' default: `"full_stats"`.
+#' @return A named list of Cox models for each feature 
+#' in the selected data type.
+#' @export
+#' 
 run_univariate_coxph_model <- function(tumor_clin_file_path,
                                 tumor_pd1_dir,
-                                # clin,
-                                # pd1_dir,
                                 covariates,
                                 # ind_scores_dir = NULL,
                                 # pathways = NULL,
@@ -520,27 +666,81 @@ unpack_summary_coxph <- function(coxph_model,
         return(res)
 }
 
-
+#' Process PD-1 Univariate Cox Regression Results
+#'
+#' Extracts and combines Cox regression model results and predicted risk 
+#' data from PD-1 analysis.
+#'
+#' @param pd1_res A list. Contains Cox regression results for PD-1 data.
+#' @param pc_names A character vector. Principal component names to process.
+#' @return A list with two data frames:
+#'   \item{coxph_model_data}{Combined Cox model results.}
+#'   \item{predicted_risk_data}{Combined predicted risk data.}
+#' @export
+#' 
 process_pd1_univarite_cox_res <- function(pd1_res, pc_names) {
-  for (pc in pc_names) {
-    for (i in seq_along(pd1_res[[pc]])) {
-      pd1_res[[pc]][[i]]$coxph_model$component <- pc
-      pd1_res[[pc]][[i]]$predicted_risk$component <- pc
-    }
-  }
-  # Combine coxph_model data
-  coxph_model_data <- do.call(rbind, lapply(pc_names, function(pc) {
-    do.call(rbind, lapply(pd1_res[[pc]], function(x) x$coxph_model))
-  }))
+        for (pc in pc_names) {
+        for (i in seq_along(pd1_res[[pc]])) {
+        pd1_res[[pc]][[i]]$coxph_model$component <- pc
+        pd1_res[[pc]][[i]]$predicted_risk$component <- pc
+        }
+        }
+        # Combine coxph_model data
+        coxph_model_data <- do.call(rbind, lapply(pc_names, function(pc) {
+        do.call(rbind, lapply(pd1_res[[pc]], function(x) x$coxph_model))
+        }))
 
-  # Combine predicted_risk data
-  predicted_risk_data <- do.call(rbind, lapply(pc_names, function(pc) {
-    do.call(rbind, lapply(pd1_res[[pc]], function(x) x$predicted_risk))
-  }))
+        # Combine predicted_risk data
+        predicted_risk_data <- do.call(rbind, lapply(pc_names, function(pc) {
+        do.call(rbind, lapply(pd1_res[[pc]], function(x) x$predicted_risk))
+        }))
 
-  return(list(
-    coxph_model_data = coxph_model_data,
-    predicted_risk_data = predicted_risk_data
-  ))
-}
+        return(list(
+        coxph_model_data = coxph_model_data,
+        predicted_risk_data = predicted_risk_data
+        ))
+        }
 
+#' Extract Gene Expression for a Specific Gene
+#'
+#' This function extracts the expression values of a specific gene
+#'
+#' @param exp_file Path to the gene expression file (CSV/TSV format). 
+#'   The file should have genes in the first column and expression values 
+#'   in subsequent columns.
+#' @param samples_file Path to the samples file containing 
+#'   sample IDs. 
+#' @param gene_id The ID of the gene to extract (default: "CD274").
+#' @return A data frame with the extracted gene expression values
+#' @examples
+#' @export
+extract_gene_expression <- function(exp_file,
+                        samples_file, 
+                        gene_id = "CD274") {
+                            if (!file.exists(exp_file)) {
+        stop("The specified `exp_file` does not exist.")
+        }
+        if (!file.exists(samples_file)) {
+        stop("The specified `samples_file` does not exist.")
+        }
+        if (!is.character(gene_id) || length(gene_id) != 1) {
+        stop("`gene_id` must be a single string.")
+        }
+        gene_id_mod <- paste0("^", gene_id, "$")
+        exp <- fread(exp_file)
+        genes <- exp$V1
+        exp <- exp[,-1]
+        samples <- fread(samples_file)
+        colnames(exp) <- samples$sample_id
+        idx_gene <- grep(gene_id_mod, genes)
+        if (length(idx_gene) == 0) {
+        stop(paste("Gene ID", gene_id, "not found in the expression file."))
+        }
+        gene_exp <- t(exp[idx_gene,])
+        colnames(gene_exp) <- gene_id
+        gene_exp <- as.data.frame(gene_exp)
+        gene_exp$cancer <- 
+                samples$cancer[match(rownames(gene_exp), samples$sample_id)]
+        gene_exp$bcr_patient_barcode <- make_bcr_code(rownames(gene_exp))
+        return(gene_exp)
+        }
