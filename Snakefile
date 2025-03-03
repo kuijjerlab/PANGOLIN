@@ -41,6 +41,9 @@ OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_c
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
 COX_RESULTS_ALL = os.path.join("data_all", "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
 PDL1_CIRCULAR_PLOT = os.path.join(FIG_DIR, "circular_pdl1_plot_{threshold_cox}.pdf")
+OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
+OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_predited_risk_scores.txt")
+
 
 ## Parameters ##
 ALPHA = config["alpha"]
@@ -54,6 +57,8 @@ rule all:
         expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         CANCER_LEGEND_PDF,
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
+        expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
+        expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
         COX_RESULTS_ALL, 
         expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)
@@ -107,6 +112,27 @@ rule extract_pd1_pathway_individual_mappings:
             --output {output.out_file}
         """
 
+
+## Run univatiate cox model on pd1-pathway based scores for each cancer ##        
+rule run_univariate_cox_pd1_pathway:
+    input:
+        clin_file = TUMOR_CLIN_FILE,
+        tumor_pd1_dir = TUMOR_PD1_DIR
+    output:
+        out_file_summary = OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY,
+        out_file_predicted_scores = OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES
+    params:
+        bin = config["bin"],
+    message:
+        "Running univariate Cox model on pd1-pathway based scores for: {wildcards.cancer}"
+    shell:
+        """
+        Rscript {params.bin}/run_univariate_cox_pd1_pathway.R \
+            --tumor_clin_file_path {input.clin_file} \
+            --tumor_pd1_dir {input.tumor_pd1_dir} \
+            --cox_model_summary {output.out_file_summary} \
+            --cox_predicted_risk {output.out_file_predicted_scores}
+        """
 
 ## Run multivariate regularized cox regression on PDL1 edges ##  
 rule run_regularized_cox:

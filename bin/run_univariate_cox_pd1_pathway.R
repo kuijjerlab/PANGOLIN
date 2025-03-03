@@ -48,11 +48,11 @@ option_list <- list(
         help = "Path to the output file of cox model summary.",
         metavar = "character"),
     optparse::make_option(
-        c("-p", "--cox_predicted_risk"),
+        c("-k", "--cox_predicted_risk"),
         type = "character",
         default = NULL,
         help = "Path to the output file of cox predicted risk scores.",
-        metavar = "character"),
+        metavar = "character")
         )
 
 opt_parser <- optparse::OptionParser(option_list = option_list)
@@ -68,7 +68,12 @@ OUTPUT_FILE_COX_SUMMARY <- opt$cox_model_summary
 OUTPUT_FILE_COX_SCORES <- opt$cox_predicted_risk
 
 source("bin/cox_regression_tumor_fn.R")
-dir.create(dirname(OUTPUT_FILE), recursive = TRUE, showWarnings = FALSE)
+dir.create(dirname(OUTPUT_FILE_COX_SUMMARY), recursive = TRUE, showWarnings = FALSE)
+dir.create(dirname(OUTPUT_FILE_COX_SCORES), recursive = TRUE, showWarnings = FALSE)
+
+COVARIATES_TO_USE = NULL
+DATATYPE = "pd1_scores"
+TYPE_STAT = "full_stats"
 pd1_res <- run_univariate_coxph_model(tumor_clin_file_path = TUMOR_CLIN_FILE,
                                 tumor_pd1_dir = TUMOR_PD1_DIR,
                                 covariates = COVARIATES_TO_USE,
