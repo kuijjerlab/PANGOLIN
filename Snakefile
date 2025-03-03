@@ -24,11 +24,14 @@ FIG_DIR = config["fig_dir"]
 
 ## Input Files ##
 CANCER_TYPES = config["cancer_types"]
+THESHOLD_COX = config["threshold_cox"]
 CLINICAL_FILE = config["clinical_file"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
 TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
+PPI_FILE = config["ppi_file"]
+MOTIF_FILE = config["motif_file"]
 
 ## Output Files ##
 
@@ -37,6 +40,7 @@ OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinic
 OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
 COX_RESULTS_ALL = os.path.join("data_all", "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
+PDL1_CIRCULAR_PLOT = os.path.join(FIG_DIR, "circular_pdl1_plot_{threshold_cox}.pdf")
 
 ## Parameters ##
 ALPHA = config["alpha"]
@@ -51,7 +55,8 @@ rule all:
         CANCER_LEGEND_PDF,
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
-        COX_RESULTS_ALL
+        COX_RESULTS_ALL, 
+        expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
@@ -85,7 +90,7 @@ rule create_cancer_legend:
             --cancer_color_file {input.cancer_color_file} \
             --figure_dir {params.fig_dir}
         """
-        
+## Extract PD1 pathway individual mappings ##        
 rule extract_pd1_pathway_individual_mappings:
     input:
        tumor_pathways_mapping_path = TUMOR_PATHWAYS_MAPPING_PATH
@@ -103,7 +108,7 @@ rule extract_pd1_pathway_individual_mappings:
         """
 
 
-
+## Run multivariate regularized cox regression on PDL1 edges ##  
 rule run_regularized_cox:
     input:
         clin_file = OUTPUT_CANCER,
@@ -129,7 +134,7 @@ rule run_regularized_cox:
             --alpha {params.alpha} \
             --output {output.out_file}
         """
-
+## Combine all multivarite cox results in one table ##  
 
 rule combine_cox_results:
     input:
@@ -145,4 +150,27 @@ rule combine_cox_results:
             cancer=$(basename $(dirname $(dirname $file)))
             tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
         done
+        """
+
+## Create a circilar PDL1 plot with the selected TFs passing a threshold ##  
+
+rule create_circular_pdl1_plot:
+    input:
+        cox_results_all = COX_RESULTS_ALL,
+        ppi_file = PPI_FILE,
+        motif_file = MOTIF_FILE
+    output:
+        out_file = PDL1_CIRCULAR_PLOT
+    message:
+        "Making a PDL1 circular plot with threshold: {wildcards.threshold_cox}"
+    params:
+        bin = config["bin"],
+    shell:
+        """
+        Rscript {params.bin}/circular_plot_PDL1.R \
+            --cox_results_all {input.cox_results_all} \
+            --ppi_file {input.ppi_file} \
+            --motif_file {input.motif_file} \
+            --threshold {wildcards.threshold_cox} \
+            --output {output.out_file}
         """

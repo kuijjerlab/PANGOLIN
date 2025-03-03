@@ -46,8 +46,7 @@ option_list <- list(
         default = NULL,
         help = "Path to the output file.",
         metavar = "character"))
-      
-
+        
 opt_parser <- optparse::OptionParser(option_list = option_list)
 opt <- optparse::parse_args(opt_parser)
 
@@ -58,7 +57,7 @@ MOTIF_FILE <- opt$motif_file
 THRESHOLD <- opt$threshold
 OUTPUT_FILE <- opt$output_file
 
-## R scripts ##
+## Filter and process data ##
 
 data <- fread(COX_RESULTS_ALL_FILE)
 
@@ -173,7 +172,7 @@ SAMPLE_LABEL_ADJUST <- 0.3
 LAST_TRACK_INDEX <- length(sectors)
 X_LABEL_OFFSET <- 2
 
-# Set up the margins so labels can fit in
+# Set up the margins so labels can fit in ##
 circos.par(track.margin = rep(MARGIN_ADJUSTMENT, 2)) 
 circos.par(
     gap.after = c(rep(DEFAULT_GAP, LAST_TRACK_INDEX - 1), FINAL_GAP),
