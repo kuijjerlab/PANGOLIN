@@ -36,6 +36,46 @@ coxph_results <- coxph_results %>%
 
 predicted_scores <- fread("data_all/cox_results_all/PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
 
+
+
+
+
+
+# should contain the folling files:
+
+# pd1_individual_scores_norm_{cancer}.RData
+# pdl1_expression_{cancer}.RData
+# {cancers}_PD1_pathway_cox_univariate_predicted_risk_scores.txt
+
+
+
+
+extract_gene_expression_tumor <- function(exp_file, 
+                                           samples_file, 
+                                           gene_id = "CD274", 
+                                           tumor = tumor) {
+    
+        # Extract gene expression data
+        gene_exp <- extract_gene_expression(exp_file, samples_file, gene_id)
+        gene_exp$cancer <- gsub("TCGA-", "", gene_exp$cancer)
+        # Ensure `cancer` column exists in `gene_exp`
+
+        # Filter for the specific tumor type
+        filtered_data <- gene_exp[gene_exp$cancer == tumor, ]
+        
+        # Pivot data to wide format
+        wide_data <- filtered_data %>%
+                pivot_wider(names_from = bcr_patient_barcode, values_from = gene_id) %>%
+                mutate(gene = gene_id) %>%
+                select(gene, everything())
+        wide_data <- as.data.frame(wide_data[,-c(1:2)])
+        rownames(wide_data) <- gene_id
+        return(wide_data)
+}
+
+
+
+
 plot_list <- lapply(1:nrow(coxph_results), function(i) {
         tumor <- toupper(coxph_results$cancer[i])
         pc_component <- coxph_results$component[i]

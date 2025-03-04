@@ -32,6 +32,8 @@ TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
 TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
 PPI_FILE = config["ppi_file"]
 MOTIF_FILE = config["motif_file"]
+EXPRESSION_FILE = config["expression_file"]
+SAMPLES_FILE = config["samples_file"]
 
 ## Output Files ##
 
@@ -50,7 +52,7 @@ OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "
 OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
 COX_RESULTS_ALL = os.path.join("data_all", "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
 PDL1_CIRCULAR_PLOT = os.path.join(FIG_DIR, "circular_pdl1_plot_{threshold_cox}.pdf")
-
+OUTPUT_PDL1_EXP_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pdl1_expression_{cancer}.txt")
 
 ## Parameters ##
 ALPHA = config["alpha"]
@@ -64,6 +66,7 @@ rule all:
     input:
         expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         CANCER_LEGEND_PDF,
+        expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer = CANCER_TYPES),
@@ -105,6 +108,29 @@ rule create_cancer_legend:
             --cancer_color_file {input.cancer_color_file} \
             --figure_dir {params.fig_dir}
         """
+
+
+## Extract PDL1 gene expression for each cancer type ##
+
+rule extract_PDL1_gene_expression:
+    input:
+        expression_file = EXPRESSION_FILE,
+        samples_file = SAMPLES_FILE
+    output:
+        out_file = OUTPUT_PDL1_EXP_CANCER
+    message:
+        "Extracting expression data for PDL1: {wildcards.cancer}"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/extract_PDL1_expression.R \
+            --exp_file {input.expression_file} \
+            --samples_file {input.samples_file} \
+            --tumor {wildcards.cancer} \
+            --output {output.out_file}
+        """
+
 ## Extract PD1 pathway individual mappings ##        
 rule extract_pd1_pathway_individual_mappings:
     input:
