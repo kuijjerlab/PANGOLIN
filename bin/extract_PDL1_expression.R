@@ -7,8 +7,6 @@ for (lib in required_libraries) {
   suppressPackageStartupMessages(library(lib, character.only = TRUE,
                                 quietly = TRUE))
 }
-
-
 ####################
 ## Read arguments ##
 ####################
@@ -52,7 +50,7 @@ source("bin/extract_PDL1_expression_fn.R")
 ##############################
 exp_pdl1 <- process_gene_expression(exp_file = EXPRESSION_FILE,
                                 samples_file = SAMPLES_FILE,
-                                gene_id = "CD274",
+                                gene_id = GENE_ID,
                                 tumor = TUMOR_TYPE)
 
 ##########################
@@ -61,5 +59,3 @@ exp_pdl1 <- process_gene_expression(exp_file = EXPRESSION_FILE,
 dir.create(dirname(OUTPUT_FILE), recursive = TRUE, showWarnings = FALSE)
 fwrite(exp_pdl1, file = OUTPUT_FILE, sep = "\t",
     row.names = FALSE, quote = FALSE, col.names = TRUE)
-
-

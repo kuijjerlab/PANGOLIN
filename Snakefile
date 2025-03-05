@@ -60,6 +60,7 @@ NUMBER_FOLDS = config["number_folds"]
 NUMBER_CORES = config["number_cores"]
 NUMBER_TIMES = config["number_times"]
 THESHOLD_COX = config["threshold_cox"]
+GENE_ID = config["gene_id"]
 
 # Rules ##
 rule all:
@@ -121,13 +122,16 @@ rule extract_PDL1_gene_expression:
     message:
         "Extracting expression data for PDL1: {wildcards.cancer}"
     params:
-        bin = config["bin"]
+        bin = config["bin"],
+        gene_id = GENE_ID # this is how it shouldbe
+
     shell:
         """
         Rscript {params.bin}/extract_PDL1_expression.R \
             --exp_file {input.expression_file} \
             --samples_file {input.samples_file} \
             --tumor {wildcards.cancer} \
+            --gene_id {params.gene_id} \
             --output {output.out_file}
         """
 

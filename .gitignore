@@ -6,4 +6,4 @@ Snakefile_old
 /bin/rename_pd1_net_files.R
 /bin/rename_pd1_net_files_fn.R
 /panda_input_primary/
-/bin/test.R
+/bin/test_V1.R

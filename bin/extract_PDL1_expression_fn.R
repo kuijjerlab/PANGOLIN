@@ -90,3 +90,5 @@ process_gene_expression <- function(exp_file,
         wide_data <- as.data.frame(wide_data[, -c(1:2)])
         return(gene_exp)
 }
+
+

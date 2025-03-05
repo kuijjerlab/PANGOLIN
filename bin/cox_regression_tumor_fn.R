@@ -135,7 +135,7 @@ validate_inputs <- function(tumor_pd1_dir, type) {
                 stop("`pd1_dir` doesn't exist.")
         }
         if (!type %in% c("pd1_links", "pd1_net", 
-                         "pd1_scores")) {
+                         "pd1_scores", "pdl1_expression")) {
                 stop("Invalid `type`. Choose valid type.")
         }
 }
@@ -151,13 +151,15 @@ validate_inputs <- function(tumor_pd1_dir, type) {
 #' determine_pattern("pd1_links")  # Returns "pd1_edges"
 #' determine_pattern("pd1_net")    # Returns "pd1_net"
 #' determine_pattern("pd1_scores") # Returns "pd1_individual_scores"
+#' determine_pattern("pdl1_expression")    # Returns "pdl1_expression"
 #' determine_pattern("invalid")    # Returns NULL
 #'
 #' @export
 #' 
 determine_pattern <- function(type) {
         patterns <- list(pd1_links = "pd1_edges", pd1_net = "pd1_net", 
-                         pd1_scores = "pd1_individual_scores")
+                         pd1_scores = "pd1_individual_scores",
+                         pdl1_expression = "pdl1_expression")
         return(patterns[[type]])
 }
 
@@ -212,7 +214,9 @@ load_process_pd1_data <- function(tumor_pd1_dir, tumor_file, type) {
                 data <- t(scores)
                 colnames(data) <- make_bcr_code(colnames(data))
                 data <- data[1:2, ] # only take 2 PCs
-        }
+        } else if (type == "pdl1_expression") {
+                data <- data.table::fread(file_path)
+                }
         return(data)
 }
 
@@ -317,6 +321,9 @@ combine_info_for_cancer <- function(tumor_clin_file_path,
             data$pd1_net <- pd1_net
             data$pd1_scores <- load_pd1_generic(tumor_pd1_dir,
                                 type = "pd1_scores")
+            data$pdl1_expression <- load_pd1_generic(tumor_pd1_dir,
+                                type = "pdl1_expression")
+        
         } else {
             message("Warning: 'tumor_pd1_dir' missing. PD1 data not included.")
         }
@@ -744,3 +751,4 @@ extract_gene_expression <- function(exp_file,
         gene_exp$bcr_patient_barcode <- make_bcr_code(rownames(gene_exp))
         return(gene_exp)
         }
+
