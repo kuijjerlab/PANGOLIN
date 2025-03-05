@@ -74,6 +74,7 @@ dir.create(dirname(OUTPUT_FILE_COX_SCORES), recursive = TRUE, showWarnings = FAL
 COVARIATES_TO_USE = NULL
 DATATYPE = "pd1_scores"
 TYPE_STAT = "full_stats"
+
 pd1_res <- run_univariate_coxph_model(tumor_clin_file_path = TUMOR_CLIN_FILE,
                                 tumor_pd1_dir = TUMOR_PD1_DIR,
                                 covariates = COVARIATES_TO_USE,

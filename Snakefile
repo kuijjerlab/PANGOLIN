@@ -34,6 +34,7 @@ PPI_FILE = config["ppi_file"]
 MOTIF_FILE = config["motif_file"]
 EXPRESSION_FILE = config["expression_file"]
 SAMPLES_FILE = config["samples_file"]
+IMMUNE_FILE = config["immune_file"]
 
 ## Output Files ##
 
@@ -53,7 +54,7 @@ OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_c
 COX_RESULTS_ALL = os.path.join("data_all", "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
 PDL1_CIRCULAR_PLOT = os.path.join(FIG_DIR, "circular_pdl1_plot_{threshold_cox}.pdf")
 OUTPUT_PDL1_EXP_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pdl1_expression_{cancer}.txt")
-
+OUTPUT_COMBINED_PATIENT_DATA_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "combined_patient_data_{cancer}.txt")
 ## Parameters ##
 ALPHA = config["alpha"]
 NUMBER_FOLDS = config["number_folds"]
@@ -73,6 +74,7 @@ rule all:
         expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer = CANCER_TYPES),
         UNIVARIATE_COX_SUMMARY_ALL,
         UNIVARIATE_COX_PREDICTED_SCORES_ALL,
+        expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
         COX_RESULTS_ALL, 
         expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)
@@ -135,7 +137,7 @@ rule extract_PDL1_gene_expression:
             --output {output.out_file}
         """
 
-## Extract PD1 pathway individual mappings ##        
+## Extract PD1 pathway-based individual mappings (heterogeneity scores) ##        
 rule extract_pd1_pathway_individual_mappings:
     input:
        tumor_pathways_mapping_path = TUMOR_PATHWAYS_MAPPING_PATH
@@ -162,7 +164,7 @@ rule run_univariate_cox_pd1_pathway:
         out_file_summary = OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY,
         out_file_predicted_scores = OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES
     params:
-        bin = config["bin"],
+        bin = config["bin"]
     message:
         "Running univariate Cox model on pd1-pathway based scores for: {wildcards.cancer}"
     shell:
@@ -203,6 +205,29 @@ rule combine_pd1_pathway_univariate_prediction_scores:
             cancer=$(basename $(dirname $(dirname $file)))
             tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
         done
+        """
+
+### Combine the PD1 pathway heterogeneity scores  with PDL1 expression and PD1 pathway scores ###
+### and immune infiltration ###
+
+rule merge_patient_data:
+    input:
+        tumor_pd1_dir = TUMOR_PD1_DIR,
+        risk_score = OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES,
+        immune_file = IMMUNE_FILE
+    output:
+        out_file = OUTPUT_COMBINED_PATIENT_DATA_CANCER
+    message:
+        "Merging patient data for: {wildcards.cancer}"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/merge_patient_data.R \
+            --tumor_pd1_dir {input.tumor_pd1_dir} \
+            --risk_score {input.risk_score} \
+            --immune_file {input.immune_file} \
+            --output_file {output.out_file}
         """
 
 ## Run multivariate regularized cox regression on PDL1 edges ##  
