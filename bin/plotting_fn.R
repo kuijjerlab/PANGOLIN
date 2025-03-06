@@ -67,15 +67,11 @@ generate_pc_cd274_plots <- function(cox_results_file,
                                method = "spearman")
         cor_coef <- cor_result$estimate
 
-        # Flip sign if correlation is negative
-
-        data_sel[[pc_component]] <- ifelse(cor_coef < 0, 
-                                           -1 * data_sel[[pc_component]], 
-                                           data_sel[[pc_component]])
-
-        data_sel[, pc_component] <- ifelse(cor_coef < 0, 
-                                           -1 * data_sel[, pc_component], 
-                                           data_sel[, pc_component])
+        if (cor_coef < 0){
+            data_sel[, pc_component] <- - data_sel[, pc_component]
+                } else {
+            data_sel[, pc_component] <- data_sel[, pc_component]
+            }
 
         # Generate and return the plot
         create_pc_cd274_plot(data_sel, pc_component, tumor)
