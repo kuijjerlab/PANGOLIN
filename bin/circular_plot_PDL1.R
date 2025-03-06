@@ -20,7 +20,7 @@ option_list <- list(
         c("-x", "--cox_results_all"),
         type = "character",
         default = NULL,
-        help = "Path to cox_results_all file.",
+        help = "Path to multivariate cox_results_all file.",
         metavar = "character"),
     optparse::make_option(
         c("-p", "--ppi_file"),
@@ -61,9 +61,9 @@ OUTPUT_FILE <- opt$output_file
 
 data <- fread(COX_RESULTS_ALL_FILE)
 
-tumors <- data.table("cancer" = c("ACC", "BRCA", "CESC", "KIRC", "LGG", 
-                                  "LIHC", "LUAD", "OV", "PRAD", "SARC", 
-                                  "SKCM", "STAD"))
+tumors <- data.table("cancer" = c("ACC", "BRCA", "CESC", "KICH", "KIRC", "LAML",
+                                "LGG", "LIHC", "LUAD", "OV", "PRAD", "SARC",
+                                "SKCM", "STAD", "UCEC"))
 pfi_cancer <-  c("BRCA", "LGG", "PRAD", "READ", "TGCT", "THCA", "THYM")
 data <- data[data$cancer %in% tumors$cancer, ]
 data <- data %>%

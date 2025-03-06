@@ -46,7 +46,7 @@ OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox
 OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_predited_risk_scores.txt")
 UNIVARIATE_COX_SUMMARY_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_model_summary_all.txt")
 UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
-
+FIG_PC_PDL1_EXPRESSION = os.path.join(FIG_DIR, "PDL1_exp_PC_component_HR.pdf")
 
 ## Output Files for multivariate regularized Cox on PDL1-edges ##
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
@@ -75,6 +75,7 @@ rule all:
         UNIVARIATE_COX_SUMMARY_ALL,
         UNIVARIATE_COX_PREDICTED_SCORES_ALL,
         expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer = CANCER_TYPES),
+        FIG_PC_PDL1_EXPRESSION,
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
         COX_RESULTS_ALL, 
         expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)
@@ -229,7 +230,26 @@ rule merge_patient_data:
             --immune_file {input.immune_file} \
             --output_file {output.out_file}
         """
-        
+
+## Plot the PC components vs PDL1 exp with risk scores from the univariate COX model ##
+
+rule plot_PC_PDL1_expression:
+    input:
+        cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL,
+        tumor_main_dir = OUTPUT_DIR
+    output:
+        out_file = FIG_PC_PDL1_EXPRESSION
+    message:
+        "Generating a figure for the selected cancer types of PDL1 exp vs corresponding PC component"
+    params:
+        bin = config["bin"],
+    shell:
+        """
+        Rscript {params.bin}/plot_PC_PDL1_exp.R \
+            --cox_summary_all_cancers {input.cox_summary_all} \
+            --tumor_dir {input.tumor_main_dir} \
+            --output {output.out_file}
+        """
 ## Run multivariate regularized cox regression on PDL1 edges ##  
 rule run_regularized_cox:
     input:
