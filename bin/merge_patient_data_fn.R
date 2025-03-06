@@ -61,6 +61,9 @@ read_cox_predicted_risk_scores <- function(risk_score_file) {
         return(risk_scores)
         }
 
+
+
+
 #' Preprocess Immune Data
 #'
 #' Reads and cleans immune data, adding `bcr_patient_barcode` and removing 
@@ -160,3 +163,95 @@ merge_patient_data <- function(tumor_pd1_dir,
         return(data_all)
 }
 
+#' Read and filter Cox proportional hazards model results
+#'
+#' This function reads a Cox model results file, filters based on a p-value 
+#' threshold, and applies cancer-type-specific filtering criteria.
+#'
+#' @param cox_results_file A string specifying the path to the Cox results file.
+#' @param pval_threshold A numeric value for filtering significant results 
+#'   (default = 0.05).
+#'
+#' @return A filtered data frame with an added `component_type` column.
+#' @export
+#'
+#' @import data.table
+#' @importFrom dplyr filter mutate
+#'
+#' @examples
+#' \dontrun{
+#'   results <- read_all_coxph_results("cox_results.csv", 0.01)
+#' }
+read_all_coxph_results <- function(cox_results_file,
+                        pval_threshold = 0.05) {
+        # Check if the file exists
+        if (!file.exists(cox_results_file)) {
+            stop("Error: Cox results file does not exist.")
+        }
+
+        # Load data
+        coxph_results <- data.table::fread(cox_results_file)
+
+        # Ensure required columns exist
+        required_cols <- c("pvalue", "type", "cancer", "feature")
+        missing_cols <- setdiff(required_cols, colnames(coxph_results))
+        if (length(missing_cols) > 0) {
+            stop("Error: Missing columns -", 
+                    paste(missing_cols, collapse = ", "))
+        }
+        # Filter based on p-value threshold
+        coxph_results <- dplyr::filter(coxph_results, pvalue < pval_threshold)
+
+        # Define PFI-specific cancer types
+        pfi_cancer <- c("BRCA", "LGG", "PRAD", "READ", "TGCT", "THCA", "THYM")
+
+        # Apply cancer-type filtering
+        coxph_results <- coxph_results %>%
+            dplyr::filter((type == "PFI" & cancer %in% pfi_cancer) | 
+                        (type == "OS" & !cancer %in% pfi_cancer))
+
+        # Create `component_type` column
+        coxph_results <- dplyr::mutate(coxph_results, 
+                        component_type = paste(feature, type, sep = "_"))
+
+    return(coxph_results)
+}
+
+#' Merge patient data from all cancer subdirectories
+#'
+#' This function scans a directory for patient data files, reads them, and adds 
+#' a `cancer` column based on the filename. The data is then merged into a 
+#' single data frame.
+#'
+#' @param cancer_dir A string specifying the directory with patient data files.
+#'
+#' @return A data frame with merged patient data from all available cancer types.
+#' @export
+#' 
+merge_patient_data_all_cancers <- function(cancer_dir) {
+    # Validate input directory
+    if (!dir.exists(cancer_dir)) {
+        stop("Error: The specified directory does not exist.")
+    }
+
+    # List all matching files
+    files <- list.files(
+        cancer_dir, 
+        pattern = "combined_patient_data",
+        recursive = TRUE, full.names = TRUE
+    )
+
+    if (length(files) == 0) {
+        stop("Error: No matching patient data files found in the directory.")
+    }
+
+    # Read and merge all data files
+    patient_data <- purrr::map_dfr(files, function(file) {
+        cancer_type <- 
+            stringr::str_extract(basename(file), "(?<=combined_patient_data_)[A-Z]+")
+        df <- data.table::fread(file)
+        df$cancer <- cancer_type  # Add cancer type column
+        return(df)
+    })
+    return(patient_data)
+}
