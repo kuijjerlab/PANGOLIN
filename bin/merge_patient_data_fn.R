@@ -255,3 +255,63 @@ merge_patient_data_all_cancers <- function(cancer_dir) {
     })
     return(patient_data)
 }
+
+#' Generate Immune Infiltration Table
+#'
+#' This function computes correlations between principal components
+#' and immune infiltration levels across multiple cancer types.
+#'
+#' @param cox_results_file Path to the Cox proportional hazards results file.
+#' @param cancer_dir Directory containing patient data for all cancers.
+#' @param pval_threshold significance threshold for filtering Cox results. Default is 0.05.
+#'
+#' @return A data frame containing Spearman correlation results
+#' between immune cell infiltration and PC scores across different cancer types.
+#'
+#' @import dplyr
+#' @import reshape2
+#' @import plyr
+#' @export
+
+generate_PC_immune_correlation_table <- 
+                                function(cox_results_file,
+                                cancer_dir, 
+                                pval_threshold = 0.05) {
+        cox_res <- read_all_coxph_results(cox_results_file,
+                                    pval_threshold = 0.05)
+        combined_data <- merge_patient_data_all_cancers(cancer_dir)
+        cols_cells <- colnames(combined_data)[9:30]
+        cor_res_all <- lapply(1:nrow(cox_res), function(i) {
+            tumor <- cox_res$cancer[i]
+            pc_component <- cox_res$component[i]
+            # Select relevant columns
+            immune_cols <- c("bcr_patient_barcode", cols_cells)
+            pd1_cols <- c("bcr_patient_barcode", pc_component)
+
+            # Filter once and create two separate datasets
+            filtered_data <- combined_data %>% filter(cancer == tumor)
+            immune_data <- filtered_data %>% select(all_of(immune_cols))
+            pd1_scores <- filtered_data %>% select(all_of(pd1_cols))
+
+            # Reshape data
+            data_long <- melt(immune_data)
+            data_long <- left_join(data_long, pd1_scores,
+                            by = "bcr_patient_barcode")
+            cor_data <- ddply(data_long, .(variable),
+                function(x) cor(x[[pc_component]], x$value, 
+                    method = "spearman",  use = "complete.obs"))
+            colnames(cor_data)[2] <- c("corr")
+            # Add metadata
+            cor_data <- cor_data %>%
+                mutate(tumor = tumor, pc_component = pc_component)
+            cor_data$tumor_component <- paste(cor_data$tumor, 
+                                        cor_data$pc_component, 
+                                        sep = "_"
+                    )
+            return(cor_data)
+        })
+        cor_res_all <- do.call("rbind", cor_res_all)
+        cor_res_all$corr <- abs(cor_res_all$corr)
+        cor_res_all  <- cor_res_all[!is.na(cor_res_all$corr),]
+        return(cor_res_all)
+}

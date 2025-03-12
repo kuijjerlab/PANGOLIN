@@ -80,3 +80,61 @@ generate_pc_cd274_plots <- function(cox_results_file,
     plots <- Filter(Negate(is.null), plots)
     return(plots)
 }
+
+
+
+#' Plot Heatmap of Correlations
+#'
+#' This function generates a heatmap of correlations between
+#' immune infiltration levels and principal component (PC) scores 
+#' across different cancer types. It highlights 
+#' strong correlations above a predefined threshold.
+#'
+#' @param cor_res_all A data frame containing correlation results with columns: 
+#'        'tumor_component', 'variable', and 'corr'.
+#'
+#' @return A heatmap visualization of correlation values.
+#'
+#' @import pheatmap
+#' @import reshape2
+#' @import viridis
+#' @export
+plot_pc_immune_correlations <- function(cor_res_all) {
+        CORRELATION_THRESHOLD <- 0.4
+        FONT_SIZE <- 12
+        CELL_SIZE <- 20
+        COLOR_PALETTE <- viridis(100)
+        # Validate input
+        if (nrow(cor_res_all) == 0) {
+            stop("Input data frame 'cor_res_all' is empty.
+            Cannot generate heatmap.")
+        }
+        # Reshape correlation data for plotting
+        data_to_plot <- dcast(cor_res_all, 
+                            tumor_component ~ variable, 
+                            value.var = "corr")
+        # Convert to matrix format for heatmap
+        data_matrix <- as.matrix(data_to_plot[,-1])
+        rownames(data_matrix) <- data_to_plot[[1]]  # More readable than [,1]
+        # Define annotation for strong correlations
+        annotation_matrix <- 
+            ifelse(data_matrix >= CORRELATION_THRESHOLD, "✔", "")
+        annotation_matrix[is.na(annotation_matrix)] <- ""  
+        # Set locale and font settings
+        Sys.setlocale("LC_ALL", "en_US.UTF-8")
+        par(family = "sans")
+        # Generate heatmap
+        heatmap_plot <- pheatmap(
+            data_matrix, 
+            cluster_rows = FALSE, 
+            cluster_cols = FALSE, 
+            display_numbers = annotation_matrix,  # Highlight correlations
+            fontsize_number = FONT_SIZE, 
+            color = COLOR_PALETTE, 
+            border_color = "white",  # Creates a gap around the heatmap
+            cellwidth = CELL_SIZE, cellheight = CELL_SIZE, 
+            annotation_legend = FALSE, 
+            na_col = "grey"
+        )
+        print(heatmap_plot)
+    }
