@@ -33,7 +33,7 @@ option_list <- list(
         c("-o", "--output_file"),
         type = "character",
         default = NULL,
-        help = "Path to the output pdf figure file.",
+        help = "Path to the output png figure file.",
         metavar = "character")
         )
 opt_parser <- optparse::OptionParser(option_list = option_list)
@@ -42,12 +42,15 @@ opt <- optparse::parse_args(opt_parser)
 ## Initialize variable
 COX_SUMMARY_ALL <- opt$cox_summary_all_cancers
 TUMOR_DIR_MAIN <- opt$tumor_dir
-OUTPUT_PDF_FILE <- opt$output_file
+OUTPUT_PNG_FILE <- opt$output_file
+
+source("bin/merge_patient_data_fn.R")
+source("bin/plotting_fn.R")
 
 res <- generate_PC_immune_correlation_table(cox_results_file = COX_SUMMARY_ALL,
                                 cancer_dir = TUMOR_DIR_MAIN, 
                                 pval_threshold = 0.05)
-pdf(OUTPUT_PDF_FILE, width = 10, height = 10)
+png(OUTPUT_PNG_FILE, width = 2000, height = 2000, res = 200) 
 plot_pc_immune_correlations(res)
 dev.off()
 
