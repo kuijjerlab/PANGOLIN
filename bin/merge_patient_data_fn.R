@@ -264,8 +264,9 @@ merge_patient_data_all_cancers <- function(cancer_dir) {
 #' @param cox_results_file Path to the Cox proportional hazards results file.
 #' @param cancer_dir Directory containing patient data for all cancers.
 #' @param pval_threshold significance threshold for filtering Cox results. Default is 0.05.
+#' @param correlation_method correaltion to use. Default is "spearman"
 #'
-#' @return A data frame containing Spearman correlation results
+#' @return A data frame containing  correlation results
 #' between immune cell infiltration and PC scores across different cancer types.
 #'
 #' @import dplyr
@@ -276,9 +277,10 @@ merge_patient_data_all_cancers <- function(cancer_dir) {
 generate_PC_immune_correlation_table <- 
                                 function(cox_results_file,
                                 cancer_dir, 
-                                pval_threshold = 0.05) {
+                                pval_threshold = 0.05,
+                                correlation_method = "spearman") {
         cox_res <- read_all_coxph_results(cox_results_file,
-                                    pval_threshold = 0.05)
+                                    pval_threshold = pval_threshold)
         combined_data <- merge_patient_data_all_cancers(cancer_dir)
         cols_cells <- colnames(combined_data)[9:30]
         cor_res_all <- lapply(1:nrow(cox_res), function(i) {
@@ -299,13 +301,13 @@ generate_PC_immune_correlation_table <-
                             by = "bcr_patient_barcode")
             cor_data <- ddply(data_long, .(variable),
                 function(x) cor(x[[pc_component]], x$value, 
-                    method = "spearman",  use = "complete.obs"))
+                    method = correlation_method,  use = "complete.obs"))
             colnames(cor_data)[2] <- c("corr")
             # Add metadata
-            cor_data <- cor_data %>%
-                mutate(tumor = tumor, pc_component = pc_component)
-            cor_data$tumor_component <- paste(cor_data$tumor, 
-                                        cor_data$pc_component, 
+            # cor_data <- cor_data %>%
+            #     mutate(tumor = tumor, pc_component = pc_component)
+            cor_data$tumor_component <- paste(tumor, 
+                                        pc_component, 
                                         sep = "_"
                     )
             return(cor_data)

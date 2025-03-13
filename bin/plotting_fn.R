@@ -99,8 +99,8 @@ generate_pc_cd274_plots <- function(cox_results_file,
 #' @import reshape2
 #' @import viridis
 #' @export
-plot_pc_immune_correlations <- function(cor_res_all) {
-        CORRELATION_THRESHOLD <- 0.4
+plot_pc_immune_correlations <- function(cor_res_all, 
+                            correlation_threshold = 0.4) {
         FONT_SIZE <- 12
         CELL_SIZE <- 20
         COLOR_PALETTE <- viridis(100)
@@ -115,26 +115,28 @@ plot_pc_immune_correlations <- function(cor_res_all) {
                             value.var = "corr")
         # Convert to matrix format for heatmap
         data_matrix <- as.matrix(data_to_plot[,-1])
-        rownames(data_matrix) <- data_to_plot[[1]]  # More readable than [,1]
+        rownames(data_matrix) <- data_to_plot[,1]
         # Define annotation for strong correlations
         annotation_matrix <- 
-            ifelse(data_matrix >= CORRELATION_THRESHOLD, "✔", "")
-        annotation_matrix[is.na(annotation_matrix)] <- ""  
+            ifelse(data_matrix >= correlation_threshold, "✔", "")
+        annotation_matrix[is.na(annotation_matrix)] <- ""
         # Set locale and font settings
         Sys.setlocale("LC_ALL", "en_US.UTF-8")
         par(family = "sans")
         # Generate heatmap
         heatmap_plot <- pheatmap(
-            data_matrix, 
-            cluster_rows = FALSE, 
-            cluster_cols = FALSE, 
+            data_matrix,
+            cluster_rows = FALSE,
+            cluster_cols = FALSE,
             display_numbers = annotation_matrix,  # Highlight correlations
-            fontsize_number = FONT_SIZE, 
-            color = COLOR_PALETTE, 
+            fontsize_number = FONT_SIZE,
+            color = COLOR_PALETTE,
             border_color = "white",  # Creates a gap around the heatmap
-            cellwidth = CELL_SIZE, cellheight = CELL_SIZE, 
-            annotation_legend = FALSE, 
+            cellwidth = CELL_SIZE, cellheight = CELL_SIZE,
+            annotation_legend = TRUE,
             na_col = "grey"
         )
         print(heatmap_plot)
     }
+
+

@@ -47,7 +47,7 @@ OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR, "{cance
 UNIVARIATE_COX_SUMMARY_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_model_summary_all.txt")
 UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
 FIG_PC_PDL1_EXPRESSION = os.path.join(FIG_DIR, "PDL1_exp_PC_component_HR.pdf")
-
+FIG_PC_IMMUNE_CORRELATION = os.path.join(FIG_DIR, "PC_immune_correlations.pdf")
 ## Output Files for multivariate regularized Cox on PDL1-edges ##
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
 OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
@@ -76,6 +76,7 @@ rule all:
         UNIVARIATE_COX_PREDICTED_SCORES_ALL,
         expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer = CANCER_TYPES),
         FIG_PC_PDL1_EXPRESSION,
+        FIG_PC_IMMUNE_CORRELATION,
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
         COX_RESULTS_ALL, 
         expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)
@@ -250,6 +251,27 @@ rule plot_PC_PDL1_expression:
             --tumor_dir {input.tumor_main_dir} \
             --output {output.out_file}
         """
+
+## Plot the correlation of the PC components and the immune cell types ##
+
+rule plot_PC_immune_correlations:
+    input:
+        cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL,
+        tumor_main_dir = OUTPUT_DIR
+    output:
+        out_file = FIG_PC_IMMUNE_CORRELATION
+    message:
+        "Generating a figure of the correlation between the PC and immune cells for selected cancer types"
+    params:
+        bin = config["bin"],
+    shell:
+        """
+        Rscript {params.bin}/plot_PC_immune_correlations.R \
+            --cox_summary_all_cancers {input.cox_summary_all} \
+            --tumor_dir {input.tumor_main_dir} \
+            --output {output.out_file}
+        """
+
 ## Run multivariate regularized cox regression on PDL1 edges ##  
 rule run_regularized_cox:
     input:
