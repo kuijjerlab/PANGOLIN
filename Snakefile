@@ -30,6 +30,8 @@ CANCER_COLOR_FILE = config["cancer_color_file"]
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
 TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
+TSNE_DIR = os.path.join(OUTPUT_DIR, "tsne_results")
+
 PPI_FILE = config["ppi_file"]
 MOTIF_FILE = config["motif_file"]
 EXPRESSION_FILE = config["expression_file"]
@@ -40,6 +42,7 @@ IMMUNE_FILE = config["immune_file"]
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
+TSNE_DATA = os.path.join(TSNE_DIR, "tsne_expression_indegree_all_cancers.txt")
 
 ## Output Files for Univariate Cox on PD1-pathway based heterogeneity scores ##
 OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
@@ -67,6 +70,7 @@ GENE_ID = config["gene_id"]
 rule all:
     input:
         expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
+        TSNE_DATA,
         CANCER_LEGEND_PDF,
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
@@ -98,6 +102,29 @@ rule extract_clinical_data:
             --tumor {wildcards.cancer} \
             --output {output.out_file}
         """
+
+
+## Run T-SNE on expression and gene indegree data for all cancers ##
+rule run_tsne:
+    input:
+        expression_file = EXPRESSION_FILE,
+        samples_file = SAMPLES_FILE,
+        tumor_main_dir = OUTPUT_DIR
+    output:
+        out_file = TSNE_DATA
+    message:
+        "Running T-SNE on the indegree and expression"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/run_tsne.R \
+            --exp_file {input.expression_file} \
+            --samples_file {input.samples_file} \
+            --tumor_dir {input.tumor_main_dir} \
+            --output {output.out_file}
+        """
+
 
 rule create_cancer_legend:
     input:

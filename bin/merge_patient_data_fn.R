@@ -301,7 +301,8 @@ generate_PC_immune_correlation_table <-
                             by = "bcr_patient_barcode")
             cor_data <- ddply(data_long, .(variable),
                 function(x) cor(x[[pc_component]], x$value, 
-                    method = correlation_method,  use = "complete.obs"))
+                        method = correlation_method, 
+                        use = "complete.obs")) ## add pvalue for this and correct for multiple testing
             colnames(cor_data)[2] <- c("corr")
             # Add metadata
             # cor_data <- cor_data %>%
