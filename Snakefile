@@ -24,13 +24,14 @@ FIG_DIR = config["fig_dir"]
 
 ## Input Files ##
 CANCER_TYPES = config["cancer_types"]
-
 CLINICAL_FILE = config["clinical_file"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
 TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
 TSNE_DIR = os.path.join(OUTPUT_DIR, "tsne_results")
+
+INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR, "{cancer}", "indegrees_norm")
 
 PPI_FILE = config["ppi_file"]
 MOTIF_FILE = config["motif_file"]
@@ -42,8 +43,11 @@ IMMUNE_FILE = config["immune_file"]
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
-TSNE_DATA = os.path.join(TSNE_DIR, "tsne_expression_indegree_all_cancers.txt")
+TSNE_DATA = os.path.join("data_all", "tsne_expression_indegree_all_cancers.txt")
 
+## output directory for te consesus clustering results ##
+
+OUTPUT_CANCER_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering")
 ## Output Files for Univariate Cox on PD1-pathway based heterogeneity scores ##
 OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
 OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_predited_risk_scores.txt")
@@ -65,6 +69,10 @@ NUMBER_CORES = config["number_cores"]
 NUMBER_TIMES = config["number_times"]
 THESHOLD_COX = config["threshold_cox"]
 GENE_ID = config["gene_id"]
+NUMBER_CORES_COLA = config["number_cores_cola"]
+PARTITION_METHOD = config["partition_method"]
+TOP_VALUE_METHOD = config["top_value_method"]
+MAX_K = config["max_k"]
 
 # Rules ##
 rule all:
@@ -72,6 +80,7 @@ rule all:
         expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         TSNE_DATA,
         CANCER_LEGEND_PDF,
+        expand(OUTPUT_CANCER_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES),
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -140,6 +149,39 @@ rule create_cancer_legend:
             --cancer_color_file {input.cancer_color_file} \
             --figure_dir {params.fig_dir}
         """
+# Run cola consensus clustering on gene indegree data for each cancer type ##
+rule run_cola:
+    input:
+        expression_file = EXPRESSION_FILE,
+        samples_file = SAMPLES_FILE,
+        indegree_dir = INPUT_CANCER_INDEGREE_DIR
+    output:
+        output_cancer_consensus_dir = OUTPUT_CANCER_CANCER_CONSENSUS_DIR
+    message:
+        "Running cola clustering on: {wildcards.cancer}"
+    params:
+        bin = config["bin"],
+        number_cores_cola = NUMBER_CORES_COLA,
+        partition_method = PARTITION_METHOD,
+        top_value_method = TOP_VALUE_METHOD,
+        max_k = MAX_K,
+        datatype = 'indegree'
+    shell:
+        """
+        Rscript {params.bin}/cola_clustering.R \
+            --tumor {wildcards.cancer} \
+            --exp_file {input.expression_file} \
+            --samples_file {input.samples_file} \
+            --indegree_dir {input.indegree_dir} \
+            --datatype {params.datatype} \
+            --number_cores {params.number_cores_cola} \
+            --top_value_method {params.top_value_method} \
+            --partition_method {params.partition_method} \
+            --max_k {params.max_k} \
+            --output {output.output_cancer_consensus_dir}
+        """
+
+
 
 
 ## Extract PDL1 gene expression for each cancer type ##
