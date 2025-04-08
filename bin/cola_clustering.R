@@ -67,10 +67,7 @@ MAX_K <- opt$max_k
 OUTPUT_DIR <- opt$output
 
 source("bin/cola_clustering_fn.R")
-CONSENSUS_DIR_OUTPUT <- file.path(OUTPUT_DIR, DATATYPE)
 # perform conssensus clustering on indegree and save the results
-dir.create(OUTPUT_DIR)
-dir.create(CONSENSUS_DIR_OUTPUT)
 perform_cola_clustering(cancer = TUMOR,
                                 samples_file = SAMPLES_FILE, 
                                 exp_file = EXPRESSION_FILE,
@@ -82,7 +79,7 @@ perform_cola_clustering(cancer = TUMOR,
                                 max_k = MAX_K,
                                 p_sampling = 0.8,
                                 partition_repeat = 1000,
-                                output_dir = CONSENSUS_DIR_OUTPUT
+                                output_dir = OUTPUT_DIR
                             )
 # # perform conssensus clustering on expression and save the results
 # mdir(consensus_exp_output)

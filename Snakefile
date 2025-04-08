@@ -24,6 +24,7 @@ FIG_DIR = config["fig_dir"]
 
 ## Input Files ##
 CANCER_TYPES = config["cancer_types"]
+DATATYPES = config["datatypes"]
 CLINICAL_FILE = config["clinical_file"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -47,7 +48,7 @@ TSNE_DATA = os.path.join("data_all", "tsne_expression_indegree_all_cancers.txt")
 
 ## output directory for te consesus clustering results ##
 
-OUTPUT_CANCER_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering")
+OUTPUT_CANCER_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering", "{datatype}")
 ## Output Files for Univariate Cox on PD1-pathway based heterogeneity scores ##
 OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
 OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_predited_risk_scores.txt")
@@ -80,7 +81,7 @@ rule all:
         expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         TSNE_DATA,
         CANCER_LEGEND_PDF,
-        expand(OUTPUT_CANCER_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES),
+        expand(OUTPUT_CANCER_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES),
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -149,23 +150,22 @@ rule create_cancer_legend:
             --cancer_color_file {input.cancer_color_file} \
             --figure_dir {params.fig_dir}
         """
-# Run cola consensus clustering on gene indegree data for each cancer type ##
-rule run_cola:
+# cola consensus clustering on gene indegree and expression data ##
+rule run_cola_clustering:
     input:
         expression_file = EXPRESSION_FILE,
         samples_file = SAMPLES_FILE,
         indegree_dir = INPUT_CANCER_INDEGREE_DIR
     output:
-        output_cancer_consensus_dir = OUTPUT_CANCER_CANCER_CONSENSUS_DIR
+        output_cancer_consensus_dir = directory(OUTPUT_CANCER_CANCER_CONSENSUS_DIR)
     message:
-        "Running cola clustering on: {wildcards.cancer}"
+        "Running cola clustering on: {wildcards.cancer} with datatype: {wildcards.datatype}"
     params:
         bin = config["bin"],
         number_cores_cola = NUMBER_CORES_COLA,
         partition_method = PARTITION_METHOD,
         top_value_method = TOP_VALUE_METHOD,
-        max_k = MAX_K,
-        datatype = 'indegree'
+        max_k = MAX_K
     shell:
         """
         Rscript {params.bin}/cola_clustering.R \
@@ -173,17 +173,13 @@ rule run_cola:
             --exp_file {input.expression_file} \
             --samples_file {input.samples_file} \
             --indegree_dir {input.indegree_dir} \
-            --datatype {params.datatype} \
+            --datatype {wildcards.datatype} \
             --number_cores {params.number_cores_cola} \
             --top_value_method {params.top_value_method} \
             --partition_method {params.partition_method} \
             --max_k {params.max_k} \
             --output {output.output_cancer_consensus_dir}
         """
-
-
-
-
 ## Extract PDL1 gene expression for each cancer type ##
 
 rule extract_PDL1_gene_expression:

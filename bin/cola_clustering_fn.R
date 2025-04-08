@@ -78,12 +78,11 @@ perform_cola_clustering <- function(cancer,
                                             partition_repeat = partition_repeat,
                                             scale_rows = TRUE)
     cat("saving results and plots", "\n")
-    if (is.null(output_dir)) {
-            stop("output directory must be provided.")
-        }
-    # Save results and generate plots
+    if (!dir.exists(output_dir)) {
+        dir.create(output_dir, recursive = TRUE)
+    }
+        # Save results and generate plots
     save_results(res, cancer, datatype, output_dir)
-
 }
 
 
