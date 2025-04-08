@@ -105,9 +105,7 @@ perform_cola_clustering <- function(cancer,
 perform_consensus_clustering <- function(data,
                                          n_cores = 10,
                                          top_value_method = "ATC",
-                                         partition_method = c("hclust", 
-                                                            "skmeans",
-                                                            "kmeans"),
+                                         partition_method = c("kmeans"),
                                          max_k = 6,
                                          p_sampling = 0.8,
                                          partition_repeat = 1000,
@@ -232,50 +230,6 @@ save_results <- function(res,
         }, error = function(e) {
             warning("Failed to save classes information: ", e$message)
         })
-    }
-
-
-
-#' Combine PDF Files in a Directory
-#'
-#' This function combines multiple PDF files in a given folder into a single PDF file.
-#' Optionally, a pattern can be specified to filter files to be combined.
-#'
-#' @param folder_path A character string specifying the path to the folder containing PDF files.
-#' @param pattern An optional character string to filter PDF files by a specific pattern (e.g., regex).
-#'
-#' @return This function returns NULL but creates a combined PDF file in the specified folder.
-#' @details The combined PDF will be saved in the same folder with the name `combined_<pattern>.pdf`.
-#' @examples
-#' 
-#' @import pdftools
-#' @export
-combine_pdfs_cola <- function(folder_path, pattern = NULL) {
-        # Check if the provided folder path exists
-        if (!dir.exists(folder_path)) {
-            stop("The specified folder does not exist. Provide a valid path.")
-        }
-
-        # List PDF files in the folder, filtered by the optional pattern
-        pdf_files <- list.files(path = folder_path, pattern = pattern,
-                                full.names = TRUE)
-        # Check if there are any PDF files to combine
-        if (length(pdf_files) == 0) {
-            stop("No PDF files found matching the specified pattern.")
-        }
-
-        # Define the output file name
-        output_pdf <- paste0("combined",
-                            if (!is.null(pattern)) paste0("_", pattern), ".pdf")
-        output_path <- file.path(folder_path, output_pdf)
-
-        # Combine PDF files
-        pdf_combine(input = pdf_files, output = output_path)
-
-        # Inform the user of the combined file creation
-        message("Combined PDF created at: ", output_path)
-
-        return(invisible(NULL))
     }
 
 #' Load a specified object from an .RData file
@@ -618,3 +572,23 @@ load_exp <- function(cancer, exp_file, samples_file) {
     exp_cancer <- exp_cancer[rowSums(exp_cancer[,-1]) >0, ]
     return(exp_cancer)
     }
+
+#' Combine Best and Optional Cluster Results
+#'
+#' This function combines the selected and optional cluster values (`selected_k`
+#' and `optional_k`) for each cancer type into a single string, separated by 
+#' semicolons. It ensures that the values are unique and sorted.
+#'
+#' @param data A `data.table` with columns `cancer`, `selected_k`, and 
+#'        `optional_k`.
+#' @return A `data.table` with one row per cancer type and a `combined` column 
+#'         containing the combined cluster values as a semicolon-separated 
+#'         string.
+#' @export
+
+combine_k_results <- function(data){
+    combined <- data[, {
+        all_vals <- c(na.omit(selected_k), na.omit(optional_k))
+        .(combined = paste(sort(unique(all_vals)), collapse = ";"))
+            }, by = cancer]
+}

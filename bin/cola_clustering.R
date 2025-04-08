@@ -8,7 +8,7 @@ for (lib in required_libraries) {
   suppressPackageStartupMessages(library(lib, character.only = TRUE,
                                 quietly = TRUE))
 }
-
+set.seed(1234)
 ####################
 ## Read arguments ##
 ####################
@@ -81,18 +81,3 @@ perform_cola_clustering(cancer = TUMOR,
                                 partition_repeat = 1000,
                                 output_dir = OUTPUT_DIR
                             )
-# # perform conssensus clustering on expression and save the results
-# mdir(consensus_exp_output)
-# perform_cola_clustering(cancer = cancer,
-#                                 samples_file = samples_file, 
-#                                 exp_file = exp_file,
-#                                 datatype = c("expression"),
-#                                 n_cores = 30,
-#                                 top_value_method = "ATC",
-#                                 partition_method = "kmeans",
-#                                 max_k = 6,
-#                                 p_sampling = 0.8,
-#                                 partition_repeat = 1000,
-#                                 output_dir = consensus_exp_output
-#                             )
-
