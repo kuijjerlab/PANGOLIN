@@ -305,7 +305,7 @@ load_and_prepare_data <- function(best_k_df_file) {
         # Load data and prepare for processing
         data <- fread(best_k_df_file)
         data_long <- data %>%
-                separate_rows(possible_clusters, sep = "; ") %>%
+                separate_rows(possible_clusters, sep = ";") %>%
                 mutate(possible_clusters = as.integer(possible_clusters))
         return(data_long)
 }

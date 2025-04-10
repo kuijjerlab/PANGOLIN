@@ -3,7 +3,7 @@
 #####################
 
 required_libraries <- c("data.table", "optparse",
-                        "tidyr", "dplyr", )
+                        "tidyr", "dplyr")
 for (lib in required_libraries) {
   suppressPackageStartupMessages(library(lib, character.only = TRUE,
                                 quietly = TRUE))
@@ -23,7 +23,7 @@ option_list = list(
         type = "character",
         default = NULL,
         help = "Path to the output directory.",
-        metavar = "character"),
+        metavar = "character"))
 
 
 opt_parser = OptionParser(option_list = option_list)
@@ -33,6 +33,9 @@ opt = parse_args(opt_parser)
 TUMOR_DIR_MAIN <- opt$tumor_dir
 OUTPUT_DIR <- opt$output_dir
 
+if (!dir.exists(OUTPUT_DIR)) {
+  dir.create(OUTPUT_DIR, recursive = TRUE)
+}
 source("bin/cola_clustering_fn.R")
 ##### Load in INDEGREE cluster results
 result_files_indegree <-
@@ -44,8 +47,7 @@ res_indegree_list <- lapply(result_files_indegree, function(file) {
 })
 res_all_indegree <- do.call(rbind, res_indegree_list)
 combined_res_indegree <- combine_k_results(res_all_indegree)
-write.table(combined_res_indegree, f
-            ile.path(OUTPUT_DIR, "best_k_cola_ind.txt"),
+write.table(combined_res_indegree, file.path(OUTPUT_DIR, "best_k_cola_ind.txt"),
             col.names = T, row.names = F, sep = "\t", quote = F)
 
 
