@@ -1,8 +1,3 @@
-library("cola")
-library("data.table")
-library("stringr")
-library("dplyr")
-library("tidyverse")
 set.seed(1234)
 #' Perform COLA clustering on cancer data
 #'
@@ -272,11 +267,8 @@ load_result <- function(result_file, object_name = "res_k") {
 #' @return A data frame containing extracted class assignments for 
 #'         each tumor type.
 
-extract_relevant_classes <- function(cola_dir, best_k_df_file) {
+extract_relevant_classes <- function(res_files, best_k_df_file) {
         data_long <- load_and_prepare_data(best_k_df_file)
-        # Get list of result files in the specified directory
-        res_files <- list.files(
-                cola_dir, pattern = "results", full.names = TRUE)
         # Error if no result files are found
         if (length(res_files) == 0) {
                 stop("Error: No result files found in cola_dir.")
@@ -305,8 +297,8 @@ load_and_prepare_data <- function(best_k_df_file) {
         # Load data and prepare for processing
         data <- fread(best_k_df_file)
         data_long <- data %>%
-                separate_rows(possible_clusters, sep = ";") %>%
-                mutate(possible_clusters = as.integer(possible_clusters))
+                separate_rows(combined, sep = ";") %>%
+                mutate(possible_clusters = as.integer(combined))
         return(data_long)
 }
 
@@ -450,11 +442,11 @@ perform_tsne_cancer <- function(tumor, res_files, perplexity = 10,
 #' # Example usage:
 #' # perform_tsne_all_cancers(c("lung", "breast"), "path/to/cola_dir")
 #'
-perform_tsne_all_cancers <- function(tumors, cola_dir) {
+perform_tsne_all_cancers <- function(tumors, res_files) {
         # Retrieve result files in the specified directory
-        res_files <- list.files(
-                cola_dir, pattern = "results", full.names = TRUE
-        )
+        # res_files <- list.files(
+        #         cola_dir, pattern = "results", full.names = TRUE
+        # )
         # Check if tumors list and result files list are non-empty
         if (length(tumors) == 0) {
                 stop("Error: The 'tumors' list is empty.")
@@ -591,4 +583,58 @@ combine_k_results <- function(data){
         all_vals <- c(na.omit(selected_k), na.omit(optional_k))
         .(combined = paste(sort(unique(all_vals)), collapse = ";"))
             }, by = cancer]
+}
+
+
+#' Plot t-SNE Results for Consensus Clusters
+#'
+#' This function generates a t-SNE plot for consensus clusters using ggplot2.
+#'
+#' @param res_data A data frame containing t-SNE results and cluster information. 
+#'   It must include the columns `Dim1`, `Dim2`, `class`, `cancer`, and `k`.
+#' @param output_file A string specifying the path to save the PDF file.
+#' @param plot_width Numeric, the width of the output PDF.
+#' @param plot_height Numeric, the height of the output PDF.
+#' @return A ggplot object representing the t-SNE plot.
+#' @examples
+#' # Example usage:
+#' plot_tsne_clusters(res_ind, "output.pdf", 10, 14)
+#' @export
+
+plot_tsne_clusters_cola <- function(res_data) {
+        POINT_SIZE <- 0.4
+        POINT_ALPHA <- 0.6
+        GRID_LINEWIDTH <- 0.5
+        GRID_COLOR <- "grey80"
+        STRIP_TEXT_SIZE <- 12
+        AXIS_TITLE_SIZE <- 14
+        AXIS_TEXT_SIZE <- 7
+        LEGEND_TEXT_SIZE <- 10
+    # Create the plot
+    p <- ggplot(res_data, aes(x = Dim1, y = Dim2, color = class)) +
+        geom_point(size = POINT_SIZE, alpha = POINT_ALPHA) +
+        scale_color_viridis(discrete = TRUE, option = "D",
+                            guide = guide_legend(nrow = 1)) +
+        facet_wrap(~cancer + k, scales = "free") +
+        theme_minimal() +
+        theme(
+        panel.grid.major = 
+            element_line(linewidth = GRID_LINEWIDTH, color = GRID_COLOR),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        strip.text = element_text(size = STRIP_TEXT_SIZE, face = "bold"),
+        axis.title = element_text(size = AXIS_TITLE_SIZE),
+        axis.text = element_text(size = AXIS_TEXT_SIZE),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = LEGEND_TEXT_SIZE),
+        legend.box = "horizontal"
+        ) +
+        labs(
+        title = "",
+        x = "t-SNE Dimension 1",
+        y = "t-SNE Dimension 2"
+        )
+    # Return the ggplot object
+    return(p)
 }

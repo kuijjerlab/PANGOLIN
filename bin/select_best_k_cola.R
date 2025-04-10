@@ -2,8 +2,8 @@
 ## Load R packages ##
 #####################
 
-required_libraries <- c("data.table", "optparse",
-                        "tidyr", "dplyr")
+required_libraries <- c("data.table", "optparse", "tidyr", "dplyr",
+                "cola", "stringr", "tidyverse", "viridis", "ggplot2")
 for (lib in required_libraries) {
   suppressPackageStartupMessages(library(lib, character.only = TRUE,
                                 quietly = TRUE))
@@ -18,11 +18,19 @@ option_list = list(
         default = NULL,
         help = "Path to the the main tumor directory.",
         metavar = "character"),
-    make_option(
-        c("-o", "--output_dir"),
+   make_option(
+        c("-i", "--best_cola_k_indegree"),
         type = "character",
         default = NULL,
-        help = "Path to the output directory.",
+        help = "Path to a file containing the best information 
+                about selected number of clusters for indegree.",
+        metavar = "character"),
+    make_option(
+        c("-e", "--best_cola_k_expression"),
+        type = "character",
+        default = NULL,
+        help = "Path to a file containing the best information 
+                about selected number of clusters for expression.",
         metavar = "character"))
 
 
@@ -31,11 +39,9 @@ opt = parse_args(opt_parser)
 
 ## Initialize variable
 TUMOR_DIR_MAIN <- opt$tumor_dir
-OUTPUT_DIR <- opt$output_dir
+BEST_K_IND <- opt$best_cola_k_indegree
+BEST_K_EXP <- opt$best_cola_k_expression
 
-if (!dir.exists(OUTPUT_DIR)) {
-  dir.create(OUTPUT_DIR, recursive = TRUE)
-}
 source("bin/cola_clustering_fn.R")
 ##### Load in INDEGREE cluster results
 result_files_indegree <-
@@ -47,7 +53,8 @@ res_indegree_list <- lapply(result_files_indegree, function(file) {
 })
 res_all_indegree <- do.call(rbind, res_indegree_list)
 combined_res_indegree <- combine_k_results(res_all_indegree)
-write.table(combined_res_indegree, file.path(OUTPUT_DIR, "best_k_cola_ind.txt"),
+write.table(combined_res_indegree, 
+            BEST_K_IND,
             col.names = T, row.names = F, sep = "\t", quote = F)
 
 
@@ -63,5 +70,5 @@ res_expression_list <- lapply(result_files_expression, function(file) {
 res_all_expression <- do.call(rbind, res_expression_list)
 combined_res_expression <- combine_k_results(res_all_expression)
 write.table(combined_res_expression, 
-            file.path(OUTPUT_DIR, "best_k_cola_exp.txt"),
+            BEST_K_EXP,
             col.names = T, row.names = F, sep = "\t", quote = F)

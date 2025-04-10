@@ -50,6 +50,11 @@ TSNE_DATA = os.path.join("data_all", "tsne_results", "tsne_expression_indegree_a
 OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering", "{datatype}")
 ## output directory for COLA-consesus clustering results for ALL cancer types ##
 OUTPUT_ALL_CANCERS_CONSENSUS_DIR = os.path.join("data_all", "cola_consensus_clustering")
+BEST_K_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_expression.txt")
+BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_indegree.txt")
+
+## output directory for plot TSNE cola clusters ##
+TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
 
 ## Output Files for Univariate Cox on PD1-pathway based heterogeneity scores ##
 OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
@@ -85,7 +90,10 @@ rule all:
         TSNE_DATA,
         CANCER_LEGEND_PDF,
         expand(OUTPUT_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES),
-        OUTPUT_ALL_CANCERS_CONSENSUS_DIR,
+        BEST_K_COLA_EXP,
+        BEST_K_COLA_IND,
+        TSNE_DATA_DIR,
+        FIG_DIR,
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -190,7 +198,8 @@ rule select_best_k_cola:
     input:
         tumor_main_dir = OUTPUT_DIR
     output:
-        output_all_cancers_consensus_dir = directory(OUTPUT_ALL_CANCERS_CONSENSUS_DIR)
+        best_k_cola_ind_file = BEST_K_COLA_IND,
+        best_k_cola_exp_file = BEST_K_COLA_EXP
     message:
         "Selecting best number of clusters for each cancer"
     params:
@@ -199,8 +208,32 @@ rule select_best_k_cola:
         """
         Rscript {params.bin}/select_best_k_cola.R \
             --tumor_dir {input.tumor_main_dir} \
-            --output {output.output_all_cancers_consensus_dir}
+            --best_cola_k_indegree {output.best_k_cola_ind_file} \
+            --best_cola_k_expression {output.best_k_cola_exp_file} \
         """
+# select best K suggested by cola for each cancer type (indegree and expression) ##
+rule plot_TSNE_cola_clusters:
+    input:
+        tumor_main_dir = OUTPUT_DIR,
+        best_k_cola_ind_file = BEST_K_COLA_IND,
+        best_k_cola_exp_file = BEST_K_COLA_EXP,
+    output:
+        tsne_dir = directory(TSNE_DATA_DIR),
+        figure_dir = directory(FIG_DIR)
+    message:
+        "Plotting T-SNE with cola clusters for all cancer types"
+    params:
+        bin = config["bin"],
+    shell:
+        """
+        Rscript {params.bin}/TSNE_plot_cola_clusters.R \
+            --tumor_dir {input.tumor_main_dir} \
+            --best_k_cola_ind_file {input.best_k_cola_ind_file} \
+            --best_k_cola_exp_file {input.best_k_cola_exp_file} \
+            --tsne_dir {output.tsne_dir} \
+            --figure_dir {output.figure_dir} \
+        """
+
 
 ## Extract PDL1 gene expression for each cancer type ##
 
