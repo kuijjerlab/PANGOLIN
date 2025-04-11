@@ -31,7 +31,6 @@ TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clin
 TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
 TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
 TSNE_DIR = os.path.join(OUTPUT_DIR, "tsne_results")
-
 INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR, "{cancer}", "indegrees_norm")
 
 PPI_FILE = config["ppi_file"]
@@ -44,17 +43,24 @@ IMMUNE_FILE = config["immune_file"]
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
-TSNE_DATA = os.path.join("data_all", "tsne_results", "tsne_expression_indegree_all_cancers.txt")
+
 
 ## output directory for COLA-consesus clustering results for each cancer type ##
 OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering", "{datatype}")
 ## output directory for COLA-consesus clustering results for ALL cancer types ##
 OUTPUT_ALL_CANCERS_CONSENSUS_DIR = os.path.join("data_all", "cola_consensus_clustering")
+## output files  for COLA-consesus clustering results for ALL cancer types ##
 BEST_K_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_expression.txt")
 BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_indegree.txt")
 
+## output figures files  for COLA-consesus clustering results for ALL cancer types on TSNE ##
+FIG_TSNE_COLA_INDEGREE = os.path.join(FIG_DIR, "TSNE_cola_clusters_indegree_all_cancers.pdf")
+FIG_TSNE_COLA_EXPRESSION = os.path.join(FIG_DIR, "TSNE_cola_clusters_expression_all_cancers.pdf")
+
+
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
+TSNE_DATA = os.path.join(TSNE_DATA_DIR, "tsne_expression_indegree_all_cancers.txt")
 
 ## Output Files for Univariate Cox on PD1-pathway based heterogeneity scores ##
 OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
@@ -92,8 +98,8 @@ rule all:
         expand(OUTPUT_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES),
         BEST_K_COLA_EXP,
         BEST_K_COLA_IND,
-        TSNE_DATA_DIR,
-        FIG_DIR,
+        FIG_TSNE_COLA_INDEGREE,
+        FIG_TSNE_COLA_EXPRESSION,
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -218,8 +224,8 @@ rule plot_TSNE_cola_clusters:
         best_k_cola_ind_file = BEST_K_COLA_IND,
         best_k_cola_exp_file = BEST_K_COLA_EXP,
     output:
-        tsne_dir = directory(TSNE_DATA_DIR),
-        figure_dir = directory(FIG_DIR)
+        fig_tsne_indegree = FIG_TSNE_COLA_INDEGREE,
+        fig_tsne_expression = FIG_TSNE_COLA_EXPRESSION
     message:
         "Plotting T-SNE with cola clusters for all cancer types"
     params:
@@ -228,10 +234,10 @@ rule plot_TSNE_cola_clusters:
         """
         Rscript {params.bin}/TSNE_plot_cola_clusters.R \
             --tumor_dir {input.tumor_main_dir} \
-            --best_k_cola_ind_file {input.best_k_cola_ind_file} \
-            --best_k_cola_exp_file {input.best_k_cola_exp_file} \
-            --tsne_dir {output.tsne_dir} \
-            --figure_dir {output.figure_dir} \
+            --best_cola_k_indegree {input.best_k_cola_ind_file} \
+            --best_cola_k_expression {input.best_k_cola_exp_file} \
+            --figure_TSNE_indegree {output.fig_tsne_indegree} \
+            --figure_TSNE_expression {output.fig_tsne_expression} 
         """
 
 
