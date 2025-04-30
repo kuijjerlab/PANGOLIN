@@ -217,7 +217,7 @@ rule select_best_k_cola:
             --best_cola_k_indegree {output.best_k_cola_ind_file} \
             --best_cola_k_expression {output.best_k_cola_exp_file} \
         """
-# select best K suggested by cola for each cancer type (indegree and expression) ##
+# plot TSNE with the selected cola clusters for each cancer type (indegree and expression) ##
 rule plot_TSNE_cola_clusters:
     input:
         tumor_main_dir = OUTPUT_DIR,

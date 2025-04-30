@@ -638,3 +638,25 @@ plot_tsne_clusters_cola <- function(res_data) {
     # Return the ggplot object
     return(p)
 }
+
+
+sanky_plot_viridis <- function(df, cancer) {
+    g1 <- ggplot(df, aes(x = x, 
+                    next_x = next_x, 
+                    node = node, 
+                    next_node = next_node,
+                    fill = factor(node),
+                    label = node)) +
+        geom_sankey(flow.alpha = 0.5, node.color = 1) +
+        geom_sankey_label(size = 2.5, color = 1, fill = "white") +
+        scale_fill_viridis_d() +
+        theme_sankey(base_size = 16) +
+        theme(
+            legend.position = "none",        # Remove legend
+            axis.title.x = element_blank(), # Remove x-axis title
+            axis.text.x = element_blank(),  # Remove x-axis labels
+            axis.ticks.x = element_blank()  # Remove x-axis ticks
+        ) +
+        ggtitle(cancer)
+    print(g1)
+}

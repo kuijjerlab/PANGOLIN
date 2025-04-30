@@ -59,7 +59,6 @@ opt = parse_args(opt_parser)
 TUMOR_DIR_MAIN <- opt$tumor_dir
 BEST_K_IND <- opt$best_cola_k_indegree
 BEST_K_EXP <- opt$best_cola_k_expression
-OUTPUT_FIG_DIR <- opt$output_figure_dir
 FIG_TSNE_INDEGREE <- opt$figure_TSNE_indegree
 FIG_TSNE_EXPRESSION <- opt$figure_TSNE_expression
 
