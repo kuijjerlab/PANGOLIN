@@ -124,7 +124,9 @@ get_plots_for_page <- function(page_number) {
   return(plots[start_index:end_index])
 }
 
-pdf(FUGURE_SANKY, width = 10, height =10)
+# Suppress default Rplots.pdf
+pdf(NULL)
+pdf(FUGURE_SANKY, width = 10, height = 10)
 for (page in 1:num_pages) {
   plots_for_page <- get_plots_for_page(page)
   grid.arrange(grobs = plots_for_page, ncol = 6 , nrow = 6)

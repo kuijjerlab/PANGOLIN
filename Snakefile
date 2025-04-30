@@ -56,7 +56,8 @@ BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_in
 ## output figures files  for COLA-consesus clustering results for ALL cancer types on TSNE ##
 FIG_TSNE_COLA_INDEGREE = os.path.join(FIG_DIR, "TSNE_cola_clusters_indegree_all_cancers.pdf")
 FIG_TSNE_COLA_EXPRESSION = os.path.join(FIG_DIR, "TSNE_cola_clusters_expression_all_cancers.pdf")
-
+## output figures file for SANKEY plot comparing COLA clusters for indegree and expression ##
+FIG_SANKEY = os.path.join(FIG_DIR, "sankey_plot_indegree_expression.pdf")
 
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
@@ -69,6 +70,7 @@ UNIVARIATE_COX_SUMMARY_ALL = os.path.join("data_all", "cox_results_all", "PD1_pa
 UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
 FIG_PC_PDL1_EXPRESSION = os.path.join(FIG_DIR, "PDL1_exp_PC_component_HR.pdf")
 FIG_PC_IMMUNE_CORRELATION = os.path.join(FIG_DIR, "PC_immune_correlations.png")
+
 ## Output Files for multivariate regularized Cox on PDL1-edges ##
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
 OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
@@ -100,6 +102,7 @@ rule all:
         BEST_K_COLA_IND,
         FIG_TSNE_COLA_INDEGREE,
         FIG_TSNE_COLA_EXPRESSION,
+        FIG_SANKEY,
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -238,6 +241,29 @@ rule plot_TSNE_cola_clusters:
             --best_cola_k_expression {input.best_k_cola_exp_file} \
             --figure_TSNE_indegree {output.fig_tsne_indegree} \
             --figure_TSNE_expression {output.fig_tsne_expression} 
+        """
+
+
+## Sanky plot comparing the indegree and expression clusters for each cancer type ##
+rule plot_SANKEY_cola_clusters:
+    input:
+        tumor_main_dir = OUTPUT_DIR,
+        best_k_cola_ind_file = BEST_K_COLA_IND,
+        best_k_cola_exp_file = BEST_K_COLA_EXP,
+
+    output:
+        fig_sankey_plot = FIG_SANKEY
+    message:
+        "Plotting sankey plot comparing indegree and expression clusters "
+    params:
+        bin = config["bin"],
+    shell:
+        """
+        Rscript {params.bin}/cola_clusters_sanky_plots.R \
+            --tumor_dir {input.tumor_main_dir} \
+            --best_cola_k_indegree {input.best_k_cola_ind_file} \
+            --best_cola_k_expression {input.best_k_cola_exp_file} \
+            --figure_sanky {output.fig_sankey_plot}  
         """
 
 
