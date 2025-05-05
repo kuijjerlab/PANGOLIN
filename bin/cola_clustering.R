@@ -3,7 +3,7 @@
 #####################
 # List of packages to be loaded
 required_libraries <- c("data.table", "optparse", "tidyr", "dplyr",
-                "cola", "stringr", "tydiverse", "viridis", "ggplot2")
+                "cola", "stringr", "tidyverse", "viridis", "ggplot2")
 
 for (lib in required_libraries) {
   suppressPackageStartupMessages(library(lib, character.only = TRUE,

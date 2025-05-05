@@ -304,10 +304,10 @@ combine_clins <- function(tumor_clin_file_path) {
 #' PD-1 data.
 
 combine_info_for_cancer <- function(tumor_clin_file_path,
-                                    tumor_pd1_dir = NULL) {
+                                    tumor_pd1_dir = NULL,
                                     # ind_scores_dir = NULL, this should 
                                     # pathways = NULL,
-                                    # cluster_file = NULL) {
+                                    cluster_file = NULL) {
 
         # Combine clinical and tumor data
         clin_tumor <- combine_clins(tumor_clin_file_path)
@@ -340,19 +340,102 @@ combine_info_for_cancer <- function(tumor_clin_file_path,
         #         message("Warning: 'pathways' missing. 
         #                                     Pathways not included.")
         # }
-        # if (!is.null(cluster_file)) {
-        #         clusters <- read_in_cluster_info(cluster_file)
-        #         clusters <- clean_cluster_info(clusters, tumor)
-        #         clusters <- rearrange_cluster_info(clusters)
-        #         data$clusters <- clusters
-        #     } else {
-        #         if (is.null(cluster_file))
-        #         message("Warning: 'cluster_file' missing. 
-        #                                     Clusters not included.")
-        #     }
+        if (!is.null(cluster_file)) {
+                clusters <- read_in_cluster_info(cluster_file)
+                clusters <- clean_cluster_info(clusters, tumor)
+                clusters <- rearrange_cluster_info(clusters)
+                data$clusters <- clusters
+            } else {
+                if (is.null(cluster_file))
+                message("Warning: 'cluster_file' missing. 
+                                            Clusters not included.")
+            }
 
         return(data)
 }
+
+#' Read Cluster Information
+#'
+#' This function reads a cluster file from cola clustering and 
+#' processes its data.
+#'
+#' @param cluster_file Path to the cluster file.
+#' @return A data frame with cluster information.
+#' @import data.table
+#' @export
+read_in_cluster_info <- function(cluster_file) {
+        # Check if file exists
+        if (!file.exists(cluster_file)) {
+                stop("Cluster file does not exist.")
+        }
+
+        # Attempt to read file
+        cluster_df <- tryCatch({
+                data.table::fread(cluster_file)
+        }, error = function(e) {
+                stop("Error reading cluster file: ", e$message)
+        })
+
+        # Process cluster information
+        cluster_df$cluster <- paste0("cluster_", cluster_df$class)
+        cluster_df$bcr_patient_barcode <- tryCatch({
+                make_bcr_code(cluster_df$ID)
+        }, error = function(e) {
+                stop("Error in generating BCR code: ", e$message)
+        })
+
+        return(cluster_df)
+}
+
+#' Clean Cluster Information
+#'
+#' Filters cluster data for a specific tumor type.
+#'
+#' @param cluster_df Data frame with cluster information.
+#' @param tumor Tumor type to filter by.
+#' @return A cleaned data frame containing data for the specified tumor.
+#' @export
+#' 
+clean_cluster_info <- function(cluster_df, tumor) {
+        # Check input types
+        if (!is.character(tumor) || length(tumor) != 1) {
+                stop("Input tumor should be a single character string.")
+        }
+        tumor <-  suppressWarnings(toupper(tumor))
+        # Filter by tumor type
+        cluster_df_clean <- cluster_df[cluster_df$cancer == tumor, ]
+
+        return(cluster_df_clean)
+}
+
+#' Rearrange Cluster Information
+#'
+#' Reshapes cluster information for analysis by rearranging data based on 
+#' patient barcode.
+#'
+#' @param cluster_df Data frame with cluster information.
+#' @return A matrix with clusters arranged by patient barcode.
+#' @import data.table
+#' @export
+#' 
+rearrange_cluster_info <- function(cluster_df) {
+        # Reshape data
+        clusters <- tryCatch({
+                dcast(cluster_df, k ~ bcr_patient_barcode,
+                            value.var = "cluster")
+        }, error = function(e) {
+                stop("Error in reshaping data: ", e$message)
+        })
+
+        # Store cluster IDs and remove column
+        cluster_ids <- clusters$k
+        clusters$k <- NULL
+        clusters <- as.data.frame(clusters)
+        rownames(clusters) <- cluster_ids
+        return(clusters)
+}
+
+
 
 #' Prepare Data for a Glmnet Cox Model
 #'
@@ -525,14 +608,14 @@ run_univariate_coxph_model <- function(tumor_clin_file_path,
                                 covariates,
                                 # ind_scores_dir = NULL,
                                 # pathways = NULL,
-                                # cluster_file = NULL,
-                                datatype = c("pd1_scores"),
+                                cluster_file = NULL,
+                                datatype = c("pd1_scores",
 #                               "pd1_net")
-#                                "clusters"),
+                               "clusters"),
                                 type_stat = c("full_stats",
                                 "overall_pval")) {
         data <- combine_info_for_cancer(tumor_clin_file_path, 
-                                tumor_pd1_dir)
+                                tumor_pd1_dir, cluster_file)
         data_combined <- create_data_combined(data[[datatype]], data$clin)
         data_cox <- create_cox_data(data_combined)
         rownames(data_cox) <- data_cox$bcr_patient_barcode

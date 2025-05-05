@@ -27,15 +27,29 @@ option_list = list(
         c("-i", "--best_cola_k_indegree"),
         type = "character",
         default = NULL,
-        help = "Path to a file containing the best information 
-                about selected number of clusters for indegree.",
+        help = "Path to a file containing the information 
+                about the selected (best) number of clusters for indegree.",
         metavar = "character"),
     make_option(
         c("-e", "--best_cola_k_expression"),
         type = "character",
         default = NULL,
-        help = "Path to a file containing the best information 
-                about selected number of clusters for expression.",
+        help = "Path to a file containing the information 
+                about the selected (best) number of clusters for expression.",
+        metavar = "character"),
+    make_option(
+        c("-b", "--clusters_indegree"),
+        type = "character",
+        default = NULL,
+        help = "Path to a file containing the information 
+                about patients and clusters for indegree",
+        metavar = "character"),
+    make_option(
+        c("-s", "--clusters_expression"),
+        type = "character",
+        default = NULL,
+        help = "Path to a file containing the information 
+                about patients and clusters for expression",
         metavar = "character"),
     make_option(
         c("-f", "--figure_sanky_plot"),
@@ -55,12 +69,15 @@ TUMOR_DIR_MAIN <- opt$tumor_dir
 BEST_K_IND <- opt$best_cola_k_indegree
 BEST_K_EXP <- opt$best_cola_k_expression
 FUGURE_SANKY <- opt$figure_sanky_plot
+CLUSTERS_INDEGREE_FILE <- opt$clusters_indegree
+CLUSTERS_EXPRESSION_FILE <- opt$clusters_expression
+
+
 
 source("bin/cola_clustering_fn.R")
 source("bin/cox_regression_tumor_fn.R")
 source("bin/merge_patient_data_fn.R")
 source("bin/sanky_plots_fn.R")
-
 
 res_files_indegree <- 
             list.files(TUMOR_DIR_MAIN,
@@ -77,6 +94,11 @@ res_files_expression <-
 # extract relavant classes
 cl_ids_ind <- extract_relevant_classes(res_files_indegree, BEST_K_IND)
 cl_ids_exp <- extract_relevant_classes(res_files_expression, BEST_K_EXP)
+write.table(cl_ids_ind, CLUSTERS_INDEGREE_FILE, 
+          col.names = T, row.names = F, sep = "\t", quote = F)
+
+write.table(cl_ids_exp, CLUSTERS_EXPRESSION_FILE, 
+          col.names = T, row.names = F, sep = "\t", quote = F)
 
 best_k_ind <- load_and_prepare_data(BEST_K_IND)
 best_k_ind <- best_k_ind %>%

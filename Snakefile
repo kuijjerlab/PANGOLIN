@@ -53,6 +53,10 @@ OUTPUT_ALL_CANCERS_CONSENSUS_DIR = os.path.join("data_all", "cola_consensus_clus
 BEST_K_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_expression.txt")
 BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_indegree.txt")
 
+## output files  for COLA-consesus clustering (individual to cluster assignment) results for ALL cancer types ##
+SELECTED_CLUSTERS_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_expression.txt")
+SELECTED_CLUSTERS_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_indegree.txt")
+
 ## output figures files  for COLA-consesus clustering results for ALL cancer types on TSNE ##
 FIG_TSNE_COLA_INDEGREE = os.path.join(FIG_DIR, "TSNE_cola_clusters_indegree_all_cancers.pdf")
 FIG_TSNE_COLA_EXPRESSION = os.path.join(FIG_DIR, "TSNE_cola_clusters_expression_all_cancers.pdf")
@@ -103,6 +107,8 @@ rule all:
         FIG_TSNE_COLA_INDEGREE,
         FIG_TSNE_COLA_EXPRESSION,
         FIG_SANKEY,
+        SELECTED_CLUSTERS_COLA_EXP,
+        SELECTED_CLUSTERS_COLA_IND,
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -249,12 +255,13 @@ rule plot_SANKEY_cola_clusters:
     input:
         tumor_main_dir = OUTPUT_DIR,
         best_k_cola_ind_file = BEST_K_COLA_IND,
-        best_k_cola_exp_file = BEST_K_COLA_EXP,
-
+        best_k_cola_exp_file = BEST_K_COLA_EXP
     output:
-        fig_sankey_plot = FIG_SANKEY
+        fig_sankey_plot = FIG_SANKEY,
+        selected_cola_ind_clusters_file = SELECTED_CLUSTERS_COLA_IND,
+        selected_cola_exp_clusters_file = SELECTED_CLUSTERS_COLA_EXP
     message:
-        "Plotting sankey plot comparing indegree and expression clusters "
+        "Plotting sankey plot comparing indegree and expression clusters"
     params:
         bin = config["bin"],
     shell:
@@ -263,6 +270,8 @@ rule plot_SANKEY_cola_clusters:
             --tumor_dir {input.tumor_main_dir} \
             --best_cola_k_indegree {input.best_k_cola_ind_file} \
             --best_cola_k_expression {input.best_k_cola_exp_file} \
+            --clusters_indegree {output.selected_cola_ind_clusters_file} \
+            --clusters_expression {output.selected_cola_exp_clusters_file} \
             --figure_sanky {output.fig_sankey_plot}  
         """
 
