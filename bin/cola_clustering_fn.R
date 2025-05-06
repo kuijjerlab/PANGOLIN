@@ -640,3 +640,23 @@ plot_tsne_clusters_cola <- function(res_data) {
 }
 
 
+#' Filter COLA Clusters by Tumor Type
+#'
+#' Filters a COLA cluster data table to include only specified tumor types.
+#'
+#' @param cluster_file Character. Path to a file with COLA cluster data.
+#'   The file must be readable by `data.table::fread()`, e.g., CSV or TSV.
+#'
+#' @param tumor_type Character vector. Tumor type(s) to filter by. Rows are
+#'   returned where the 'cancer' column matches any of these types.
+#'
+#' @return A `data.table` with rows where the 'cancer' column matches any
+#'   specified `tumor_type`.
+#' 
+#' @export
+filter_cola_clusters_for_tumor <- function(cluster_file, tumor_type) {
+        clusters <- data.table::fread(cluster_file)
+        clusters_tumor <- clusters[clusters$cancer %in% tumor_type, ]
+        return(clusters_tumor)
+        }
+

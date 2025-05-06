@@ -57,11 +57,16 @@ BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_in
 SELECTED_CLUSTERS_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_expression.txt")
 SELECTED_CLUSTERS_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_indegree.txt")
 
+
 ## output figures files  for COLA-consesus clustering results for ALL cancer types on TSNE ##
 FIG_TSNE_COLA_INDEGREE = os.path.join(FIG_DIR, "TSNE_cola_clusters_indegree_all_cancers.pdf")
 FIG_TSNE_COLA_EXPRESSION = os.path.join(FIG_DIR, "TSNE_cola_clusters_expression_all_cancers.pdf")
 ## output figures file for SANKEY plot comparing COLA clusters for indegree and expression ##
 FIG_SANKEY = os.path.join(FIG_DIR, "sankey_plot_indegree_expression.pdf")
+
+## output dir and files for saving cola clusters for each cancer type ##
+CLUSTERS_PER_TUMOR_IND = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_indegree_{cancer}.txt")
+CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_expression_{cancer}.txt")
 
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
@@ -109,6 +114,8 @@ rule all:
         FIG_SANKEY,
         SELECTED_CLUSTERS_COLA_EXP,
         SELECTED_CLUSTERS_COLA_IND,
+        expand(CLUSTERS_PER_TUMOR_IND, cancer = CANCER_TYPES),
+        expand(CLUSTERS_PER_TUMOR_EXP, cancer = CANCER_TYPES),
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -275,6 +282,28 @@ rule plot_SANKEY_cola_clusters:
             --figure_sanky {output.fig_sankey_plot}  
         """
 
+## Extract cola clusters for each cancer type and write to a separate files ##
+rule save_final_cola_clusters_per_tumor:
+    input:
+        cluster_file_expression = SELECTED_CLUSTERS_COLA_EXP,
+        cluster_file_indegree = SELECTED_CLUSTERS_COLA_IND,
+    output:
+        cluster_file_exp_per_cancer = CLUSTERS_PER_TUMOR_EXP,
+        cluster_file_ind_per_cancer = CLUSTERS_PER_TUMOR_IND
+
+    message:
+        "Extracting cola individual clusters for: {wildcards.cancer}"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/extract_cola_clusters_per_tumor.R \
+            --cluster_file_expression {input.cluster_file_expression} \
+            --cluster_file_indegree {input.cluster_file_indegree} \
+            --tumor {wildcards.cancer} \
+            --cluster_expression_per_tumor {output.cluster_file_exp_per_cancer} \
+            --cluster_indegree_per_tumor {output.cluster_file_ind_per_cancer}
+        """
 
 ## Extract PDL1 gene expression for each cancer type ##
 
