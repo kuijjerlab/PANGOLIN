@@ -43,8 +43,8 @@ opt = parse_args(opt_parser)
 CLUSTER_FILE_EXP <- opt$cluster_file_expression
 CLUSTER_FILE_IND <- opt$cluster_file_indegree
 TUMOR_TYPE <- opt$tumor
-EXPRESSION_CLUSTERS_PER_CANCER <- opt$cluster_expression_tumor
-INDEGREE_CLUSTERS_PER_CANCER <- opt$cluster_indegree_tumor
+EXPRESSION_CLUSTERS_PER_CANCER <- opt$cluster_expression_per_tumor
+INDEGREE_CLUSTERS_PER_CANCER <- opt$cluster_indegree_per_tumor
 
 source("bin/cola_clustering_fn.R")
 
@@ -58,10 +58,10 @@ filtered_data_ind <-
 
 ## Save filtered data ##
 ##########################
-#dir.create(dirname(EXPRESSION_CLUSTERS_PER_CANCER), recursive = TRUE, showWarnings = FALSE)
+dir.create(dirname(EXPRESSION_CLUSTERS_PER_CANCER), recursive = TRUE, showWarnings = FALSE)
 fwrite(filtered_data_exp, file = EXPRESSION_CLUSTERS_PER_CANCER, sep = "\t",
     row.names = FALSE, quote = FALSE)
 
-#dir.create(dirname(EXPRESSION_CLUSTERS_PER_CANCER), recursive = TRUE, showWarnings = FALSE)
+dir.create(dirname(EXPRESSION_CLUSTERS_PER_CANCER), recursive = TRUE, showWarnings = FALSE)
 fwrite(filtered_data_ind, file = INDEGREE_CLUSTERS_PER_CANCER, sep = "\t",
     row.names = FALSE, quote = FALSE)

@@ -65,8 +65,8 @@ FIG_TSNE_COLA_EXPRESSION = os.path.join(FIG_DIR, "TSNE_cola_clusters_expression_
 FIG_SANKEY = os.path.join(FIG_DIR, "sankey_plot_indegree_expression.pdf")
 
 ## output dir and files for saving cola clusters for each cancer type ##
-CLUSTERS_PER_TUMOR_IND = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_indegree_{cancer}.txt")
-CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_expression_{cancer}.txt")
+OUTPUT_CLUSTERS_PER_TUMOR_IND = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_indegree_{cancer}.txt")
+OUTPUT_CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_expression_{cancer}.txt")
 
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
@@ -114,8 +114,8 @@ rule all:
         FIG_SANKEY,
         SELECTED_CLUSTERS_COLA_EXP,
         SELECTED_CLUSTERS_COLA_IND,
-        expand(CLUSTERS_PER_TUMOR_IND, cancer = CANCER_TYPES),
-        expand(CLUSTERS_PER_TUMOR_EXP, cancer = CANCER_TYPES),
+        expand(OUTPUT_CLUSTERS_PER_TUMOR_IND, cancer = CANCER_TYPES),
+        expand(OUTPUT_CLUSTERS_PER_TUMOR_EXP, cancer = CANCER_TYPES),
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -288,11 +288,8 @@ rule save_final_cola_clusters_per_tumor:
         cluster_file_expression = SELECTED_CLUSTERS_COLA_EXP,
         cluster_file_indegree = SELECTED_CLUSTERS_COLA_IND,
     output:
-        cluster_file_exp_per_cancer = CLUSTERS_PER_TUMOR_EXP,
-        cluster_file_ind_per_cancer = CLUSTERS_PER_TUMOR_IND
-
-    message:
-        "Extracting cola individual clusters for: {wildcards.cancer}"
+        cluster_file_exp_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_EXP,
+        cluster_file_ind_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_IND
     params:
         bin = config["bin"]
     shell:
