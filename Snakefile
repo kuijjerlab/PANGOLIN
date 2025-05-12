@@ -47,6 +47,7 @@ OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinic
 
 ## output directory for COLA-consesus clustering results for each cancer type ##
 OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering", "{datatype}")
+
 ## output directory for COLA-consesus clustering results for ALL cancer types ##
 OUTPUT_ALL_CANCERS_CONSENSUS_DIR = os.path.join("data_all", "cola_consensus_clustering")
 ## output files  for COLA-consesus clustering results for ALL cancer types ##
@@ -67,6 +68,9 @@ FIG_SANKEY = os.path.join(FIG_DIR, "sankey_plot_indegree_expression.pdf")
 ## output dir and files for saving cola clusters for each cancer type ##
 OUTPUT_CLUSTERS_PER_TUMOR_IND = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_indegree_{cancer}.txt")
 OUTPUT_CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_expression_{cancer}.txt")
+
+## output file for cox univariate results comparing cola clustering results for each cancer type ##
+OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "cox_results_final_clusters_indegree_expression_{cancer}.txt")
 
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
@@ -301,6 +305,31 @@ rule save_final_cola_clusters_per_tumor:
             --cluster_expression_per_tumor {output.cluster_file_exp_per_cancer} \
             --cluster_indegree_per_tumor {output.cluster_file_ind_per_cancer}
         """
+
+## Run univariate COX regression comparing cola clusters (expression and indegree) ##
+rule run_univariate_cox_cola_clusters:
+    input:
+        clin_file = TUMOR_CLIN_FILE,
+        tumor_pd1_dir = TUMOR_PD1_DIR,
+        cluster_file_exp_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_EXP,
+        cluster_file_ind_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_IND
+    output:
+        out_file_summary = OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS
+    message:
+        "Running univariate Cox model comparing cola clusters for: {wildcards.cancer}"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/cola_clusters_survival.R \
+            --clinical_file_tumor {input.clin_file} \
+            --tumor_pd1_directory {input.tumor_pd1_dir} \
+            --cluster_file_expression {input.cluster_file_expression} \
+            --cluster_file_indegree {input.cluster_file_indegree} \
+            --output_file {out_file_summary}
+        """
+
+
 
 ## Extract PDL1 gene expression for each cancer type ##
 
