@@ -342,7 +342,7 @@ combine_info_for_cancer <- function(tumor_clin_file_path,
         # }
         if (!is.null(cluster_file)) {
                 clusters <- read_in_cluster_info(cluster_file)
-                clusters <- clean_cluster_info(clusters, tumor)
+                # clusters <- clean_cluster_info(clusters, tumor)
                 clusters <- rearrange_cluster_info(clusters)
                 data$clusters <- clusters
             } else {
@@ -396,17 +396,17 @@ read_in_cluster_info <- function(cluster_file) {
 #' @return A cleaned data frame containing data for the specified tumor.
 #' @export
 #' 
-clean_cluster_info <- function(cluster_df, tumor) {
-        # Check input types
-        if (!is.character(tumor) || length(tumor) != 1) {
-                stop("Input tumor should be a single character string.")
-        }
-        tumor <-  suppressWarnings(toupper(tumor))
-        # Filter by tumor type
-        cluster_df_clean <- cluster_df[cluster_df$cancer == tumor, ]
+# clean_cluster_info <- function(cluster_df, tumor) {
+#         # Check input types
+#         if (!is.character(tumor) || length(tumor) != 1) {
+#                 stop("Input tumor should be a single character string.")
+#         }
+#         tumor <-  suppressWarnings(toupper(tumor))
+#         # Filter by tumor type
+#         cluster_df_clean <- cluster_df[cluster_df$cancer == tumor, ]
 
-        return(cluster_df_clean)
-}
+#         return(cluster_df_clean)
+# }
 
 #' Rearrange Cluster Information
 #'
@@ -620,14 +620,16 @@ run_univariate_coxph_model <- function(tumor_clin_file_path,
         data_cox <- create_cox_data(data_combined)
         rownames(data_cox) <- data_cox$bcr_patient_barcode
         if (!is.null(covariates)) {
-                rows_to_include <- rownames(na.omit(data_cox[covariates]))
+                #rows_to_include <- rownames(na.omit(data_cox[, ..covariates]))
+                #data_cox <- data_cox[rows_to_include, ]
+                rows_to_include <- rownames(data_cox)[which(complete.cases(data_cox[, ..covariates]))]
                 data_cox <- data_cox[rows_to_include, ]
         } else {
                 data_cox <- data_cox
         }
         if (!is.null(covariates)) {
             exclude_vars <-
-                sapply(data_cox[, covariates, drop = FALSE],
+                sapply(data_cox[, ..covariates, drop = FALSE],
                     function(x) length(unique(x)) == 1)
             covariates <- covariates[!exclude_vars]
         }
@@ -835,3 +837,15 @@ extract_gene_expression <- function(exp_file,
         return(gene_exp)
         }
 
+extract_coxph_results_clusters <- function(res){
+        ks <- names(res)
+        all_cox_res <- NULL
+        for (k in ks){
+                for (i in seq_along(res[[k]])) {
+                        cox_res <- res[[k]][[i]]$coxph_model
+                        cox_res$k <- k
+                        all_cox_res <- rbind(cox_res, all_cox_res)
+                }
+        }
+        return(all_cox_res)
+}
