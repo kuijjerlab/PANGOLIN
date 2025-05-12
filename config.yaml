@@ -18,7 +18,7 @@ threshold_cox: [20, 50]
 output_dir: "data_individual_cancers"
 fig_dir: "figs"
 alpha: 0.3
-number_cores: 50
+number_cores: 20
 number_folds: 5
 number_times: 100
 gene_id: "CD274"

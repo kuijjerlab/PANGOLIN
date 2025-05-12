@@ -72,6 +72,10 @@ OUTPUT_CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR, "{cancer}", "final_clus
 ## output file for cox univariate results comparing cola clustering results for each cancer type ##
 OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "cox_results_final_clusters_indegree_expression_{cancer}.txt")
 
+OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL = os.path.join("data_all", "cox_results_all", "cox_results_final_clusters_indegree_expression_all.txt")
+
+
+
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
 TSNE_DATA = os.path.join(TSNE_DATA_DIR, "tsne_expression_indegree_all_cancers.txt")
@@ -120,6 +124,7 @@ rule all:
         SELECTED_CLUSTERS_COLA_IND,
         expand(OUTPUT_CLUSTERS_PER_TUMOR_IND, cancer = CANCER_TYPES),
         expand(OUTPUT_CLUSTERS_PER_TUMOR_EXP, cancer = CANCER_TYPES),
+        expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer = CANCER_TYPES),
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -324,11 +329,26 @@ rule run_univariate_cox_cola_clusters:
         Rscript {params.bin}/cola_clusters_survival.R \
             --clinical_file_tumor {input.clin_file} \
             --tumor_pd1_directory {input.tumor_pd1_dir} \
-            --cluster_file_expression {input.cluster_file_expression} \
-            --cluster_file_indegree {input.cluster_file_indegree} \
-            --output_file {out_file_summary}
+            --cluster_file_expression {input.cluster_file_exp_per_cancer} \
+            --cluster_file_indegree {input.cluster_file_ind_per_cancer} \
+            --output_file {output.out_file_summary}
         """
-
+## Combine all COX regression results for comparing cola clusters (expression and indegree) ##
+rule combine_univariate_cox_cola_clusters_results:
+    input:
+        expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer=CANCER_TYPES)
+    output:
+        OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL
+    message:
+        "Combining all univariate cox results (comparing cola clusters) into one table."
+    shell:
+        """
+        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+        for file in {input}; do
+            cancer=$(basename $(dirname $(dirname $file)))
+            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+        done
+        """
 
 
 ## Extract PDL1 gene expression for each cancer type ##

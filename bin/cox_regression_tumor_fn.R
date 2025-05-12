@@ -623,7 +623,10 @@ run_univariate_coxph_model <- function(tumor_clin_file_path,
                 #rows_to_include <- rownames(na.omit(data_cox[, ..covariates]))
                 #data_cox <- data_cox[rows_to_include, ]
                 rows_to_include <- rownames(data_cox)[which(complete.cases(data_cox[, ..covariates]))]
-                data_cox <- data_cox[rows_to_include, ]
+                #data_cox <- data_cox[rows_to_include, ]
+                data_cox <- data_cox[data_cox$bcr_patient_barcode %in% rows_to_include, ]
+                data_cox <- data_cox[match(rows_to_include, data_cox$bcr_patient_barcode), ]
+                rownames(data_cox) <- as.character(data_cox$bcr_patient_barcode)
         } else {
                 data_cox <- data_cox
         }
