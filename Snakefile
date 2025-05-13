@@ -126,6 +126,8 @@ rule all:
         expand(OUTPUT_CLUSTERS_PER_TUMOR_IND, cancer = CANCER_TYPES),
         expand(OUTPUT_CLUSTERS_PER_TUMOR_EXP, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer = CANCER_TYPES),
+        OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL,
+        FIG_COX_COLA_CLUSTERS,
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -360,6 +362,8 @@ rule plot_univariate_cox_cola_clusters_results:
         fig_cox_cola_clusters = FIG_COX_COLA_CLUSTERS
     message:
         "Pltting all univariate cox results (comparing cola clusters)"
+    params:
+        bin = config["bin"]
     shell:
         """
         Rscript {params.bin}/plot_cox_cola_clusters.R \
