@@ -852,3 +852,71 @@ extract_coxph_results_clusters <- function(res){
         }
         return(all_cox_res)
 }
+
+
+#' Plot Cox regression results for COLA clusters
+#'
+#' Creates a ggplot of -log10(p-value) vs cancer type, 
+#'
+#' @param df A data frame with columns: log10pval, cancer, datatype, cluster
+#' @param cancer_colors A data frame with columns: cancer_type, colour
+#' @param pval_threshold P-value threshold for significance (default: 0.05)
+#' @param alpha_val Transparency of points (default: 0.6)
+#' @param label_size Size of text labels (default: 4)
+#' @param max_labels Max number of overlapping labels (default: 10)
+#' @param box_padding Padding around labels (default: 0.5)
+#' @param point_padding Padding around labeled points (default: 0.3)
+#' @param size_range Range for point sizes (default: c(3, 7))
+#' @param base_font_size Base font size for the theme (default: 14)
+#' @param y_axis_font_size Font size for y-axis text (default: 10)
+#'
+#' @return A ggplot object
+#' @export
+plot_cox_results_cola_clusters <- function(df,
+                                           cancer_colors,
+                                           pval_threshold = 0.05,
+                                           alpha_val = 0.6,
+                                           label_size = 4,
+                                           max_labels = 10,
+                                           box_padding = 0.5,
+                                           point_padding = 0.3,
+                                           size_range = c(3, 7),
+                                           base_font_size = 14,
+                                           y_axis_font_size = 10) {
+        log10_threshold <- -log10(pval_threshold)
+
+        g <- ggplot(df, aes(x = log10pval, y = cancer,
+                      shape = datatype, size = log10pval)) +
+        geom_point(
+        aes(color = ifelse(log10pval < log10_threshold,
+                         "below_threshold", cancer)),
+        alpha = alpha_val
+        ) +
+        geom_text_repel(
+        data = subset(df, log10pval >= log10_threshold),
+        aes(label = cluster),
+        size = label_size,
+        max.overlaps = max_labels,
+        box.padding = box_padding,
+        point.padding = point_padding
+        ) +
+        scale_color_manual(
+        values = c("below_threshold" = "grey",
+                 setNames(cancer_colors$colour,
+                          cancer_colors$cancer_type))
+        ) +
+        scale_size_continuous(range = size_range) +
+        labs(x = "-log10 (p-value)", y = "", title = "") +
+        theme_minimal(base_size = base_font_size) +
+        theme(
+        axis.text.y = element_text(size = y_axis_font_size),
+        panel.grid.minor = element_blank(),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        strip.text = element_blank()
+        ) +
+        facet_wrap(~datatype, scales = "free") +
+        guides(size = "none", color = "none")
+
+  return(g)
+}
