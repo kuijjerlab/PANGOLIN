@@ -54,7 +54,7 @@ OUTPUT_ALL_CANCERS_CONSENSUS_DIR = os.path.join("data_all", "cola_consensus_clus
 BEST_K_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_expression.txt")
 BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_indegree.txt")
 
-## output files  for COLA-consesus clustering (individual to cluster assignment) results for ALL cancer types ##
+## output files  for COLA-consesus clustering (individual to cluster assignment table) results for ALL cancer types ##
 SELECTED_CLUSTERS_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_expression.txt")
 SELECTED_CLUSTERS_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_indegree.txt")
 
@@ -71,9 +71,10 @@ OUTPUT_CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR, "{cancer}", "final_clus
 
 ## output file for cox univariate results comparing cola clustering results for each cancer type ##
 OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "cox_results_final_clusters_indegree_expression_{cancer}.txt")
-
 OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL = os.path.join("data_all", "cox_results_all", "cox_results_final_clusters_indegree_expression_all.txt")
 
+## output figure for cox univariate results comparing cola clustering results for all cancer types ##
+FIG_COX_COLA_CLUSTERS = os.path.join(FIG_DIR, "cox_results_final_clusters_indegree_expression_all_cancers.pdf") 
 
 
 ## output directory for plot TSNE cola clusters ##
@@ -348,6 +349,23 @@ rule combine_univariate_cox_cola_clusters_results:
             cancer=$(basename $(dirname $(dirname $file)))
             tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
         done
+        """
+
+## Create a plot with COX results for cola clusters (expression and indegree) ##
+rule plot_univariate_cox_cola_clusters_results:
+    input:
+        cox_cola_clusters_results = OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL,
+        cancer_color_file = CANCER_COLOR_FILE
+    output:
+        fig_cox_cola_clusters = FIG_COX_COLA_CLUSTERS
+    message:
+        "Pltting all univariate cox results (comparing cola clusters)"
+    shell:
+        """
+        Rscript {params.bin}/plot_cox_cola_clusters.R \
+            --cox_results_cluster_file {input.cox_cola_clusters_results} \
+            --cancer_color_file {input.cancer_color_file} \
+            --output_file {output.fig_cox_cola_clusters} \
         """
 
 
