@@ -76,6 +76,11 @@ OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL = os.path.join("data_all", "cox_r
 ## output figure for cox univariate results comparing cola clustering results for all cancer types ##
 FIG_COX_COLA_CLUSTERS = os.path.join(FIG_DIR, "cox_results_final_clusters_indegree_expression_all_cancers.pdf") 
 
+## analysis of PRAD COLA CLUSTERS k = 4 ##
+CLUSTER_INDEGREE_PRAD = os.path.join(OUTPUT_DIR, "PRAD", "final_clusters", "final_clusters_indegree_PRAD.txt")
+PRAD_CLIN_FILE = os.path.join(OUTPUT_DIR, "PRAD", "clinical", "curated_clinical_PRAD.txt")
+PRAD_PD1_DIR = os.path.join(OUTPUT_DIR, "PRAD", "pd1_data")
+FIG_PRAD_SURVIVAL = os.path.join(FIG_DIR, "PRAD_clusters_survival.pdf")
 
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
@@ -128,6 +133,7 @@ rule all:
         expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer = CANCER_TYPES),
         OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL,
         FIG_COX_COLA_CLUSTERS,
+        FIG_PRAD_SURVIVAL,
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -370,6 +376,28 @@ rule plot_univariate_cox_cola_clusters_results:
             --cox_results_cluster_file {input.cox_cola_clusters_results} \
             --cancer_color_file {input.cancer_color_file} \
             --output_file {output.fig_cox_cola_clusters} \
+        """
+
+
+## Create a survival plot for PRAD indegree cola clusters (k=4) ##
+rule plot_PRAD_clusters_survival:
+    input:
+        prad_clin_file = PRAD_CLIN_FILE,
+        prad_pd1_dir = PRAD_PD1_DIR,
+        prad_cluster_file_ind = CLUSTER_INDEGREE_PRAD
+    output:
+        fig_prad_survival = FIG_PRAD_SURVIVAL
+    message:
+        "Pltting all univariate cox results (comparing cola clusters)"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/plot_prad_clusters_survival.R \
+            --prad_clin_file_path {input.prad_clin_file} \
+            --prad_pd1_dir {input.prad_pd1_dir} \
+            --prad_cluster_file_indegree {input.prad_cluster_file_ind} \
+            --output_figure_file {output.fig_prad_survival}
         """
 
 

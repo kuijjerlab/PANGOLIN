@@ -618,24 +618,27 @@ run_univariate_coxph_model <- function(tumor_clin_file_path,
                                 tumor_pd1_dir, cluster_file)
         data_combined <- create_data_combined(data[[datatype]], data$clin)
         data_cox <- create_cox_data(data_combined)
-        rownames(data_cox) <- data_cox$bcr_patient_barcode
-        if (!is.null(covariates)) {
-                #rows_to_include <- rownames(na.omit(data_cox[, ..covariates]))
-                #data_cox <- data_cox[rows_to_include, ]
-                rows_to_include <- rownames(data_cox)[which(complete.cases(data_cox[, ..covariates]))]
-                #data_cox <- data_cox[rows_to_include, ]
-                data_cox <- data_cox[data_cox$bcr_patient_barcode %in% rows_to_include, ]
-                data_cox <- data_cox[match(rows_to_include, data_cox$bcr_patient_barcode), ]
-                rownames(data_cox) <- as.character(data_cox$bcr_patient_barcode)
-        } else {
-                data_cox <- data_cox
-        }
-        if (!is.null(covariates)) {
-            exclude_vars <-
-                sapply(data_cox[, ..covariates, drop = FALSE],
-                    function(x) length(unique(x)) == 1)
-            covariates <- covariates[!exclude_vars]
-        }
+        # rownames(data_cox) <- data_cox$bcr_patient_barcode
+        # if (!is.null(covariates)) {
+        #         rows_to_include <- 
+        #                 rownames(data_cox)[which(complete.cases(data_cox[, ..covariates]))]
+        #         data_cox <- 
+        #                 data_cox[data_cox$bcr_patient_barcode %in% rows_to_include, ]
+        #         data_cox <- 
+        #                 data_cox[match(rows_to_include, data_cox$bcr_patient_barcode), ]
+        #         rownames(data_cox) <- as.character(data_cox$bcr_patient_barcode)
+        # } else {
+        #         data_cox <- data_cox
+        # }
+        # if (!is.null(covariates)) {
+        #     exclude_vars <-
+        #         sapply(data_cox[, ..covariates, drop = FALSE],
+        #             function(x) length(unique(x)) == 1)
+        #     covariates <- covariates[!exclude_vars]
+        # }
+        data_cox <- prepare_data_cox_covariates(data_cox, covariates)
+        data_cox <- data_cox$data_cox
+        covariates <- data_cox$covariates
         features <- rownames(data[[datatype]])
         cox_models <- 
             purrr::map(features,
@@ -643,6 +646,34 @@ run_univariate_coxph_model <- function(tumor_clin_file_path,
         names(cox_models) <- features
         return(cox_models)
 }
+
+prepare_data_cox_covariates <- function(data_cox, covariates) {
+        rownames(data_cox) <- data_cox$bcr_patient_barcode
+
+        if (!is.null(covariates)) {
+                rows_to_include <- rownames(data_cox)[which(
+                complete.cases(data_cox[, ..covariates])
+                )]
+        data_cox <- data_cox[
+            data_cox$bcr_patient_barcode %in% rows_to_include, 
+        ]
+        data_cox <- data_cox[
+            match(rows_to_include, data_cox$bcr_patient_barcode), 
+        ]
+        rownames(data_cox) <- as.character(data_cox$bcr_patient_barcode)
+
+        exclude_vars <- sapply(
+            data_cox[, ..covariates, drop = FALSE],
+            function(x) length(unique(x)) == 1
+        )
+        covariates <- covariates[!exclude_vars]
+        }
+
+        return(list(data_cox = data_cox, covariates = covariates))
+}
+
+
+
 
 #' Create Univariate Cox Proportional Hazards Model for a Given Feature
 #'
@@ -919,4 +950,138 @@ plot_cox_results_cola_clusters <- function(df,
         guides(size = "none", color = "none")
 
   return(g)
+}
+
+#' Plot a Kaplan-Meier Survival Curve
+#'
+#' Generates a Kaplan-Meier survival plot using `ggsurvplot`, with consistent
+#' theming and formatting options for customization.
+#'
+#' @param fit A `survfit` object from the `survival` package.
+#' @param data_cox A data frame containing clinical data used in the survival
+#'   fit.
+#' @param new_labels Character vector of labels for legend groups.
+#' @param pval_coord Numeric vector of length 2 for x and y coordinates of the
+#'   p-value annotation. Default is `c(4000, 0.9)`.
+#' @param pval_size Numeric value for p-value text size. Default is `7.5`.
+#' @param line_size Numeric value for line thickness. Default is `1.2`.
+#' @param palette Character string or vector for color palette. Default is
+#'   `"Dark2"`.
+#' @param font_main_size Numeric value for title font size. Default is `20`.
+#' @param font_axis_size Numeric value for axis label font size. Default is
+#'   `16`.
+#' @param tick_label_size Numeric value for tick and legend text size. Default
+#'   is `12`.
+#' @param legend_position Position of the legend (e.g., `"bottom"`, `"right"`).
+#'   Default is `"bottom"`.
+#' @param legend_title Title for the legend. Default is `"Group"`.
+#' @param x_label Label for the x-axis. Default is
+#'   `"Progression free interval (days)"`.
+#' @param y_label Label for the y-axis. Default is
+#'   `"Survival probability (%)"`.
+#'
+#' @return A `ggsurvplot` object representing the survival plot.
+#' @export
+
+
+plot_survival_curve <- function(fit,
+                                data_cox,
+                                new_labels,
+                                pval_coord = c(4000, 0.9),
+                                pval_size = 7.5,
+                                line_size = 1.2,
+                                palette = "Dark2",
+                                font_main_size = 20,
+                                font_axis_size = 16,
+                                tick_label_size = 12,
+                                legend_position = "bottom",
+                                legend_title = "Group",
+                                x_label = "Progression free interval (days)",
+                                y_label = "Survival probability (%)") {
+    g <- ggsurvplot(
+        fit,
+        data = data_cox,
+        size = line_size,
+        palette = palette,
+        conf.int = FALSE,
+        pval = TRUE,
+        pval.size = pval_size,
+        pval.coord = pval_coord,
+        font.main = c(font_main_size, "bold"),
+        font.x = c(font_axis_size, "bold"),
+        font.y = c(font_axis_size, "bold"),
+        legend = legend_position,
+        legend.title = legend_title,
+        legend.labs = new_labels,
+        xlab = x_label,
+        ylab = y_label,
+        ggtheme = theme_minimal() +
+            theme(
+                legend.title = element_blank(),
+                axis.line = element_line(),
+                legend.text = element_text(size = tick_label_size),
+                axis.text.x = element_text(size = tick_label_size),
+                axis.text.y = element_text(size = tick_label_size)
+            )
+    )
+    return(g)
+}
+
+
+#' Fit and Plot Cox Model for PRAD Data
+#'
+#' Loads and prepares prostate cancer clinical and clustering data, fits a
+#' Cox proportional hazards model using selected covariates and a specific
+#' cluster feature, and plots the Kaplan-Meier survival curve.
+#'
+#' @param tumor_clin_file_path Path to the clinical data file for the tumor.
+#' @param tumor_pd1_dir Directory containing PD1-related input data.
+#' @param covariates Character vector of covariate names to include in the model.
+#' @param cluster_file File path to the cluster assignments.
+#' @param datatype Character string specifying the data type to use; default is
+#'   `"clusters"`.
+#'
+#' @return A Kaplan-Meier survival plot (`ggsurvplot` object).
+#' @export
+#
+plot_PRAD_cox_fit <- function(tumor_clin_file_path,
+                              tumor_pd1_dir,
+                              covariates,
+                              cluster_file,
+                              datatype = c("clusters")) {
+        data <- combine_info_for_cancer(tumor_clin_file_path,
+                                        tumor_pd1_dir,
+                                        cluster_file)
+
+        data_combined <- create_data_combined(data[[datatype]], data$clin)
+        data_cox <- create_cox_data(data_combined)
+
+        processed <- prepare_data_cox_covariates(data_cox, covariates)
+        data_cox <- processed$data_cox
+        covariates <- processed$covariates
+
+        formula_str <- paste(
+                "Surv(ToF_death, event) ~",
+                paste(covariates, collapse = " + ")
+        )
+        feature <- sprintf("`%s`", "k_4")
+        formula <- as.formula(paste(formula_str, "+", feature))
+
+        type <- c("PFI")
+        event_col <- paste0(type, collapse = "")
+        time_col <- paste0(type, ".time", collapse = "")
+        data_cox$event <- as.numeric(data_cox[[event_col]])
+        data_cox$ToF_death <- as.numeric(data_cox[[time_col]])
+
+        data_cox <- clean_data_cox(data_cox)
+        model_cox <- survival::coxph(formula, data = data_cox)
+
+        fit <- survfit(Surv(ToF_death, event) ~ k_4, data = data_cox)
+        group_sizes <- data_cox %>%
+                dplyr::group_by(k_4) %>%
+                dplyr::summarise(n = n())
+
+        new_labels <- paste(group_sizes$k_4, "(n =", group_sizes$n, ")")
+
+        plot_survival_curve(fit, data_cox, new_labels)
 }
