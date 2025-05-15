@@ -1,6 +1,3 @@
-# library(data.table)
-# library(dplyr)
-# library(tidyr)
 
 #' Extract Gene Expression for a Specific Gene
 #'

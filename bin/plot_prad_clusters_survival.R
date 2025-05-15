@@ -39,11 +39,36 @@ option_list <- list(
                 indegree (for PRAD)",
                 metavar = "character"),
     optparse::make_option(
-                c("-o", "--output_figure_file"), 
+                c("-i", "--indegree_file"), 
                 type = "character",
                 default = NULL,
-                help = "Path to the output figure file (for PRAD)",
-                metavar = "character")
+                help = "Path to the indegree file(for PRAD)",
+                metavar = "character"),
+    optparse::make_option(
+            c("-e", "--exp_file"), 
+            type = "character", 
+            default = NULL,
+            help = "Path to the expression file",
+            metavar = "character"),
+    optparse::make_option(
+            c("-s", "--samples_file"), 
+            type = "character",
+            default = NULL,
+            help = "Path to the samples file",
+            metavar = "character"),
+    optparse::make_option(
+            c("-o", "--output_survival_plot"), 
+            type = "character",
+            default = NULL,
+            help = "Path to the output survival plot (for PRAD)",
+            metavar = "character"),
+    optparse::make_option(
+          optparse::make_option(
+            c("-l", "--output_fgsea_plot"), 
+            type = "character",
+            default = NULL,
+            help = "Path to the output fgsea figure (for PRAD)",
+            metavar = "character")
 
 )
 # Parse the command-line arguments
@@ -55,29 +80,49 @@ opt <- parse_args(opt_parser)
 TUMOR_CLIN_FILE <- opt$prad_clin_file_path
 TUMOR_PD1_DIR <- opt$prad_pd1_dir
 CLUSTER_INDEGREE <- opt$prad_cluster_file_indegree
-OUTPUT_FILE <- opt$output_figure_file
+INDEGREE_FILE <- opt$indegree_file
+EXP_FILE <- opt$exp_file
+SAMPLES_FILE <- opt$samples_file
+OUTPUT_SURV_PLOT <- opt$output_survival_plot
+OUTPUT_FGSEA_PLOT <- opt$output_fgsea_plot
+
 
 ########################
 ## Load Helper Scripts ##
 ########################
 # source required functions
 source("bin/cox_regression_tumor_fn.R")
-
-
-# CLUSTER_INDEGREE <- "/storage/kuijjerarea/tatiana/PANGOLIN/data_individual_cancers/PRAD/final_clusters/final_clusters_indegree_PRAD.txt"
-# TUMOR_CLIN_FILE <-"/storage/kuijjerarea/tatiana/PANGOLIN/data_individual_cancers/PRAD/clinical/curated_clinical_PRAD.txt"
-# TUMOR_PD1_DIR <- "/storage/kuijjerarea/tatiana/PANGOLIN/data_individual_cancers/PRAD/pd1_data"
+source("bin/PRAD_clusters_analysis_fn.R")
 
 datatype <- "clusters"
 covariates <- c("gender", "age_at_initial_pathologic_diagnosis")
-
+type_outcome <- c("PFI")
+cluster_id <- "k_4"
 
 pdf(OUTPUT_FILE, width = 8, height = 8)
-
 plot_PRAD_cox_fit(TUMOR_CLIN_FILE,
                               TUMOR_PD1_DIR,
                               covariates,
                               CLUSTER_INDEGREE,
-                              datatype = c("clusters"))
+                              datatype,
+                              type_outcome,
+                              cluster_id)
+dev.off()
 
+### Make a plot with fgsea results comparing cl1 to the other clusters
+
+res <- get_degs_drgs_PRAD(TUMOR_CLIN_FILE,
+                              TUMOR_PD1_DIR,
+                              covariates,
+                              CLUSTER_INDEGREE,
+                              datatype,
+                              type_outcome,
+                              cluster_id = "k_4",
+                              indegree_file = ind_file,
+                              exp_file = exp_file ,
+                              samples_file)
+
+indegree_res <- run_fgsea(res$indegree, gmt_file)
+pdf(OUTPUT_FGSEA_PLOT, width = 8, height = 8)
+plot_fgsea_results(indegree_res)
 dev.off()

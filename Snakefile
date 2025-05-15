@@ -38,6 +38,7 @@ MOTIF_FILE = config["motif_file"]
 EXPRESSION_FILE = config["expression_file"]
 SAMPLES_FILE = config["samples_file"]
 IMMUNE_FILE = config["immune_file"]
+GMT_FILE = config["gmt_file"]
 
 ## Output Files ##
 
@@ -81,6 +82,8 @@ CLUSTER_INDEGREE_PRAD = os.path.join(OUTPUT_DIR, "PRAD", "final_clusters", "fina
 PRAD_CLIN_FILE = os.path.join(OUTPUT_DIR, "PRAD", "clinical", "curated_clinical_PRAD.txt")
 PRAD_PD1_DIR = os.path.join(OUTPUT_DIR, "PRAD", "pd1_data")
 FIG_PRAD_SURVIVAL = os.path.join(FIG_DIR, "PRAD_clusters_survival.pdf")
+PRAD_IND_FILE = os.path.join(OUTPUT_DIR, "PRAD", "indegrees_norm", "indegree_norm_PRAD.RData")
+
 
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")

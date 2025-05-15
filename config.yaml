@@ -9,6 +9,7 @@ samples_file: "panda_input_primary/samples_cancers_primary.tsv"
 
 cancer_color_file: "data_all/samples/cancer_colors.txt"
 immune_file: "data_all/cibersortx/CIBERSORTx_Results.txt"
+gmt_file: "data_all/MSigDb/c2.cp.reactome.v7.1.symbols.gmt"
 cancer_types: ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "COAD", "DLBC", "ESCA", "GBM",
               "HNSC", "KICH", "KIRC", "KIRP", "LAML", "LGG", "LIHC", "LUAD", "LUSC", "MESO",
               "OV", "PAAD", "PCPG", "PRAD", "READ", "SARC", "SKCM", "STAD", "TGCT", "THCA",
