@@ -20,57 +20,61 @@ set.seed(1234)
 # Define command-line options
 option_list <- list(
     optparse::make_option(
-                c("-t", "--prad_clin_file_path"),
-                type = "character",
-                default = NULL,
-                help = "Path to the clinical file (PRAD).",
-                metavar = "character"),
+        c("-t", "--prad_clin_file_path"),
+        type = "character",
+        default = NULL,
+        help = "Path to the clinical file (PRAD).",
+        metavar = "character"),
     optparse::make_option(
-                c("-p", "--prad_pd1_dir"),
-                type = "character",
-                default = NULL,
-                help = "Path to the pd1 tumor directory (PRAD).",
-                metavar = "character"),
+        c("-p", "--prad_pd1_dir"),
+        type = "character",
+        default = NULL,
+        help = "Path to the pd1 tumor directory (PRAD).",
+        metavar = "character"),
     optparse::make_option(
-                c("-m", "--prad_cluster_file_indegree"), 
-                type = "character",
-                default = NULL,
-                help = "Path to the file with individual-cluster information
-                indegree (for PRAD)",
-                metavar = "character"),
+        c("-m", "--prad_cluster_file_indegree"), 
+        type = "character",
+        default = NULL,
+        help = "Path to the file with 
+        individual-cluster information indegree (for PRAD)",
+        metavar = "character"),
     optparse::make_option(
-                c("-i", "--indegree_file"), 
-                type = "character",
-                default = NULL,
-                help = "Path to the indegree file(for PRAD)",
-                metavar = "character"),
+        c("-i", "--indegree_file"), 
+        type = "character",
+        default = NULL,
+        help = "Path to the indegree file (for PRAD)",
+        metavar = "character"),
     optparse::make_option(
-            c("-e", "--exp_file"), 
-            type = "character", 
-            default = NULL,
-            help = "Path to the expression file",
-            metavar = "character"),
+        c("-e", "--exp_file"), 
+        type = "character", 
+        default = NULL,
+        help = "Path to the expression file",
+        metavar = "character"),
     optparse::make_option(
-            c("-s", "--samples_file"), 
-            type = "character",
-            default = NULL,
-            help = "Path to the samples file",
-            metavar = "character"),
+        c("-s", "--samples_file"), 
+        type = "character",
+        default = NULL,
+        help = "Path to the samples file",
+        metavar = "character"),
     optparse::make_option(
-            c("-o", "--output_survival_plot"), 
-            type = "character",
-            default = NULL,
-            help = "Path to the output survival plot (for PRAD)",
-            metavar = "character"),
+        c("-g", "--gmt_file"),
+        type = "character",
+        default = NULL,
+        help = "Path to the GMT file for fgsea",
+        metavar = "character"),
     optparse::make_option(
-          optparse::make_option(
-            c("-l", "--output_fgsea_plot"), 
-            type = "character",
-            default = NULL,
-            help = "Path to the output fgsea figure (for PRAD)",
-            metavar = "character")
-
-)
+        c("-o", "--output_survival_plot"), 
+        type = "character",
+        default = NULL,
+        help = "Path to the output survival plot (for PRAD)",
+        metavar = "character"),
+    optparse::make_option(
+        c("-l", "--output_fgsea_plot"), 
+        type = "character",
+        default = NULL,
+        help = "Path to the output fgsea figure (for PRAD)",
+        metavar = "character")
+        )
 # Parse the command-line arguments
 opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
@@ -83,6 +87,7 @@ CLUSTER_INDEGREE <- opt$prad_cluster_file_indegree
 INDEGREE_FILE <- opt$indegree_file
 EXP_FILE <- opt$exp_file
 SAMPLES_FILE <- opt$samples_file
+GMT_FILE <- opt$gmt_file
 OUTPUT_SURV_PLOT <- opt$output_survival_plot
 OUTPUT_FGSEA_PLOT <- opt$output_fgsea_plot
 
@@ -122,7 +127,7 @@ res <- get_degs_drgs_PRAD(TUMOR_CLIN_FILE,
                               exp_file = exp_file ,
                               samples_file)
 
-indegree_res <- run_fgsea(res$indegree, gmt_file)
+indegree_res <- run_fgsea(res$indegree, GMT_FILE)
 pdf(OUTPUT_FGSEA_PLOT, width = 8, height = 8)
 plot_fgsea_results(indegree_res)
 dev.off()

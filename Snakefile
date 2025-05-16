@@ -81,9 +81,9 @@ FIG_COX_COLA_CLUSTERS = os.path.join(FIG_DIR, "cox_results_final_clusters_indegr
 CLUSTER_INDEGREE_PRAD = os.path.join(OUTPUT_DIR, "PRAD", "final_clusters", "final_clusters_indegree_PRAD.txt")
 PRAD_CLIN_FILE = os.path.join(OUTPUT_DIR, "PRAD", "clinical", "curated_clinical_PRAD.txt")
 PRAD_PD1_DIR = os.path.join(OUTPUT_DIR, "PRAD", "pd1_data")
-FIG_PRAD_SURVIVAL = os.path.join(FIG_DIR, "PRAD_clusters_survival.pdf")
 PRAD_IND_FILE = os.path.join(OUTPUT_DIR, "PRAD", "indegrees_norm", "indegree_norm_PRAD.RData")
-
+FIG_PRAD_SURVIVAL = os.path.join(FIG_DIR, "PRAD_clusters_survival.pdf")
+FIG_FGSEA_PRAD = os.path.join(FIG_DIR, "PRAD_clusters_fgsea.pdf")
 
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
@@ -137,6 +137,7 @@ rule all:
         OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL,
         FIG_COX_COLA_CLUSTERS,
         FIG_PRAD_SURVIVAL,
+        FIG_FGSEA_PRAD, 
         expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
@@ -388,8 +389,13 @@ rule plot_PRAD_clusters_survival:
         prad_clin_file = PRAD_CLIN_FILE,
         prad_pd1_dir = PRAD_PD1_DIR,
         prad_cluster_file_ind = CLUSTER_INDEGREE_PRAD
+        prad_indegree_file = PRAD_IND_FILE,
+        expression_file = EXPRESSION_FILE,
+        samples_file = SAMPLES_FILE, 
+        gmt_file = GMT_FILE
     output:
-        fig_prad_survival = FIG_PRAD_SURVIVAL
+        fig_prad_survival = FIG_PRAD_SURVIVAL,
+        fig_fgsea_prad = FIG_FGSEA_PRAD 
     message:
         "Pltting all univariate cox results (comparing cola clusters)"
     params:
@@ -400,7 +406,12 @@ rule plot_PRAD_clusters_survival:
             --prad_clin_file_path {input.prad_clin_file} \
             --prad_pd1_dir {input.prad_pd1_dir} \
             --prad_cluster_file_indegree {input.prad_cluster_file_ind} \
-            --output_figure_file {output.fig_prad_survival}
+            --indegree_file {input.prad_indegree_file} \
+            --exp_file {input.expression_file} \
+            --samples_file {input.samples_file} \
+            --gmt_file {input.gmt_file} \
+            --output_survival_plot {output.fig_prad_survival} \
+            --output_fgsea_plot {output.fig_fgsea_prad}
         """
 
 
