@@ -163,151 +163,244 @@ plot_survival_curve <- function(fit,
 
 
 
+#' Get Differentially Expressed/Regulated Genes for PRAD
+#'
+#' Prepares Cox regression data and runs limma differential analysis for both
+#' indegree and expression data in PRAD.
+#'
+#' @param tumor_clin_file_path Character. Path to clinical data file.
+#' @param tumor_pd1_dir Character. Directory containing tumor PD-1 data.
+#' @param covariates Character vector. Covariates to include in Cox model.
+#' @param cluster_file Character. Path to clustering result file.
+#' @param datatype Character. Type of data to use (default: "clusters").
+#' @param type_outcome Character. Survival outcome type (default: "PFI").
+#' @param cluster_id Character. Identifier for cluster column (default: "k_4").
+#' @param indegree_file Character. Path to the indegree data file.
+#' @param exp_file Character. Path to the expression data file.
+#' @param samples_file Character. Path to the file with sample information.
+#'
+#' @return A named list with limma results for indegree and expression data.
+#' @export
 get_degs_drgs_PRAD <- function(tumor_clin_file_path,
-                              tumor_pd1_dir,
-                              covariates,
-                              cluster_file,
-                              datatype = c("clusters"),
-                              type_outcome = c("PFI"),
-                              cluster_id = "k_4",
-                              indegree_file,
-                              exp_file,
-                              samples_file) {
-        data_cox <- create_data_cox_PRAD(tumor_clin_file_path,
-                        tumor_pd1_dir,
-                        covariates,
-                        cluster_file,
-                        datatype = datatype,
-                        type_outcome = type_outcome,
-                        cluster_id = cluster_id)
-        res <- perform_limma_PRAD(indegree_file,
-                                exp_file,
-                                samples_file,
-                                data_cox)
-        return(res)
+                               tumor_pd1_dir,
+                               covariates,
+                               cluster_file,
+                               datatype = c("clusters"),
+                               type_outcome = c("PFI"),
+                               cluster_id = "k_4",
+                               indegree_file,
+                               exp_file,
+                               samples_file) {
+    data_cox <- create_data_cox_PRAD(
+        tumor_clin_file_path = tumor_clin_file_path,
+        tumor_pd1_dir = tumor_pd1_dir,
+        covariates = covariates,
+        cluster_file = cluster_file,
+        datatype = datatype,
+        type_outcome = type_outcome,
+        cluster_id = cluster_id
+    )
+    res <- perform_limma_PRAD(
+        indegree_file = indegree_file,
+        exp_file = exp_file,
+        samples_file = samples_file,
+        data_cox = data_cox
+    )
+    return(res)
 }
 
-perform_limma_PRAD <- function(indegree_file, 
-                        exp_file,
-                        samples_file,
-                        data_cox) {
-        ind <- load_indegree(ind_file)
-        colnames(ind)[-1] <- make_bcr_code(colnames(ind)[-1])
-        exp <- load_exp("PRAD", exp_file, samples_file)
-        colnames(exp)[-1] <- make_bcr_code(colnames(exp)[-1])
-        drgs <- run_limma_PRAD(ind, data_cox)
-        degs <- run_limma_PRAD(exp, data_cox)
-        all_ranks <- list("indegree" = drgs, "expression" = degs)
-        return(all_ranks)
+#' Run Limma Differential analysis for Indegree and Expression Data in PRAD
+#'
+#' @param indegree_file Character. Path to the indegree data file.
+#' @param exp_file Character. Path to the expression data file.
+#' @param samples_file Character. Path to the file with sample information.
+#' @param data_cox List. Contains Cox regression data and covariates.
+#'
+#' @return A named list with limma results for indegree and expression data.
+#' @export
+perform_limma_PRAD <- function(indegree_file,
+                               exp_file,
+                               samples_file,
+                               data_cox) {
+    ind <- load_indegree(indegree_file)
+    colnames(ind)[-1] <- make_bcr_code(colnames(ind)[-1])
+    exp <- load_exp("PRAD", exp_file, samples_file)
+    colnames(exp)[-1] <- make_bcr_code(colnames(exp)[-1])
+    drgs <- run_limma_PRAD(ind, data_cox)
+    degs <- run_limma_PRAD(exp, data_cox)
+    all_ranks <- list("indegree" = drgs, "expression" = degs)
+    return(all_ranks)
 }
 
 
-
-run_limma_PRAD <- function(data, 
-                        data_cox, 
-                        cluster_id = "k_4") {
+#' Run Limma Differential Expression for PRAD Clusters
+#'
+#' Performs differential expression analysis using limma for all pairwise
+#' cluster comparisons, optionally adjusting for covariates.
+#'
+#' @param data Matrix or data frame of expression/indegree values (genes x samples).
+#'   The first column should be gene names.
+#' @param data_cox List with elements containing data_cox and covariates
+#' @param cluster_id Character. Name of the cluster column (default: "k_4").
+#'
+#' @return Data frame with limma results for all pairwise cluster comparisons.
+#' @export
+run_limma_PRAD <- function(data,
+                           data_cox,
+                           cluster_id = "k_4") {
         # Prepare data
         data <- as_tibble(data)
         genes <- as.character(data[[1]])
         covariates <- data_cox$covariates
         data_cox_df <- data_cox$data
+
         # Build formula for model matrix
-        fml <- as.formula(paste("~ 0 +", cluster_id,
-                if (length(covariates) > 0) 
-                paste("+", paste(covariates, collapse = " + ")) else ""))
+        fml <- as.formula(paste(
+                "~ 0 +", cluster_id,
+                if (length(covariates) > 0)
+                paste("+", paste(covariates, collapse = " + "))
+                else ""
+        ))
         design_matrix <- model.matrix(fml, data = data_cox_df)
 
+        # Subset and format expression data
         data_clean <- data[, rownames(design_matrix)]
         data_clean <- as.matrix(data_clean)
         rownames(data_clean) <- genes
-        # Extract cluster levels
+
+        # Extract cluster levels and build contrasts
         cluster_levels <- levels(as.factor(data_cox_df[[cluster_id]]))
         comparisons <- combn(cluster_levels, 2, simplify = FALSE)
-        # Build contrast string expressions dynamically
         contrast_strs <- sapply(comparisons, function(cmp) {
                 paste0(cluster_id, cmp[1], " - ", cluster_id, cmp[2])
         })
         names(contrast_strs) <- sapply(comparisons, function(cmp) {
                 paste0("cl", cmp[1], "_cl", cmp[2])
         })
+
         # Create contrast matrix
-        contrast_matrix <- makeContrasts(contrasts = contrast_strs,
-                levels = design_matrix)
+        contrast_matrix <- makeContrasts(
+                contrasts = contrast_strs,
+                levels = design_matrix
+        )
+
         # Run limma
         fit <- lmFit(data_clean, design_matrix)
         fit2 <- contrasts.fit(fit, contrast_matrix)
         fit3 <- eBayes(fit2)
+
         # Collect results for each contrast
         result_list <- lapply(seq_along(contrast_strs), function(i) {
-        res <- topTable(fit3, sort.by = "none", n = Inf, coef = i)
-        res$cmp <- names(contrast_strs)[i]
-        res$gene <- rownames(res)
-        return(res)
+                res <- topTable(fit3, sort.by = "none", n = Inf, coef = i)
+                res$cmp <- names(contrast_strs)[i]
+                res$gene <- rownames(res)
+                return(res)
         })
 
         # Combine all results
         res_all <- do.call(rbind, result_list)
         return(res_all)
-        }
+}
 
-
-run_fgsea_PRAD <- function(res_all, 
-                        gmt_file, 
-                        min_size = 10,
-                        max_size = 100,
-                        padj_cutoff = 0.01, 
-                        es_threshold = 0.5) {
+#' Run FGSEA for PRAD Cluster Comparisons
+#'
+#' Performs FGSEA (Fast Gene Set Enrichment Analysis) for each cluster 
+#' comparison in the results table, filtering by adjusted p-value and 
+#' enrichment score thresholds.
+#'
+#' @param res_all Data frame with differential results. Must contain columns 
+#'   \code{cmp}, \code{gene}, and \code{t}.
+#' @param gmt_file Character. Path to the GMT file with gene sets.
+#' @param min_size Integer. Minimum gene set size (default: 10).
+#' @param max_size Integer. Maximum gene set size (default: 100).
+#' @param padj_cutoff Numeric. Adjusted p-value cutoff (default: 0.01).
+#' @param es_threshold Numeric. Minimum absolute enrichment score (default: 0.5).
+#'
+#' @return Data frame of filtered FGSEA results for all comparisons.
+#' @export
+run_fgsea_PRAD <- function(res_all,
+                           gmt_file,
+                           min_size = 10,
+                           max_size = 100,
+                           padj_cutoff = 0.01,
+                           es_threshold = 0.5) {
 
         pt <- fgsea::gmtPathways(gmt_file)
         comparisons <- unique(res_all$cmp)
 
         fgsea_results_list <- lapply(comparisons, function(comparison) {
-        data <- subset(res_all, cmp == comparison)
-        ranks <- setNames(data$t, data$gene)
+                data <- subset(res_all, cmp == comparison)
+                ranks <- setNames(data$t, data$gene)
 
-        fgseaRes <- fgsea::fgseaMultilevel(pathways = pt,
-                                 stats = ranks,
-                                 minSize = min_size,
-                                 maxSize = max_size)
+                fgseaRes <- fgsea::fgseaMultilevel(
+                pathways = pt,
+                stats = ranks,
+                minSize = min_size,
+                maxSize = max_size
+                )
 
-        if (nrow(fgseaRes) == 0) return(NULL)
+                if (nrow(fgseaRes) == 0) return(NULL)
 
-        fgseaRes <- fgseaRes[, 1:7]
-        fgseaRes <- subset(fgseaRes,
-                        padj < padj_cutoff & abs(ES) >= es_threshold)
+                fgseaRes <- fgseaRes[, 1:7]
+                fgseaRes <- subset(
+                fgseaRes,
+                padj < padj_cutoff & abs(ES) >= es_threshold
+                )
 
-        if (nrow(fgseaRes) == 0) return(NULL)
+                if (nrow(fgseaRes) == 0) return(NULL)
 
-        fgseaRes$cmp <- comparison
-        return(fgseaRes)
+                fgseaRes$cmp <- comparison
+                return(fgseaRes)
         })
 
-        fgseaRes_all <- do.call(rbind, Filter(Negate(is.null),
-                                                fgsea_results_list))
+        fgseaRes_all <- do.call(
+                rbind,
+                Filter(Negate(is.null), fgsea_results_list)
+        )
         return(fgseaRes_all)
-        }
+}
 
 
-plot_fgsea_results <- function(fgseaRes_all,
-                        sel_cmps = c("cl_1_cl_2", "cl_1_cl_3", "cl_1_cl_4")) {
-        fgseaRes_all$pathway <-
-                 gsub("REACTOME_", "", fgseaRes_all$pathway)
+#' Plot FGSEA Results for Selected Cluster Comparisons
+#'
+#' Visualizes FGSEA results as bar plots of normalized enrichment scores (NES)
+#' for selected cluster comparisons.
+#'
+#' @param fgseaRes_all Data frame with FGSEA results. Must contain columns
+#'   \code{pathway}, \code{cmp}, \code{NES}, and \code{padj}.
+#' @param sel_cmps Character vector of cluster comparisons to include
+#'   (default: c("cl_1_cl_2", "cl_1_cl_3", "cl_1_cl_4")).
+#' @param trunc_width Integer. Max width for pathway names (default: 70).
+#' @param nrow Integer. Number of facet rows (default: 3).
+#'
+#' @return A ggplot object showing NES for selected comparisons, faceted by cmp.
+#' @export
+plot_fgsea_results <- function(
+                        fgseaRes_all,
+                        sel_cmps = c("cl_1_cl_2", "cl_1_cl_3", "cl_1_cl_4"),
+                        nrow = 3
+                        ) {
+        fgseaRes_all$pathway <- gsub("REACTOME_", "", fgseaRes_all$pathway)
         fgseaRes_all$cmp <- gsub("clcluster_", "cl_", fgseaRes_all$cmp)
         fgseaRes_all <- fgseaRes_all[fgseaRes_all$cmp %in% sel_cmps, ]
-        fgseaRes_all$pathway <- 
-                str_trunc(fgseaRes_all$pathway, width = 70, side = "right")
+        fgseaRes_all$pathway <- stringr::str_trunc(
+                fgseaRes_all$pathway, width = 70, side = "right"
+        )
         fgseaRes_all$log10padj <- -log10(fgseaRes_all$padj)
         g <- fgseaRes_all %>%
-            group_by(cmp) %>%
-            ungroup() %>%
-            mutate(cmp = as.factor(cmp),
-                   pathway = reorder_within(pathway, NES, cmp)) %>%
-            ggplot(aes(pathway, NES)) +
-            geom_col(aes(fill = NES < 0)) +
-            coord_flip() +
-            scale_x_reordered() +
-            labs(x = "", y = "Normalized Enrichment Score") +
-            theme_minimal() + theme(legend.position = "none") +
-            facet_wrap(~cmp, nrow = 3, scales = "free")
+                dplyr::group_by(cmp) %>%
+                dplyr::ungroup() %>%
+                dplyr::mutate(
+                cmp = as.factor(cmp),
+                pathway = reorder_within(pathway, NES, cmp)
+                ) %>%
+                ggplot2::ggplot(ggplot2::aes(pathway, NES)) +
+                ggplot2::geom_col(ggplot2::aes(fill = NES < 0)) +
+                ggplot2::coord_flip() +
+                ggplot2::scale_x_reordered() +
+                ggplot2::labs(x = "", y = "Normalized Enrichment Score") +
+                ggplot2::theme_minimal() +
+                ggplot2::theme(legend.position = "none") +
+                ggplot2::facet_wrap(~cmp, nrow = nrow, scales = "free")
         return(g)
-}
+        }
