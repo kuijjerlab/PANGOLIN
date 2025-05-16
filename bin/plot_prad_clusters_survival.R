@@ -3,7 +3,8 @@
 #####################
 # List of required libraries
 required_libraries <- c("data.table", "optparse", "tidyr", "dplyr",
-                        "stringr", "tidyverse", "viridis", "ggplot2", "ggrepel")
+                        "stringr", "tidyverse", "viridis", "ggplot2", "ggrepel",
+                        "tidytext", "limma")
 
 # Load each library and suppress startup messages
 for (lib in required_libraries) {
@@ -98,13 +99,14 @@ OUTPUT_FGSEA_PLOT <- opt$output_fgsea_plot
 # source required functions
 source("bin/cox_regression_tumor_fn.R")
 source("bin/PRAD_clusters_analysis_fn.R")
+source("bin/cola_clustering_fn.R")
 
 datatype <- "clusters"
 covariates <- c("gender", "age_at_initial_pathologic_diagnosis")
 type_outcome <- c("PFI")
 cluster_id <- "k_4"
 
-pdf(OUTPUT_FILE, width = 8, height = 8)
+pdf(OUTPUT_SURV_PLOT, width = 8, height = 8)
 plot_PRAD_cox_fit(TUMOR_CLIN_FILE,
                               TUMOR_PD1_DIR,
                               covariates,
@@ -123,11 +125,11 @@ res <- get_degs_drgs_PRAD(TUMOR_CLIN_FILE,
                               datatype,
                               type_outcome,
                               cluster_id = "k_4",
-                              indegree_file = ind_file,
-                              exp_file = exp_file ,
-                              samples_file)
+                              indegree_file = INDEGREE_FILE,
+                              exp_file = EXP_FILE ,
+                              samples_file = SAMPLES_FILE)
 
-indegree_res <- run_fgsea(res$indegree, GMT_FILE)
+indegree_res <- run_fgsea_PRAD(res$indegree, GMT_FILE)
 pdf(OUTPUT_FGSEA_PLOT, width = 8, height = 8)
 plot_fgsea_results(indegree_res)
 dev.off()

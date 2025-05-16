@@ -388,19 +388,19 @@ plot_fgsea_results <- function(
         )
         fgseaRes_all$log10padj <- -log10(fgseaRes_all$padj)
         g <- fgseaRes_all %>%
-                dplyr::group_by(cmp) %>%
-                dplyr::ungroup() %>%
-                dplyr::mutate(
+                group_by(cmp) %>%
+                ungroup() %>%
+                mutate(
                 cmp = as.factor(cmp),
                 pathway = reorder_within(pathway, NES, cmp)
                 ) %>%
-                ggplot2::ggplot(ggplot2::aes(pathway, NES)) +
-                ggplot2::geom_col(ggplot2::aes(fill = NES < 0)) +
-                ggplot2::coord_flip() +
-                ggplot2::scale_x_reordered() +
-                ggplot2::labs(x = "", y = "Normalized Enrichment Score") +
-                ggplot2::theme_minimal() +
-                ggplot2::theme(legend.position = "none") +
-                ggplot2::facet_wrap(~cmp, nrow = nrow, scales = "free")
+                ggplot(ggplot2::aes(pathway, NES)) +
+                geom_col(ggplot2::aes(fill = NES < 0)) +
+                coord_flip() +
+                scale_x_reordered() +
+                labs(x = "", y = "Normalized Enrichment Score") +
+                theme_minimal() +
+                theme(legend.position = "none") +
+                facet_wrap(~cmp, nrow = nrow, scales = "free")
         return(g)
         }

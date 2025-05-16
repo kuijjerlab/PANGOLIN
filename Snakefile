@@ -388,7 +388,7 @@ rule plot_PRAD_clusters_survival:
     input:
         prad_clin_file = PRAD_CLIN_FILE,
         prad_pd1_dir = PRAD_PD1_DIR,
-        prad_cluster_file_ind = CLUSTER_INDEGREE_PRAD
+        prad_cluster_file_ind = CLUSTER_INDEGREE_PRAD,
         prad_indegree_file = PRAD_IND_FILE,
         expression_file = EXPRESSION_FILE,
         samples_file = SAMPLES_FILE, 
