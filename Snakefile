@@ -28,6 +28,7 @@ DATATYPES = config["datatypes"]
 CLINICAL_FILE = config["clinical_file"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
+PORCUPINE_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "pcp_results_with_variance_{cancer}.txt")
 TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
 TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
 TSNE_DIR = os.path.join(OUTPUT_DIR, "tsne_results")
@@ -45,6 +46,8 @@ GMT_FILE = config["gmt_file"]
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 
+## output files for filtered porcupine results ##
+FILTERED_PORCUPINE_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "pcp_results_filtered_{cancer}.txt")
 
 ## output directory for COLA-consesus clustering results for each cancer type ##
 OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering", "{datatype}")
@@ -123,6 +126,7 @@ rule all:
         expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         TSNE_DATA,
         CANCER_LEGEND_PDF,
+        FILTERED_PORCUPINE_FILE,
         expand(OUTPUT_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES),
         BEST_K_COLA_EXP,
         BEST_K_COLA_IND,
@@ -205,6 +209,22 @@ rule create_cancer_legend:
         Rscript {params.bin}/create_cancer_legend.R \
             --cancer_color_file {input.cancer_color_file} \
             --figure_dir {params.fig_dir}
+        """
+# filter PORCUPINE results
+rule filter_porcupine_results:
+    input:
+        porcupine_file = PORCUPINE_FILE
+    output:
+        filtered_porcupine_file = FILTERED_PORCUPINE_FILE
+    message:
+        "Running filtering of porcupine results for: {wildcards.cancer} 
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/preprocess_PORCUPINE_results.R \
+            --porcpupine_file_path {input.porcupine_file} \
+            --filtered_porcupine_file_path {output.filtered_porcupine_file}
         """
 # cola consensus clustering on gene indegree and expression data ##
 rule run_cola_clustering:
