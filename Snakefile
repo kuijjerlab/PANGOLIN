@@ -48,7 +48,7 @@ OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinic
 
 ## output files for filtered porcupine results ##
 FILTERED_PORCUPINE_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "pcp_results_filtered_{cancer}.txt")
-
+PORCUPINE_RESULTS_ALL = os.path.join("data_all", "porcupine", "porcupine_results_all_cancers.txt")
 ## output directory for COLA-consesus clustering results for each cancer type ##
 OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering", "{datatype}")
 
@@ -126,7 +126,8 @@ rule all:
         expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         TSNE_DATA,
         CANCER_LEGEND_PDF,
-        FILTERED_PORCUPINE_FILE,
+        expand(FILTERED_PORCUPINE_FILE, cancer = CANCER_TYPES),
+        PORCUPINE_RESULTS_ALL,
         expand(OUTPUT_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES),
         BEST_K_COLA_EXP,
         BEST_K_COLA_IND,
@@ -217,7 +218,7 @@ rule filter_porcupine_results:
     output:
         filtered_porcupine_file = FILTERED_PORCUPINE_FILE
     message:
-        "Running filtering of porcupine results for: {wildcards.cancer} 
+        "Running filtering of porcupine results for: {wildcards.cancer}" 
     params:
         bin = config["bin"]
     shell:
@@ -226,6 +227,23 @@ rule filter_porcupine_results:
             --porcpupine_file_path {input.porcupine_file} \
             --filtered_porcupine_file_path {output.filtered_porcupine_file}
         """
+# combine filtered PORCUPINE results
+rule combine_porcupine_results:
+    input:
+        expand(FILTERED_PORCUPINE_FILE, cancer=CANCER_TYPES)
+    output:
+        PORCUPINE_RESULTS_ALL
+    message:
+        "Combining all filtered PORCUPINE results into one table."
+    shell:
+        """
+        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+        for file in {input}; do
+            cancer=$(basename $(dirname $(dirname $file)))
+            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+        done
+        """
+
 # cola consensus clustering on gene indegree and expression data ##
 rule run_cola_clustering:
     input:
