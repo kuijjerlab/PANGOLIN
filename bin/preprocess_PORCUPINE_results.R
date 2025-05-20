@@ -53,6 +53,3 @@ write.table(res_filt,
             row.names = F,
             sep = "\t",
             quote = F)
-
-
-
