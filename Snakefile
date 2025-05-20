@@ -54,7 +54,7 @@ OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinic
 FILTERED_PORCUPINE_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "pcp_results_filtered_{cancer}.txt")
 PORCUPINE_RESULTS_ALL = os.path.join("data_all", "porcupine", "porcupine_results_all_cancers.txt")
 FIG_PATHWAY_INTERSECTION = os.path.join(FIG_DIR, "pathways_intersection_pcp.pdf")
-FIG_SHARED_CATEGORIES = os.path.join(FIG_DIR,"combined_figure_pcp_results_shared_categories.pdf")
+FIG_SHARED_CATEGORIES = os.path.join(FIG_DIR, "combined_figure_pcp_results_shared_categories.pdf")
 
 ## output directory for COLA-consesus clustering results for each cancer type ##
 OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering", "{datatype}")
@@ -273,7 +273,7 @@ rule plot_porcupine_results:
             --pathways_hierarchy_file {input.pathways_hierarchy_file} \
             --pathways_hsa_id_file {input.pathways_hsa_id_file} \
             --list_of_pathways_file {input.list_of_pathways_file} \
-            --figure_pathway_intersection {output.figure_pathway_intersection}
+            --figure_pathway_intersection {output.figure_pathway_intersection} \
             --figure_shared_categories {output.figure_shared_categories}
         """
 

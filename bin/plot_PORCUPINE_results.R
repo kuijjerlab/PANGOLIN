@@ -61,7 +61,7 @@ opt <- parse_args(opt_parser)
 # Assign parsed arguments to variables
 ## Initialize variable
 PCP_RESULTS_FILE = opt$pcp_results_all_cancers_file
-PATHWAYS_HIERARCHY_FILE = opt$pathways_hierachy_file
+PATHWAYS_HIERARCHY_FILE = opt$pathways_hierarchy_file
 PATHWAYS_HSA_ID_FILE = opt$pathways_hsa_id_file
 LIST_PATHWAYS_FILE = opt$list_of_pathways_file
 FIG_PATHWAY_INTERSECTION = opt$figure_pathway_intersection
@@ -81,10 +81,9 @@ head(res_all)
 ptws_sel <- data.table("pathway" = unique(res_all$pathway))
 ptws_dat <- assign_functions_to_pathways(
                         pathways_hsa_ids_file = PATHWAYS_HSA_ID_FILE,
-                        pathways_hierachy_file = PATHWAYS_HIERARCHY_FILE,
+                        pathways_hierarchy_file = PATHWAYS_HIERARCHY_FILE,
                         list_of_pathways_file = LIST_PATHWAYS_FILE, 
                         pathways = ptws_sel)
-
 
 n_pathways <- table(res_all$cancer)
 res_list <- split(res_all$pathway, res_all$cancer)

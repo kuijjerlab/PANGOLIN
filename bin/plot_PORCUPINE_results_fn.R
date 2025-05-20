@@ -1,41 +1,55 @@
 #' Plot a Jaccard Similarity Heatmap with Pathway Counts Annotation
 #'
 #' @param intersection_matrix Numeric matrix. Jaccard similarity values.
-#' @param col_fun Function. Color mapping function (default: white to darkblue).
 #' @param pathways_counts Numeric vector. Pathway counts for barplot annotation.
+#' @param col_fun Function. Color mapping function (default: white to darkblue).
+#' @param width_per_col_mm Numeric. Width per column in mm (default: 5).
+#' @param height_per_row_mm Numeric. Height per row in mm (default: 5).
+#' @param legend_fontsize Integer. Font size for legend (default: 10).
+#' @param names_fontsize Integer. Font size for row/column names (default: 10).
+#' @param barplot_fill Character. Fill color for barplot (default: "lightgrey").
 #'
 #' @return A ComplexHeatmap heatmap object.
 #' @export
+#' 
 plot_intersection_heatmap <- function(
-    intersection_matrix,
-    pathways_counts,
-    col_fun = colorRamp2(c(0, 1), c("white", "darkblue"))
-) {
-    stopifnot(is.matrix(intersection_matrix))
-    if (!is.null(pathways_counts)) {
-        stopifnot(length(pathways_counts) == ncol(intersection_matrix))
-        column_barplot <- columnAnnotation(
-            n_pathways = anno_barplot(
-                as.numeric(pathways_counts),
-                gp = gpar(fill = "lightgrey")
+                        intersection_matrix,
+                        pathways_counts,
+                        col_fun = colorRamp2(c(0, 1), c("white", "darkblue")),
+                        width_per_col_mm = 5,
+                        height_per_row_mm = 5,
+                        legend_fontsize = 10,
+                        names_fontsize = 10,
+                        barplot_fill = "lightgrey"
+    ) {
+        stopifnot(is.matrix(intersection_matrix))
+        if (!is.null(pathways_counts)) {
+            stopifnot(length(pathways_counts) == ncol(intersection_matrix))
+            column_barplot <- columnAnnotation(
+                n_pathways = anno_barplot(
+                    as.numeric(pathways_counts),
+                    gp = gpar(fill = barplot_fill)
+                )
             )
+        } else {
+            column_barplot <- NULL
+        }
+        ht1 <- Heatmap(
+            intersection_matrix,
+            col = col_fun,
+            width = ncol(intersection_matrix) * unit(width_per_col_mm, "mm"),
+            height = nrow(intersection_matrix) * unit(height_per_row_mm, "mm"),
+            heatmap_legend_param = list(
+                title = "jaccard \n similarity",
+                title_gp = gpar(fontsize = legend_fontsize)
+            ),
+            column_names_gp = gpar(fontsize = names_fontsize),
+            row_names_gp = gpar(fontsize = names_fontsize),
+            show_row_dend = FALSE,
+            show_column_dend = FALSE,
+            top_annotation = column_barplot
         )
-    } else {
-        column_barplot <- NULL
-    }
-    ht1 <- Heatmap(
-        intersection_matrix,
-        col = col_fun,
-        width = ncol(intersection_matrix) * unit(5, "mm"),
-        height = nrow(intersection_matrix) * unit(5, "mm"),
-        heatmap_legend_param = list(title = "jaccard \n similarity"),
-        column_names_gp = gpar(fontsize = 10),
-        row_names_gp = gpar(fontsize = 10),
-        show_row_dend = FALSE,
-        show_column_dend = FALSE,
-        top_annotation = column_barplot
-    )
-    return(ht1)
+        return(ht1)
 }
 
 
@@ -139,7 +153,7 @@ preprocess_pathway_results <- function(res_all,
 plot_pathway_category_dotplot <- function(
     stat,
     col_categories,
-    size_range = c(3, 11),
+    size_range = c(3, 10),
     axis_text_x_size = 12,
     axis_text_y_size = 14,
     axis_text_x_angle = 90,

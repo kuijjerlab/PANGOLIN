@@ -202,11 +202,11 @@ add_variance_to_pcp_results <- function(cancer, pcp_dir) {
 #' @export
 #' 
 assign_functions_to_pathways <- function(pathways_hsa_ids_file,
-                                        pathways_hierachy_file,
+                                        pathways_hierarchy_file,
                                         list_of_pathways_file,
                                         pathways) {
         ptw_ids <- load_pathway_ids(pathways_hsa_ids_file)
-        ptw_hr <- load_pathway_hierarchy(pathways_hierachy_file)
+        ptw_hr <- load_pathway_hierarchy(pathways_hierarchy_file)
         ptw_titles <- load_pathway_titles(list_of_pathways_file)
         ptw_titles <- ptw_titles[ptw_titles$V3 == "Homo sapiens", ]
         colnames(ptw_hr) <- c("parent_id", "child_id")
