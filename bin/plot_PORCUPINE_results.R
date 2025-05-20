@@ -1,12 +1,3 @@
-library(ComplexHeatmap)
-library(data.table)
-library(ggplot2)
-library(circlize)
-library(cowplot)
-library(grid)
-library(plyr)
-library(dplyr)
-
 #####################
 ## Load R Packages ##
 #####################
@@ -56,7 +47,7 @@ optparse::make_option(
         pathways between cancers.",
         metavar = "character"),
 optparse::make_option(
-        c("-f", "--figure_shared_categories"),
+        c("-k", "--figure_shared_categories"),
         type = "character",
         default = NULL,
         help = "Path to the output figure file with shared categories.",

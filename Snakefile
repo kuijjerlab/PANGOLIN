@@ -22,11 +22,21 @@ configfile: CONFIG_PATH
 OUTPUT_DIR = config["output_dir"]
 FIG_DIR = config["fig_dir"]
 
-## Input Files ##
+## From config ##
 CANCER_TYPES = config["cancer_types"]
 DATATYPES = config["datatypes"]
 CLINICAL_FILE = config["clinical_file"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
+PPI_FILE = config["ppi_file"]
+MOTIF_FILE = config["motif_file"]
+EXPRESSION_FILE = config["expression_file"]
+SAMPLES_FILE = config["samples_file"]
+IMMUNE_FILE = config["immune_file"]
+GMT_FILE = config["gmt_file"]
+PATHWAYS_HIERARCHY_FILE = config["pathways_hierarchy_file"]
+PATHWAYS_HSA_ID_FILE = config["pathways_hsa_id_file"]
+LIST_PATHWAYS_FILE = config["list_of_pathways_file"]
+
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 PORCUPINE_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "pcp_results_with_variance_{cancer}.txt")
 TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
@@ -34,12 +44,6 @@ TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", 
 TSNE_DIR = os.path.join(OUTPUT_DIR, "tsne_results")
 INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR, "{cancer}", "indegrees_norm")
 
-PPI_FILE = config["ppi_file"]
-MOTIF_FILE = config["motif_file"]
-EXPRESSION_FILE = config["expression_file"]
-SAMPLES_FILE = config["samples_file"]
-IMMUNE_FILE = config["immune_file"]
-GMT_FILE = config["gmt_file"]
 
 ## Output Files ##
 
@@ -49,6 +53,9 @@ OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinic
 ## output files for filtered porcupine results ##
 FILTERED_PORCUPINE_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "pcp_results_filtered_{cancer}.txt")
 PORCUPINE_RESULTS_ALL = os.path.join("data_all", "porcupine", "porcupine_results_all_cancers.txt")
+FIG_PATHWAY_INTERSECTION = os.path.join(FIG_DIR, "pathways_intersection_pcp.pdf")
+FIG_SHARED_CATEGORIES = os.path.join(FIG_DIR,"combined_figure_pcp_results_shared_categories.pdf")
+
 ## output directory for COLA-consesus clustering results for each cancer type ##
 OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering", "{datatype}")
 
@@ -128,6 +135,8 @@ rule all:
         CANCER_LEGEND_PDF,
         expand(FILTERED_PORCUPINE_FILE, cancer = CANCER_TYPES),
         PORCUPINE_RESULTS_ALL,
+        FIG_PATHWAY_INTERSECTION,
+        FIG_SHARED_CATEGORIES,
         expand(OUTPUT_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES),
         BEST_K_COLA_EXP,
         BEST_K_COLA_IND,
@@ -242,6 +251,30 @@ rule combine_porcupine_results:
             cancer=$(basename $(dirname $(dirname $file)))
             tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
         done
+        """
+# plot PORCUPINE results
+rule plot_porcupine_results:
+    input:
+        porcupine_file_all = PORCUPINE_RESULTS_ALL,
+        pathways_hierarchy_file = PATHWAYS_HIERARCHY_FILE,
+        pathways_hsa_id_file = PATHWAYS_HSA_ID_FILE,
+        list_of_pathways_file = LIST_PATHWAYS_FILE
+    output:
+        figure_pathway_intersection = FIG_PATHWAY_INTERSECTION,
+        figure_shared_categories = FIG_SHARED_CATEGORIES
+    message:
+        "Creating plots for the PORCUPINE results" 
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/plot_PORCUPINE_results.R \
+            --pcp_results_all_cancers_file {input.porcupine_file_all} \
+            --pathways_hierarchy_file {input.pathways_hierarchy_file} \
+            --pathways_hsa_id_file {input.pathways_hsa_id_file} \
+            --list_of_pathways_file {input.list_of_pathways_file} \
+            --figure_pathway_intersection {output.figure_pathway_intersection}
+            --figure_shared_categories {output.figure_shared_categories}
         """
 
 # cola consensus clustering on gene indegree and expression data ##
