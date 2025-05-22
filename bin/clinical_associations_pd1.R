@@ -57,6 +57,7 @@ source("bin/clinical_association_pd1_fn.R")
 source("bin/cox_regression_tumor_fn.R")
 source("bin/extract_clinical_data_fn.R")
 set.seed(1234)
+
 df <- fread(COX_RESULTS_FILE)
 pfi_cancer <-  c("brca", "lgg", "prad", "read", "tgct", "thca", "thym")
 pfi_cancer <- toupper(pfi_cancer)
@@ -71,7 +72,7 @@ pd1_dirs <- dirs[grepl("pd1_data", basename(dirs))]
 clin_dirs <- dirs[grepl("clinical", basename(dirs))]
 res_groups_all <- NULL
 res_numeric_all <- NULL
-for (i in 1:length(df_clean)){
+for (i in 1:nrow(df_clean)){
     cancer <- df_clean$cancer[i]
     component <- df_clean$component[i]
     tumor_pd1_dir <- pd1_dirs[grep(cancer, pd1_dirs)]
@@ -82,12 +83,14 @@ for (i in 1:length(df_clean)){
                         clin_cancer_file =  tumor_clin_file,
                         pd1_dir = tumor_pd1_dir,
                         component = component)
+    res_groups$principal_component <- component
     res_groups$cancer <- cancer
     res_numeric <- clin_association_numeric_pd1(tumor = cancer, 
                         clin_cancer_file =  tumor_clin_file,
                         pd1_dir = tumor_pd1_dir,
                         component = component,
                         correlation_type = c("spearman"))
+    res_numeric$principal_component <- component
     res_groups_all <- rbind(res_groups, res_groups_all)  
     res_numeric_all <- rbind(res_numeric, res_numeric_all) 
 }

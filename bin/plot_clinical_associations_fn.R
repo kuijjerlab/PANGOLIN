@@ -1,6 +1,3 @@
-libraries <- c("data.table", "dplyr", 
-            "ggplot2", "ggrepel", "cowplot")
-lapply(libraries, library, character.only = TRUE)
 #' Load Cancer Colors
 #'
 #' Reads a file with cancer types and colors
@@ -52,6 +49,7 @@ load_coxph_results <- function(coxph_results_file,
     }
     coxph_results <- coxph_results[coxph_results$pvalue < pvalue_th, ]
     pfi_cancer <- c("brca", "lgg", "prad", "read", "tgct", "thca", "thym")
+    pfi_cancer <- toupper(pfi_cancer)
     coxph_results <- coxph_results %>%
         filter((type == "PFI" & cancer %in% pfi_cancer) |
                (type == "OS" & !cancer %in% pfi_cancer))
@@ -276,7 +274,7 @@ plot_clinical_associations <- function(
                             size_range = c(0, 4),
                             effect_size_max = 0.85,
                             x_limits = c(0, 0.8),
-                            y_limits = c(0, 55),
+                            y_limits = c(0, 30),
                             base_font_size = 10,
                             text_size = 2.5,
                             max_overlaps = 30,

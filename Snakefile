@@ -109,6 +109,8 @@ FIG_PC_IMMUNE_CORRELATION = os.path.join(FIG_DIR, "PC_immune_correlations.png")
 
 TUMOR_RESULTS_PD1_GROUPS = os.path.join("data_all", "clinical_associations_PD1", "pd1_pathway_categorical_results.txt")
 TUMOR_RESULTS_PD1_NUMERIC = os.path.join("data_all", "clinical_associations_PD1", "pd1_pathway_numeric_results.txt")
+FIGURE_PC_CLIN_ASSOCIATIONS = os.path.join("figs", "PC_all_features_clin_associations.pdf")
+
 
 ## Output Files for multivariate regularized Cox on PDL1-edges ##
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
@@ -166,6 +168,7 @@ rule all:
         FIG_PC_IMMUNE_CORRELATION,
         TUMOR_RESULTS_PD1_GROUPS,
         TUMOR_RESULTS_PD1_NUMERIC,
+        FIGURE_PC_CLIN_ASSOCIATIONS,
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
         COX_RESULTS_ALL, 
         expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)
@@ -669,6 +672,32 @@ rule calculate_association_clinical_features_pd1_heterogeneity_scores:
             --results_pd1_groups {output.results_pd1_groups} \
             --results_pd1_numeric {output.results_pd1_numeric}
         """
+
+## Plot the Associations between the PD1 pathway-based patient heterogeneity scores and clinical features
+
+rule plot_association_clinical_features_pd1_heterogeneity_scores:
+    input:
+        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL,
+        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
+        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC,
+        cancer_color_file = CANCER_COLOR_FILE
+    output:
+        figure_pc_clin_associations = FIGURE_PC_CLIN_ASSOCIATIONS 
+    message:
+        "Plot PD1 heterogeneity clinical associations"
+    params:
+        bin = config["bin"],
+    shell:
+        """
+        Rscript {params.bin}/plot_clinical_associations_pd1.R \
+            --cox_results_file {input.cox_res_file} \
+            --results_pd1_groups {input.results_pd1_groups} \
+            --results_pd1_numeric {input.results_pd1_numeric} \
+            --cancer_color_file {input.cancer_color_file} \
+            --pc_clinical_association_figure {output.figure_pc_clin_associations}
+
+        """
+
 
 ## Run multivariate regularized cox regression on PDL1 edges ##  
 rule run_regularized_cox:
