@@ -107,6 +107,9 @@ UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join("data_all", "cox_results_all"
 FIG_PC_PDL1_EXPRESSION = os.path.join(FIG_DIR, "PDL1_exp_PC_component_HR.pdf")
 FIG_PC_IMMUNE_CORRELATION = os.path.join(FIG_DIR, "PC_immune_correlations.png")
 
+TUMOR_RESULTS_PD1_GROUPS = os.path.join("data_all", "clinical_associations_PD1", "pd1_pathway_categorical_results.txt")
+TUMOR_RESULTS_PD1_NUMERIC = os.path.join("data_all", "clinical_associations_PD1", "pd1_pathway_numeric_results.txt")
+
 ## Output Files for multivariate regularized Cox on PDL1-edges ##
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
 OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
@@ -161,6 +164,8 @@ rule all:
         expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer = CANCER_TYPES),
         FIG_PC_PDL1_EXPRESSION,
         FIG_PC_IMMUNE_CORRELATION,
+        TUMOR_RESULTS_PD1_GROUPS,
+        TUMOR_RESULTS_PD1_NUMERIC,
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
         COX_RESULTS_ALL, 
         expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)
@@ -641,6 +646,28 @@ rule plot_PC_immune_correlations:
             --cox_summary_all_cancers {input.cox_summary_all} \
             --tumor_dir {input.tumor_main_dir} \
             --output {output.out_file}
+        """
+## Perform the association analysis between the PD1 pathway heterogeneity scores and clinical features (categorical and numeric) ##
+
+rule calculate_association_clinical_features_pd1_heterogeneity_scores:
+    input:
+        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL,
+        tumor_main_dir = OUTPUT_DIR
+    output:
+        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
+        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC
+
+    message:
+        "Calculating PD1 heterogeneity clinical associations"
+    params:
+        bin = config["bin"],
+    shell:
+        """
+        Rscript {params.bin}/clinical_associations_pd1.R \
+            --cox_results_file {input.cox_res_file} \
+            --tumor_main_dir {input.tumor_main_dir} \
+            --results_pd1_groups {output.results_pd1_groups} \
+            --results_pd1_numeric {output.results_pd1_numeric}
         """
 
 ## Run multivariate regularized cox regression on PDL1 edges ##  

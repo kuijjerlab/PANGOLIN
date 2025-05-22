@@ -69,7 +69,6 @@ df$cancer <- toupper(df$cancer)
 df$colour <- cancer_colors$colour[match(df$cancer, cancer_colors$cancer_type)]
 df$shape <- cancer_colors$shape[match(df$cancer, cancer_colors$cancer_type)]
 df$cluster <- df$k
-plot_cox_results_cola_clusters(df, cancer_colors)
 
 ########################################
 ## Plot Cox Results for Cola Clusters ##

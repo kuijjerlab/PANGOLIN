@@ -16,22 +16,24 @@
 #'
 #' @return Data frame. Cleaned and filtered for clinical association analysis.
 #' @export
-prepare_data_for_clin_association <- function(
-    tumor, clin, pd1_dir, na_threshold = 0.4
-) {
+#' 
+prepare_data_for_clin_association <- function(tumor,
+                                clin_cancer_file, 
+                                tumor_pd1_dir, 
+                                na_threshold = 0.4) {
+        clin_cancer <- combine_clins(clin_cancer_file)
         pd1_scores <- 
-            t(load_pd1_generic(tumor, pd1_dir, type = "pd1_scores"))
+            t(load_pd1_generic(tumor_pd1_dir, type = "pd1_scores"))
         pd1_scores <- pd1_scores[, 1:2, drop = FALSE]
         pd1_scores <- as.data.frame(pd1_scores)
         pd1_scores$bcr_patient_barcode <- rownames(pd1_scores)
-        clin_cancer <- combine_clins(tumor, clin)
         data <- merge(pd1_scores, 
                 clin_cancer,
                 by = "bcr_patient_barcode", all = TRUE)
         data_filt <- data[!is.na(data$PC1), ]
-        if (tumor == "skcm") data_filt <- clean_skcm_clinical(data_filt)
-        if (tumor == "sarc") data_filt <- clean_sarc_clinical(data_filt)
-        if (tumor == "cesc") data_filt <- clean_cesc_clinical(data_filt)
+        if (tumor == "SKCM") data_filt <- clean_skcm_clinical(data_filt)
+        if (tumor == "SARC") data_filt <- clean_sarc_clinical(data_filt)
+        if (tumor == "CESC") data_filt <- clean_cesc_clinical(data_filt)
         data_filt <- remove_irrelevant_values_columns(data_filt)
         data_filt <- 
             data_filt[, colMeans(is.na(data_filt)) <= na_threshold, drop = FALSE]
@@ -64,15 +66,14 @@ prepare_data_for_clin_association <- function(
 #' @export
 #' @examples
 #' clin_association_groups_pd1("prad", clin, "data/pd1/", c("PC1", "PC2"))
-clin_association_groups_pd1 <- function(
-                            tumor,
-                            clin,
+clin_association_groups_pd1 <- function(tumor,
+                            clin_cancer_file,
                             pd1_dir,
                             component = c("PC1", "PC2"),
                             na_threshold = 0.4) {
-    stopifnot(is.character(tumor), is.data.frame(clin), is.character(pd1_dir))
-    data_filt <- prepare_data_for_clin_association(
-        tumor, clin, pd1_dir, na_threshold = na_threshold)
+    #stopifnot(is.character(tumor), is.data.frame(clin), is.character(pd1_dir))
+    data_filt <- prepare_data_for_clin_association(tumor,
+        clin_cancer_file, pd1_dir, na_threshold = na_threshold)
     res_clin <- calculate_correlations_groups(data_filt, component)
     res_clin$cancer <- tumor
     return(res_clin)
@@ -97,17 +98,15 @@ clin_association_groups_pd1 <- function(
 #'   features and PD-1 PC1/PC2 scores.
 #' @export
 #' @examples
-#' clin_association_numeric_pd1("prad", clin, "data/pd1/", c("PC1", "PC2"))
-clin_association_numeric_pd1 <- function(
-                                tumor, 
-                                clin,
+
+clin_association_numeric_pd1 <- function(tumor,
+                                clin_cancer_file,
                                 pd1_dir,
                                 component = c("PC1", "PC2"),
                                 correlation_type = c("pearson", "spearman"),
                                 na_threshold = 0.4) {
-    stopifnot(is.character(tumor), is.data.frame(clin), is.character(pd1_dir))
     data_filt <- prepare_data_for_clin_association(
-        tumor, clin, pd1_dir, na_threshold = na_threshold
+        tumor, clin_cancer_file, pd1_dir, na_threshold = na_threshold
     )
     res_clin <- calculate_correlations_numeric(
         data_filt, component, correlation_type
@@ -238,7 +237,8 @@ plot_clin_feature <- function(
                         box_fill_color = "#0f993d",
                         point_color = "white") {
     # Prepare data
-    data_filt <- prepare_data_for_clin_association(tumor, clin, pd1_dir)
+    data_filt <- prepare_data_for_clin_association(tumor, 
+                clin_cancer_file, pd1_dir)
     data_filt <- data_filt[!is.na(data_filt[[feature_to_plot]]), ]
     feature_value <- data_filt[[feature_to_plot]]
     component_value <- as.numeric(data_filt[[component]])
