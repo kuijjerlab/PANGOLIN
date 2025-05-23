@@ -33,7 +33,7 @@ option_list <- list(
                 default = NULL,
                 help = "Path to the result file with numerical features",
                 metavar = "character"),
-        make_option(c("-t", "--tumor_main_dir"),
+        make_option(c("-f", "--tumor_main_dir"),
                 type = "character", 
                 default = NULL,
                 help = "Path to the main directory containing all tumor types",
@@ -60,14 +60,15 @@ OUTPUT_FIGURE <- opt$output_figure_file
 ## Load Helper Scripts ##
 ########################
 # source required functions
-source("bin/plot_clinical_associations_fn.R")
 source("bin/clinical_association_pd1_fn.R")
+source("bin/cox_regression_tumor_fn.R")
+source("bin/extract_clinical_data_fn.R")
+source("bin/plot_clinical_associations_fn.R")
 set.seed(1234)
 
 
 
 # plot the differences in PC scores between the clinical groups 
-
 
 res_cat <- process_categorical_results(
                         res_categorical_file = RESULTS_CATEGORICAL_FILE,
