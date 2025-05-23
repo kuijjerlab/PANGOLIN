@@ -25,11 +25,17 @@ option_list = list(
         help = "Path to the the main tumor directory.",
         metavar = "character"),
     make_option(
-        c("-o", "--output_file"),
+        c("-o", "--output_file_expression"),
         type = "character",
         default = NULL,
-        help = "Path to the output txt file with tsne results.",
-        metavar = "character")
+        help = "Path to the output txt file with tsne results for expression.",
+        metavar = "character"),
+    make_option(
+        c("-m", "--output_file_indegree"),
+        type = "character",
+        default = NULL,
+        help = "Path to the output txt file with tsne results for indegree.",
+        metavar = "character")   
         )
 
 opt_parser = OptionParser(option_list = option_list)
@@ -40,7 +46,8 @@ opt = parse_args(opt_parser)
 EXPRESSION_FILE <- opt$exp_file
 SAMPLES_FILE <- opt$samples_file
 TUMOR_DIR_MAIN <- opt$tumor_dir
-OUTPUT_FILE <- opt$output
+OUTPUT_FILE_EXPRESSION <- opt$output_file_expression
+OUTPUT_FILE_INDEGREE <- opt$output_file_indegree
 
 source("bin/tsne_fn.R")
 
@@ -57,11 +64,19 @@ ind_all <- ind_all[,-1]
 # run TSNE
 tsne_res_ind <- runTSNE_withPCA(ind_all, perplexity = 20, n_pcs = 50)
 tsne_res_ind$tsne <- "indegree"
+
+write.table(tsne_res_ind,
+        file = OUTPUT_FILE_INDEGREE,
+        sep = "\t",
+        row.names = F,
+        col.names = T,
+        quote = F)
+
 tsne_res_exp <- runTSNE_withPCA(exp_all, perplexity = 20, n_pcs = 50)
 tsne_res_exp$tsne <- "expression"
-tsne_res_all <- rbind(tsne_res_ind, tsne_res_exp)
-write.table(tsne_res_all,
-        file = OUTPUT_FILE,
+
+write.table(tsne_res_exp,
+        file = OUTPUT_FILE_EXPRESSION,
         sep = "\t",
         row.names = F,
         col.names = T,

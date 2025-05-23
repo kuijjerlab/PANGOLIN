@@ -64,3 +64,72 @@ create_legend <- function(data) {
 
     return(legend)
 }
+
+
+
+#' Plot t-SNE for all cancers with custom colors and shapes
+#'
+#' Generates a t-SNE scatter plot for all cancers, using custom colors and shapes
+#' from a color file. Handles missing color/shape assignments and suppresses the
+#' legend.
+#'
+#' @param tsne_res_file Path to t-SNE results file (columns: Dim1, Dim2, cancer).
+#' @param cancer_color_file Path to color/shape mapping file (columns: cancer_type,
+#'        colour, shape).
+#' @param point_size Point size for the plot. Default: 0.7.
+#' @param point_alpha Point transparency. Default: 0.7.
+#' @param default_color Color for missing cancers. Default: "grey".
+#' @param default_shape Shape for missing cancers. Default: 16.
+#' @param legend_rows Legend rows (if shown). Default: 3.
+#' @param base_font_size Base font size. Default: 12.
+#'
+#' @return Invisibly returns the ggplot object.
+#' @import data.table
+#' @import ggplot2
+#' @export
+plot_TSNE_all_cancers <- function(tsne_res_file, cancer_color_file,
+            point_size = 0.7, point_alpha = 0.7, default_color = "grey",
+            default_shape = 16, legend_rows = 3, base_font_size = 12) {
+          cancer_colors <- fread(cancer_color_file)
+          res <- fread(tsne_res_file)
+          res$cancer <- toupper(gsub("TCGA-", "", res$cancer))
+          res$colour <- cancer_colors$colour[
+            match(res$cancer, toupper(cancer_colors$cancer_type))]
+          res$shape <- cancer_colors$shape[
+            match(res$cancer, toupper(cancer_colors$cancer_type))]
+          if (any(is.na(res$colour))) {
+            warning("Some cancer types in tsne_res_file do not have colors.")
+            res$colour[is.na(res$colour)] <- default_color
+          }
+          if (any(is.na(res$shape))) {
+            warning("Some cancer types in tsne_res_file do not have shapes.")
+            res$shape[is.na(res$shape)] <- default_shape
+          }
+          g1 <- ggplot(res, aes(x = Dim1, 
+                      y = Dim2, 
+                      color = cancer, 
+                      shape = cancer)) +
+            geom_point(size = point_size, alpha = point_alpha) +
+            scale_colour_manual(values = setNames(cancer_colors$colour,
+              toupper(cancer_colors$cancer_type))) +
+            scale_shape_manual(values = setNames(cancer_colors$shape,
+              toupper(cancer_colors$cancer_type))) +
+            labs(x = "Dim 1", y = "Dim 2") +
+            theme_minimal(base_size = base_font_size) +
+            theme(
+              plot.title = element_text(color = "black", size = base_font_size,
+                face = "bold.italic"),
+              axis.text = element_text(size = base_font_size - 2),
+              axis.title = element_text(size = base_font_size),
+              legend.position = "none",
+              legend.text = element_text(size = base_font_size - 3),
+              legend.title = element_blank(),
+              legend.key.size = unit(0.5, "cm")
+            ) +
+            guides(
+              color = guide_legend(nrow = legend_rows, byrow = TRUE),
+              shape = guide_legend(nrow = legend_rows, byrow = TRUE)
+            )
+          print(g1)
+
+}

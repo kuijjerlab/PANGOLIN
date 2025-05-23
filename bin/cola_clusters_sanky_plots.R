@@ -52,6 +52,13 @@ option_list = list(
                 about patients and clusters for expression",
         metavar = "character"),
     make_option(
+        c("-z", "--datasets_to_plot_cola_clusters"),
+        type = "character",
+        default = NULL,
+        help = "Path to a file containing the information about the 
+            datasets to plot for cola cluster comparison",
+        metavar = "character"),
+    make_option(
         c("-f", "--figure_sanky_plot"),
         type = "character",
         default = NULL,
@@ -59,7 +66,6 @@ option_list = list(
         metavar = "character"))
 
 
-set.seed(1234)
 
 opt_parser = OptionParser(option_list = option_list)
 opt = parse_args(opt_parser)
@@ -71,13 +77,18 @@ BEST_K_EXP <- opt$best_cola_k_expression
 FUGURE_SANKY <- opt$figure_sanky_plot
 CLUSTERS_INDEGREE_FILE <- opt$clusters_indegree
 CLUSTERS_EXPRESSION_FILE <- opt$clusters_expression
+DATASETS_TO_PLOT_COLA_CLUSTERS_FILE <- opt$datasets_to_plot_cola_clusters
 
-
+########################
+## Load Helper Scripts ##
+########################
+# source required functions
 
 source("bin/cola_clustering_fn.R")
 source("bin/cox_regression_tumor_fn.R")
 source("bin/merge_patient_data_fn.R")
 source("bin/sanky_plots_fn.R")
+set.seed(1234)
 
 res_files_indegree <- 
             list.files(TUMOR_DIR_MAIN,
@@ -133,6 +144,8 @@ datasets <- make_dataset_for_sanky(cl_ids_all)
 r_index <- datasets$ri_index
 do.call("rbind", r_index)
 datasets_to_plot <- datasets$datasets
+save(datasets_to_plot, file = DATASETS_TO_PLOT_COLA_CLUSTERS_FILE)
+
 plots <- lapply(datasets_to_plot, function(x) sanky_plot_viridis(x, x$cancer))
 plots_per_page <- 36
 

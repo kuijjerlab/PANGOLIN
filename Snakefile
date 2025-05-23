@@ -68,7 +68,7 @@ BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_in
 ## output files  for COLA-consesus clustering (individual to cluster assignment table) results for ALL cancer types ##
 SELECTED_CLUSTERS_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_expression.txt")
 SELECTED_CLUSTERS_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_indegree.txt")
-
+DATASETS_TO_PLOT_COLA_CLUSTERS = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "datasets_to_plot_cola_clusters.RData")
 
 ## output figures files  for COLA-consesus clustering results for ALL cancer types on TSNE ##
 FIG_TSNE_COLA_INDEGREE = os.path.join(FIG_DIR, "TSNE_cola_clusters_indegree_all_cancers.pdf")
@@ -97,7 +97,8 @@ FIG_FGSEA_PRAD = os.path.join(FIG_DIR, "PRAD_clusters_fgsea.pdf")
 
 ## output directory for plot TSNE cola clusters ##
 TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
-TSNE_DATA = os.path.join(TSNE_DATA_DIR, "tsne_expression_indegree_all_cancers.txt")
+TSNE_DATA_EXPRESSION = os.path.join(TSNE_DATA_DIR, "tsne_expression_all_cancers.txt")
+TSNE_DATA_INDEGREE = os.path.join(TSNE_DATA_DIR, "tsne_expression_all_indegree.txt")
 
 ## Output Files for Univariate Cox on PD1-pathway based heterogeneity scores ##
 OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
@@ -136,7 +137,8 @@ MAX_K = config["max_k"]
 rule all:
     input:
         expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
-        TSNE_DATA,
+        TSNE_DATA_EXPRESSION,
+        TSNE_DATA_INDEGREE,
         CANCER_LEGEND_PDF,
         expand(FILTERED_PORCUPINE_FILE, cancer = CANCER_TYPES),
         PORCUPINE_RESULTS_ALL,
@@ -200,7 +202,8 @@ rule run_tsne:
         samples_file = SAMPLES_FILE,
         tumor_main_dir = OUTPUT_DIR
     output:
-        out_file = TSNE_DATA
+        out_file_expression = TSNE_DATA_EXPRESSION,
+        out_file_indegree = TSNE_DATA_INDEGREE
     message:
         "Running T-SNE on the indegree and expression"
     params:
@@ -211,7 +214,9 @@ rule run_tsne:
             --exp_file {input.expression_file} \
             --samples_file {input.samples_file} \
             --tumor_dir {input.tumor_main_dir} \
-            --output {output.out_file}
+            --output_file_expression {output.out_file_expression} \
+            --output_file_indegree {output.out_file_indegree} 
+            
         """
 
 
@@ -368,7 +373,8 @@ rule plot_SANKEY_cola_clusters:
     output:
         fig_sankey_plot = FIG_SANKEY,
         selected_cola_ind_clusters_file = SELECTED_CLUSTERS_COLA_IND,
-        selected_cola_exp_clusters_file = SELECTED_CLUSTERS_COLA_EXP
+        selected_cola_exp_clusters_file = SELECTED_CLUSTERS_COLA_EXP,
+        datasets_to_plot_cola_clusters = DATASETS_TO_PLOT_COLA_CLUSTERS
     message:
         "Plotting sankey plot comparing indegree and expression clusters"
     params:
@@ -381,6 +387,7 @@ rule plot_SANKEY_cola_clusters:
             --best_cola_k_expression {input.best_k_cola_exp_file} \
             --clusters_indegree {output.selected_cola_ind_clusters_file} \
             --clusters_expression {output.selected_cola_exp_clusters_file} \
+            --datasets_to_plot_cola_clusters {output.datasets_to_plot_cola_clusters} \
             --figure_sanky {output.fig_sankey_plot}  
         """
 
