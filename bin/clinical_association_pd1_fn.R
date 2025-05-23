@@ -224,7 +224,7 @@ plot_clin_feature <- function(
                         results_categorical,
                         feature_to_plot,
                         component,
-                        clin,
+                        clin_cancer_file,
                         pd1_dir,
                         outlier_size = 0.5,
                         jitter_width = 0.2,

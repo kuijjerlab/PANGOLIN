@@ -39,7 +39,7 @@ option_list <- list(
         make_option(c("-p", "--pc_clinical_association_figure"), 
                 type = "character", 
                 default = NULL,
-                help = "Path to the cancer color file",
+                help = "Path to the clinical_association_figure",
                 metavar = "character")
 )
 
