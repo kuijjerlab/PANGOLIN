@@ -25,11 +25,29 @@ option_list <- list(
                 datasets to plot for cola cluster comparison",
         metavar = "character"),
     make_option(
+        c("-o", "--tsne_file_expression"),
+        type = "character",
+        default = NULL,
+        help = "Path to the file with tsne results for expression.",
+        metavar = "character"),
+    make_option(
+        c("-m", "--tsne_file_indegree"),
+        type = "character",
+        default = NULL,
+        help = "Path to the file with tsne results for indegree.",
+        metavar = "character"),
+    make_option(
         c("-c", "--cancer_color_file"),
         type = "character",
         default = NULL,
         help = "Path to the cancer color file",
-        metavar = "character")    
+        metavar = "character"),
+    make_option(
+        c("-o", "--ouput_figure_file"),
+        type = "character",
+        default = NULL,
+        help = "Path to the output figure file",
+        metavar = "character")
 )
 
 opt_parser = OptionParser(option_list = option_list)
@@ -38,7 +56,9 @@ opt = parse_args(opt_parser)
 ## Initialize variable
 DATASETS_TO_PLOT_COLA_CLUSTERS_FILE <- opt$datasets_to_plot_cola_clusters
 CANCER_COLOR_FILE <- opt$cancer_color_file
-
+TNSE_EXPRESSION_FILE <- opt$tsne_file_expression
+TSNE_INDEGREE_FILE <-  opt$tsne_file_indegree
+OUTPUT_FIGURE_FILE <- opt$ouput_figure_file
 
 ########################
 ## Load Helper Scripts ##
@@ -46,11 +66,6 @@ CANCER_COLOR_FILE <- opt$cancer_color_file
 # source required functions
 source("bin/create_cancer_legend_fn.R")
 source("bin/sanky_plots_fn.R")
-
-DATASETS_TO_PLOT_COLA_CLUSTERS_FILE <- "/storage/kuijjerarea/tatiana/PANGOLIN/data_all/cola_consensus_clustering/datasets_to_plot_cola_clusters.RData"
-CANCER_COLOR_FILE <- "/storage/kuijjerarea/tatiana/PANGOLIN/data_all/samples/cancer_colors.txt"
-UMAP_EXP_FILE <-
-UMAP_IND_FILE <- 
 
 
 load(DATASETS_TO_PLOT_COLA_CLUSTERS_FILE, data <- new.env())
@@ -63,26 +78,10 @@ p1 <- sanky_plot_viridis(prad_data, "PRAD")
 p2 <- sanky_plot_viridis(uvm_data, "UVM")
 ggarrange(p1, p2, ncol = 1)
 
+p3 <- plot_TSNE_all_cancers(tsne_res_file = UMAP_EXP_FILE , cancer_color_file = CANCER_COLOR_FILE)
+p4 <- plot_TSNE_all_cancers(tsne_res_file = UMAP_IND_FILE, cancer_color_file = CANCER_COLOR_FILE)
 
-
-
-
-
-
-umap_ind_file <- file.path(int_res_dir, "tsne_ind_all_cancers_primary.txt")
-umap_exp_file <- file.path(int_res_dir, "tsne_exp_all_cancers_primary.txt")
-
-p3 <- plot_TSNE_a(umap_exp_file, cancer_color_file = cancer_color_file)
-p4 <- plot_TSNE_a(umap_ind_file, cancer_color_file = cancer_color_file)
-
-
-
-
-pdf(file.path(fig_dir, "/test_figure_1.pdf"), width = 8, height = 8)
+pdf(OUTPUT_FIGURE_FILE, width = 8, height = 8)
 ggarrange(p3, p1, p4, p2, ncol = 2, nrow = 2, labels = c("A.", "C.", "B.", "D."), 
-          font.label = list(size = 16, color = "black", face = "bold"))
-dev.off()
-pdf(file.path(fig_dir, "/test_figure_1.pdf"), width = 24, height = 8)
-ggarrange(p3, p4, p1, p2, ncol = 4, nrow = 1, labels = c("A.", "C.", "B.", "D."), 
           font.label = list(size = 16, color = "black", face = "bold"))
 dev.off()

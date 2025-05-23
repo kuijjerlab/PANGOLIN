@@ -49,8 +49,10 @@ TUMOR_DIR_MAIN <- opt$tumor_dir
 OUTPUT_FILE_EXPRESSION <- opt$output_file_expression
 OUTPUT_FILE_INDEGREE <- opt$output_file_indegree
 
+
 source("bin/tsne_fn.R")
 
+SAMPLES_FILE <- "/storage/kuijjerarea/tatiana/PANGOLIN/panda_input_primary/samples_cancers_primary.tsv"
 # load expression data
 samples <- fread(SAMPLES_FILE)
 exp_all <- fread(EXPRESSION_FILE)
@@ -64,7 +66,7 @@ ind_all <- ind_all[,-1]
 # run TSNE
 tsne_res_ind <- runTSNE_withPCA(ind_all, perplexity = 20, n_pcs = 50)
 tsne_res_ind$tsne <- "indegree"
-
+tsne_res_ind$cancer <- samples$cancer[match(tsne_res_ind$id, samples$sample_id)]
 write.table(tsne_res_ind,
         file = OUTPUT_FILE_INDEGREE,
         sep = "\t",
@@ -74,7 +76,7 @@ write.table(tsne_res_ind,
 
 tsne_res_exp <- runTSNE_withPCA(exp_all, perplexity = 20, n_pcs = 50)
 tsne_res_exp$tsne <- "expression"
-
+tsne_res_exp$cancer <- samples$cancer[match(tsne_res_exp$id, samples$sample_id)]
 write.table(tsne_res_exp,
         file = OUTPUT_FILE_EXPRESSION,
         sep = "\t",
