@@ -85,13 +85,16 @@ generate_pc_cd274_plots <- function(cox_results_file,
 
 #' Plot Heatmap of Correlations
 #'
-#' This function generates a heatmap of correlations between
-#' immune infiltration levels and principal component (PC) scores 
-#' across different cancer types. It highlights 
-#' strong correlations above a predefined threshold.
+#' Generates a heatmap of correlations between immune infiltration 
+#' levels and principal component (PC) scores across various 
+#' cancer types. Strong correlations above a threshold are annotated.
 #'
-#' @param cor_res_all A data frame containing correlation results with columns: 
-#'        'tumor_component', 'variable', and 'corr'.
+#' @param cor_res_all Data frame with columns: 'tumor_component', 
+#'   'variable', and 'corr'.
+#' @param correlation_threshold Numeric threshold to annotate 
+#'   strong correlations.
+#' @param font_size Numeric font size for annotation text in the plot.
+#' @param cell_size Numeric size of each cell in the heatmap.
 #'
 #' @return A heatmap visualization of correlation values.
 #'
@@ -99,44 +102,50 @@ generate_pc_cd274_plots <- function(cox_results_file,
 #' @import reshape2
 #' @import viridis
 #' @export
-plot_pc_immune_correlations <- function(cor_res_all, 
-                            correlation_threshold = 0.4) {
-        FONT_SIZE <- 12
-        CELL_SIZE <- 20
+plot_pc_immune_correlations <- function(cor_res_all,
+                                        correlation_threshold = 0.4,
+                                        font_size = 12,
+                                        cell_size = 20) {
         COLOR_PALETTE <- viridis(100)
+        
         # Validate input
         if (nrow(cor_res_all) == 0) {
-            stop("Input data frame 'cor_res_all' is empty.
-            Cannot generate heatmap.")
+            stop("Input data frame 'cor_res_all' is empty.")
         }
-        # Reshape correlation data for plotting
-        data_to_plot <- dcast(cor_res_all, 
-                            tumor_component ~ variable, 
-                            value.var = "corr")
-        # Convert to matrix format for heatmap
-        data_matrix <- as.matrix(data_to_plot[,-1])
-        rownames(data_matrix) <- data_to_plot[,1]
-        # Define annotation for strong correlations
-        annotation_matrix <- 
-            ifelse(data_matrix >= correlation_threshold, "✔", "")
+        
+        # Reshape data for plotting
+        data_to_plot <- reshape2::dcast(
+            cor_res_all, tumor_component ~ variable, value.var = "corr"
+        )
+        
+        # Convert to matrix
+        data_matrix <- as.matrix(data_to_plot[, -1])
+        rownames(data_matrix) <- data_to_plot[, 1]
+        
+        # Annotate strong correlations
+        annotation_matrix <- ifelse(
+            data_matrix >= correlation_threshold, "✔", ""
+        )
         annotation_matrix[is.na(annotation_matrix)] <- ""
-        # Set locale and font settings
+        
+        # Set locale for consistent display
         Sys.setlocale("LC_ALL", "en_US.UTF-8")
         par(family = "sans")
+        
         # Generate heatmap
-        heatmap_plot <- pheatmap(
+        pheatmap::pheatmap(
             data_matrix,
             cluster_rows = FALSE,
             cluster_cols = FALSE,
-            display_numbers = annotation_matrix,  # Highlight correlations
-            fontsize_number = FONT_SIZE,
+            display_numbers = annotation_matrix,
+            fontsize_number = font_size,
             color = COLOR_PALETTE,
-            border_color = "white",  # Creates a gap around the heatmap
-            cellwidth = CELL_SIZE, cellheight = CELL_SIZE,
-            annotation_legend = TRUE,
-            na_col = "grey"
+            border_color = "white",
+            cellwidth = cell_size,
+            cellheight = cell_size,
+            na_col = "grey",
+            legend = TRUE,
+            legend_labels = list(Strong = "✔"),
+            legend_breaks = NULL
         )
-        print(heatmap_plot)
-    }
-
-
+        }

@@ -78,7 +78,8 @@ sanky_plot_viridis <- function(df,
                                label_color = 1,
                                label_fill = "white",
                                base_size = 16,
-                               title_hjust = 0.5) {
+                               title_hjust = 0.5,
+                               title_size = 8) {
         g1 <- ggplot(
             df,
             aes(
@@ -103,7 +104,7 @@ sanky_plot_viridis <- function(df,
             axis.title.x = element_blank(),
             axis.text.x = element_blank(),
             axis.ticks.x = element_blank(),
-            plot.title = element_text(hjust = title_hjust)
+            plot.title = element_text(hjust = title_hjust, size = title_size)
             ) +
             ggtitle(cancer)
 

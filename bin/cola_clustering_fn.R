@@ -586,57 +586,56 @@ combine_k_results <- function(data){
 }
 
 
-#' Plot t-SNE Results for Consensus Clusters
+#' Plot t-SNE Clusters with Customizable Aesthetics
 #'
-#' This function generates a t-SNE plot for consensus clusters using ggplot2.
+#' @param res_data A data frame containing t-SNE results with columns `Dim1`,
+#'   `Dim2`, `class`, `cancer`, and `k`.
+#' @param point_size Numeric. Size of the points. Default is 0.4.
+#' @param point_alpha Numeric. Transparency of the points. Default is 0.6.
+#' @param grid_linewidth Numeric. Width of grid lines. Default is 0.5.
+#' @param grid_color Character. Color of the major grid lines. Default is
+#'   "grey80".
+#' @param strip_text_size Numeric. Font size of facet strip text. Default is 12.
+#' @param axis_title_size Numeric. Font size of axis titles. Default is 14.
+#' @param axis_text_size Numeric. Font size of axis tick labels. Default is 7.
+#' @param legend_text_size Numeric. Font size of legend text. Default is 10.
 #'
-#' @param res_data A data frame containing t-SNE results and cluster information. 
-#'   It must include the columns `Dim1`, `Dim2`, `class`, `cancer`, and `k`.
-#' @param output_file A string specifying the path to save the PDF file.
-#' @param plot_width Numeric, the width of the output PDF.
-#' @param plot_height Numeric, the height of the output PDF.
-#' @return A ggplot object representing the t-SNE plot.
-#' @examples
-#' # Example usage:
-#' plot_tsne_clusters(res_ind, "output.pdf", 10, 14)
+#' @return A ggplot2 object showing the t-SNE cluster plot.
 #' @export
-
-plot_tsne_clusters_cola <- function(res_data) {
-        POINT_SIZE <- 0.4
-        POINT_ALPHA <- 0.6
-        GRID_LINEWIDTH <- 0.5
-        GRID_COLOR <- "grey80"
-        STRIP_TEXT_SIZE <- 12
-        AXIS_TITLE_SIZE <- 14
-        AXIS_TEXT_SIZE <- 7
-        LEGEND_TEXT_SIZE <- 10
-    # Create the plot
-    p <- ggplot(res_data, aes(x = Dim1, y = Dim2, color = class)) +
-        geom_point(size = POINT_SIZE, alpha = POINT_ALPHA) +
-        scale_color_viridis(discrete = TRUE, option = "D",
-                            guide = guide_legend(nrow = 1)) +
-        facet_wrap(~cancer + k, scales = "free") +
-        theme_minimal() +
-        theme(
-        panel.grid.major = 
-            element_line(linewidth = GRID_LINEWIDTH, color = GRID_COLOR),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank(),
-        strip.text = element_text(size = STRIP_TEXT_SIZE, face = "bold"),
-        axis.title = element_text(size = AXIS_TITLE_SIZE),
-        axis.text = element_text(size = AXIS_TEXT_SIZE),
-        legend.position = "bottom",
-        legend.title = element_blank(),
-        legend.text = element_text(size = LEGEND_TEXT_SIZE),
-        legend.box = "horizontal"
-        ) +
-        labs(
-        title = "",
-        x = "t-SNE Dimension 1",
-        y = "t-SNE Dimension 2"
-        )
-    # Return the ggplot object
-    return(p)
+plot_tsne_clusters_cola <- function(res_data,
+                                    point_size = 0.4,
+                                    point_alpha = 0.6,
+                                    grid_linewidth = 0.5,
+                                    grid_color = "grey80",
+                                    strip_text_size = 10,
+                                    axis_title_size = 10,
+                                    axis_text_size = 7,
+                                    legend_text_size = 10) {
+  p <- ggplot(res_data, aes(x = Dim1, y = Dim2, color = class)) +
+    geom_point(size = point_size, alpha = point_alpha) +
+    scale_color_viridis(discrete = TRUE, option = "D",
+                        guide = guide_legend(nrow = 1)) +
+    facet_wrap(~cancer + k, scales = "free") +
+    theme_minimal() +
+    theme(
+      panel.grid.major = element_line(linewidth = grid_linewidth,
+                                      color = grid_color),
+      panel.grid.minor = element_blank(),
+      panel.border = element_blank(),
+      strip.text = element_text(size = strip_text_size, face = "bold"),
+      axis.title = element_text(size = axis_title_size),
+      axis.text = element_text(size = axis_text_size),
+      legend.position = "bottom",
+      legend.title = element_blank(),
+      legend.text = element_text(size = legend_text_size),
+      legend.box = "horizontal"
+    ) +
+    labs(
+      title = "",
+      x = "t-SNE Dimension 1",
+      y = "t-SNE Dimension 2"
+    )
+  return(p)
 }
 
 

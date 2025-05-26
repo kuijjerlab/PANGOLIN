@@ -378,7 +378,8 @@ run_fgsea_PRAD <- function(res_all,
 plot_fgsea_results <- function(
                         fgseaRes_all,
                         sel_cmps = c("cl_1_cl_2", "cl_1_cl_3", "cl_1_cl_4"),
-                        nrow = 3
+                        nrow = 3,
+                        axis_size = 7
                         ) {
         fgseaRes_all$pathway <- gsub("REACTOME_", "", fgseaRes_all$pathway)
         fgseaRes_all$cmp <- gsub("clcluster_", "cl_", fgseaRes_all$cmp)
@@ -400,7 +401,8 @@ plot_fgsea_results <- function(
                 scale_x_reordered() +
                 labs(x = "", y = "Normalized Enrichment Score") +
                 theme_minimal() +
-                theme(legend.position = "none") +
+                theme(legend.position = "none",
+                axis.text.y = element_text(size = axis_size)) +
                 facet_wrap(~cmp, nrow = nrow, scales = "free")
         return(g)
         }
