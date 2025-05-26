@@ -89,5 +89,5 @@ ggarrange(p3, p1, p4, p2,
         spacer, spacer,
         ncol = 2, nrow = 3, labels = c("A.", "C.", "B.", "D."), 
         font.label = list(size = 16, color = "black", face = "bold"),
-        heights = c(1, 1, 0.2))
+        heights = c(1, 1, 0.3))
 dev.off()
