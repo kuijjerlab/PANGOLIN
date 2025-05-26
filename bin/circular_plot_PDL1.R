@@ -7,7 +7,6 @@ for (lib in required_libraries) {
                                 quietly = TRUE))
 }
 
-
 ####################
 ## Read arguments ##
 ####################
@@ -17,53 +16,58 @@ options(stringsAsFactors = FALSE)
 ### Command line options
 option_list <- list(
     optparse::make_option(
-        c("-x", "--cox_results_all"),
+        c("-c", "--cox_univariate_results_pd1_pathway"),
         type = "character",
         default = NULL,
-        help = "Path to multivariate cox_results_all file.",
+        help = "Path to filtered univariate Cox results on PD1 pathway.",
+        metavar = "character"),
+    optparse::make_option(
+        c("-x", "--cox_results_multivariate"),
+        type = "character",
+        default = NULL,
+        help = "Path to multivariate Cox results performed on edges to PD1.",
         metavar = "character"),
     optparse::make_option(
         c("-p", "--ppi_file"),
         type = "character",
         default = NULL,
-        help = "Path to the ppi file.",
+        help = "Path to the protein-protein interaction (PPI) network file.",
         metavar = "character"),
     optparse::make_option(
         c("-m", "--motif_file"),
         type = "character",
         default = NULL,
-        help = "Path to the motif file.",
+        help = "Path to the transcription factor (TF) motif binding file.",
         metavar = "character"),
     optparse::make_option(
         c("-t", "--threshold"),
         type = "numeric",
         default = NULL,
-        help = "Threshold for number of times a TF is selected.",
+        help = "Minimum times a transcription factor must be selected.",
         metavar = "numeric"),
     optparse::make_option(
         c("-o", "--output_file"),
         type = "character",
         default = NULL,
-        help = "Path to the output file.",
+        help = "Path to the output file to save results.",
         metavar = "character"))
-        
+
 opt_parser <- optparse::OptionParser(option_list = option_list)
 opt <- optparse::parse_args(opt_parser)
 
 ## Initialize variable ##
-COX_RESULTS_ALL_FILE <- opt$cox_results_all
+COX_RESULTS_UNIVARIATE <- opt$cox_univariate_results_pd1_pathway 
+COX_RESULTS_MULTIVARIATE <- opt$cox_results_multivariate
 PPI_FILE <- opt$ppi_file
 MOTIF_FILE <- opt$motif_file
 THRESHOLD <- opt$threshold
 OUTPUT_FILE <- opt$output_file
 
 ## Filter and process data ##
+results_cox_univariate <- fread(COX_RESULTS_UNIVARIATE)
+data <- fread(COX_RESULTS_MULTIVARIATE)
 
-data <- fread(COX_RESULTS_ALL_FILE)
-
-tumors <- data.table("cancer" = c("ACC", "BRCA", "CESC", "KICH", "KIRC", "LAML",
-                                "LGG", "LIHC", "LUAD", "OV", "PRAD", "SARC",
-                                "SKCM", "STAD", "UCEC"))
+tumors <- unique(results_cox_univariate$cancer)
 pfi_cancer <-  c("BRCA", "LGG", "PRAD", "READ", "TGCT", "THCA", "THYM")
 data <- data[data$cancer %in% tumors$cancer, ]
 data <- data %>%

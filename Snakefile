@@ -104,6 +104,7 @@ TSNE_DATA_INDEGREE = os.path.join(TSNE_DATA_DIR, "tsne_expression_all_indegree.t
 OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
 OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_predited_risk_scores.txt")
 UNIVARIATE_COX_SUMMARY_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_model_summary_all.txt")
+UNIVARIATE_COX_SUMMARY_ALL_FILTERED = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_model_summary_filtered.txt")
 UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
 FIG_PC_PDL1_EXPRESSION = os.path.join(FIG_DIR, "PDL1_exp_PC_component_HR.pdf")
 FIG_PC_IMMUNE_CORRELATION = os.path.join(FIG_DIR, "PC_immune_correlations_cibersort.png")
@@ -116,7 +117,7 @@ FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS = os.path.join("figs", "PC_individual_fea
 ## Output Files for multivariate regularized Cox on PDL1-edges ##
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
 OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
-COX_RESULTS_ALL = os.path.join("data_all", "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
+COX_RESULTS_ALL_MULTIVARIATE = os.path.join("data_all", "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
 PDL1_CIRCULAR_PLOT = os.path.join(FIG_DIR, "circular_pdl1_plot_{threshold_cox}.pdf")
 OUTPUT_PDL1_EXP_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pdl1_expression_{cancer}.txt")
 OUTPUT_COMBINED_PATIENT_DATA_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "combined_patient_data_{cancer}.txt")
@@ -169,6 +170,7 @@ rule all:
         expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer = CANCER_TYPES),
         UNIVARIATE_COX_SUMMARY_ALL,
         UNIVARIATE_COX_PREDICTED_SCORES_ALL,
+        UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
         expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer = CANCER_TYPES),
         FIG_PC_PDL1_EXPRESSION,
         FIG_PC_IMMUNE_CORRELATION,
@@ -177,7 +179,7 @@ rule all:
         FIGURE_PC_CLIN_ASSOCIATIONS,
         FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS,
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
-        COX_RESULTS_ALL, 
+        COX_RESULTS_ALL_MULTIVARIATE, 
         expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX),
         FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS        
 
@@ -601,6 +603,27 @@ rule combine_pd1_pathway_univariate_prediction_scores:
         done
         """
 
+## Clean the univatiate cox model on pd1-pathway results based of the PORCUPINE results ##        
+rule clean_univariate_cox_pd1_pathway:
+    input:
+        univarite_cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL,
+        porcupine_results_all_filtered = PORCUPINE_RESULTS_ALL
+    output:
+        univarite_cox_summary_all_filtered = UNIVARIATE_COX_SUMMARY_ALL_FILTERED
+    params:
+        bin = config["bin"]
+    message:
+        "Cleaning the univariate Cox model on pd1-pathway results based on the PORCUPINE results"
+    shell:
+        """
+        Rscript {params.bin}/clean_pd1_pathway_cox_results_by_porcupine.R \
+            --cox_summary_all_cancers {input.univarite_cox_summary_all} \
+            --porcupine_filtered_results {input.porcupine_results_all_filtered} \
+            --cox_summary_all_cancers_filtered {output.univarite_cox_summary_all_filtered} 
+        """
+
+
+
 ### Combine the PD1 pathway heterogeneity scores  with PDL1 expression and PD1 pathway scores ###
 ### and immune infiltration ###
 
@@ -628,7 +651,7 @@ rule merge_patient_data:
 
 rule plot_PC_PDL1_expression:
     input:
-        cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL,
+        cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
         tumor_main_dir = OUTPUT_DIR
     output:
         out_file = FIG_PC_PDL1_EXPRESSION
@@ -648,7 +671,7 @@ rule plot_PC_PDL1_expression:
 
 rule plot_PC_immune_correlations:
     input:
-        cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL,
+        cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
         tumor_main_dir = OUTPUT_DIR
     output:
         out_file = FIG_PC_IMMUNE_CORRELATION
@@ -667,7 +690,7 @@ rule plot_PC_immune_correlations:
 
 rule calculate_association_clinical_features_pd1_heterogeneity_scores:
     input:
-        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL,
+        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
         tumor_main_dir = OUTPUT_DIR
     output:
         results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
@@ -690,7 +713,7 @@ rule calculate_association_clinical_features_pd1_heterogeneity_scores:
 
 rule plot_association_clinical_features_pd1_heterogeneity_scores:
     input:
-        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL,
+        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
         results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
         results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC,
         cancer_color_file = CANCER_COLOR_FILE
@@ -715,7 +738,7 @@ rule plot_association_clinical_features_pd1_heterogeneity_scores:
 
 rule plot_individual_clinical_features_pd1_heterogeneity_scores:
     input:
-        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL,
+        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
         results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
         results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC,
         tumor_main_dir = OUTPUT_DIR
@@ -769,7 +792,7 @@ rule combine_multivarite_cox_results:
     input:
         expand(OUTPUT_CANCER_COX, cancer=CANCER_TYPES)
     output:
-        COX_RESULTS_ALL
+        COX_RESULTS_ALL_MULTIVARIATE
     message:
         "Combining all multivariate Cox regression results into one table."
     shell:
@@ -785,7 +808,8 @@ rule combine_multivarite_cox_results:
 
 rule create_circular_pdl1_plot:
     input:
-        cox_results_all = COX_RESULTS_ALL,
+        cox_univariate_results_pd1_pathway = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
+        cox_results_all_multivariate = COX_RESULTS_ALL_MULTIVARIATE,
         ppi_file = PPI_FILE,
         motif_file = MOTIF_FILE
     output:
@@ -797,7 +821,8 @@ rule create_circular_pdl1_plot:
     shell:
         """
         Rscript {params.bin}/circular_plot_PDL1.R \
-            --cox_results_all {input.cox_results_all} \
+            --cox_univariate_results_pd1_pathway {input.cox_univariate_results_pd1_pathway} \
+            --cox_results_multivariate {input.cox_results_all_multivariate} \
             --ppi_file {input.ppi_file} \
             --motif_file {input.motif_file} \
             --threshold {wildcards.threshold_cox} \

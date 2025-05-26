@@ -48,7 +48,7 @@ generate_pc_cd274_plots <- function(cox_results_file,
                             cancer_dir, 
                             pval_threshold = 0.05) {
     cox_res <- read_all_coxph_results(cox_results_file,
-                                pval_threshold = 0.05)
+                                pval_threshold = pval_threshold)
     combined_data <- merge_patient_data_all_cancers(cancer_dir)
     plots <- lapply(1:nrow(cox_res), function(i) {
         tumor <- cox_res$cancer[i]

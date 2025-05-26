@@ -318,3 +318,42 @@ generate_PC_immune_correlation_table <-
         cor_res_all  <- cor_res_all[!is.na(cor_res_all$corr),]
         return(cor_res_all)
 }
+
+#### clean cox results by the PORCUPINE results
+clean_cox_results <- function(cox_results_file, 
+                                porcupine_results_file,
+                                pval_threshold = 0.05) {
+    cox_res <- read_all_coxph_results(cox_results_file,
+                                pval_threshold = pval_threshold)
+    porcupine_res <- 
+                filter_porcupine_results_PD1_pathway( 
+                                porcupine_results_file)
+    # Filter cox results based on porcupine results
+    cox_res_filtered <- cox_res %>%
+        filter(cancer %in% porcupine_res$cancer)
+
+    return(cox_res_filtered)
+}
+
+#' Filter Porcupine Results for PD-1 Signaling Pathway
+#'
+#' Reads a Porcupine results file and filters for the 
+#' REACTOME_PD_1_SIGNALING pathway.
+#'
+#' @param porcupine_results_file Path to the Porcupine results file.
+#' @return A data.table with entries for the PD-1 signaling pathway.
+#' @import data.table
+#' @export
+#' 
+filter_porcupine_results_PD1_pathway <- function(
+                        porcupine_results_file) {
+    # Load Porcupine results
+    porcupine_res <- data.table::fread(porcupine_results_file) 
+    # Filter rows matching the PD-1 signaling pathway
+    filtered_results <- porcupine_res[
+        grep("REACTOME_PD_1_SIGNALING", pathway, fixed = TRUE)
+    ]
+    
+    # Return filtered results
+    return(filtered_results)
+}
