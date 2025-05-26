@@ -121,6 +121,10 @@ PDL1_CIRCULAR_PLOT = os.path.join(FIG_DIR, "circular_pdl1_plot_{threshold_cox}.p
 OUTPUT_PDL1_EXP_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pdl1_expression_{cancer}.txt")
 OUTPUT_COMBINED_PATIENT_DATA_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "combined_patient_data_{cancer}.txt")
 
+
+# figure for TNSE plot for all cancers and also comparisons of cola clusters for indegree and expression for PRAD and UVM
+FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS = os.path.join(FIG_DIR, "TSNE_all_cancers_indegree_expression_UVM_PRAD_clusters.pdf")
+
 ## Parameters ##
 ALPHA = config["alpha"]
 NUMBER_FOLDS = config["number_folds"]
@@ -174,7 +178,8 @@ rule all:
         FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS,
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
         COX_RESULTS_ALL, 
-        expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)
+        expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX),
+        FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS        
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
@@ -219,7 +224,7 @@ rule run_tsne:
             
         """
 
-
+## Create cancer legend for the cancer types ##
 rule create_cancer_legend:
     input:
         cancer_color_file = CANCER_COLOR_FILE
@@ -797,4 +802,25 @@ rule create_circular_pdl1_plot:
             --motif_file {input.motif_file} \
             --threshold {wildcards.threshold_cox} \
             --output {output.out_file}
+        """
+
+## plor the comparison of the indegree and expression clusters for PRAD and UVM ##
+rule plot_tsne_expression_indegree_and_uvm_prad_comparisons:
+    input:
+        datasets_to_plot_cola_clusters = DATASETS_TO_PLOT_COLA_CLUSTERS,
+        tsne_file_expression = TSNE_DATA_EXPRESSION,
+        tsne_file_indegree = TSNE_DATA_INDEGREE,
+        cancer_color_file = CANCER_COLOR_FILE
+    output:
+        ouput_figure = FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS
+    params:
+        bin = config["bin"],
+    shell:
+        """
+        Rscript {params.bin}/plot_TSNE_all_cancers.R \
+            --datasets_to_plot_cola_clusters {input.datasets_to_plot_cola_clusters} \
+            --tsne_data_expression {input.tsne_file_expression} \
+            --tsne_data_indegree {input.tsne_file_indegree} \
+            --cancer_color_file {input.cancer_color_file} \
+            --ouput_figure_file {output.ouput_figure}
         """

@@ -25,13 +25,13 @@ option_list <- list(
                 datasets to plot for cola cluster comparison",
         metavar = "character"),
     make_option(
-        c("-o", "--tsne_file_expression"),
+        c("-f", "--tsne_data_expression"),
         type = "character",
         default = NULL,
         help = "Path to the file with tsne results for expression.",
         metavar = "character"),
     make_option(
-        c("-m", "--tsne_file_indegree"),
+        c("-m", "--tsne_data_indegree"),
         type = "character",
         default = NULL,
         help = "Path to the file with tsne results for indegree.",
@@ -56,8 +56,8 @@ opt = parse_args(opt_parser)
 ## Initialize variable
 DATASETS_TO_PLOT_COLA_CLUSTERS_FILE <- opt$datasets_to_plot_cola_clusters
 CANCER_COLOR_FILE <- opt$cancer_color_file
-TNSE_EXPRESSION_FILE <- opt$tsne_file_expression
-TSNE_INDEGREE_FILE <-  opt$tsne_file_indegree
+TNSE_EXPRESSION_FILE <- opt$tsne_data_expression
+TSNE_INDEGREE_FILE <-  opt$tsne_data_indegree
 OUTPUT_FIGURE_FILE <- opt$ouput_figure_file
 
 ########################
@@ -67,7 +67,7 @@ OUTPUT_FIGURE_FILE <- opt$ouput_figure_file
 source("bin/create_cancer_legend_fn.R")
 source("bin/sanky_plots_fn.R")
 
-
+# loading the datasets to plot for cola cluster comparison
 load(DATASETS_TO_PLOT_COLA_CLUSTERS_FILE, data <- new.env())
 datasets_to_plot <- data$datasets_to_plot
 uvm_data <- datasets_to_plot$UVM
@@ -78,10 +78,16 @@ p1 <- sanky_plot_viridis(prad_data, "PRAD")
 p2 <- sanky_plot_viridis(uvm_data, "UVM")
 ggarrange(p1, p2, ncol = 1)
 
-p3 <- plot_TSNE_all_cancers(tsne_res_file = UMAP_EXP_FILE , cancer_color_file = CANCER_COLOR_FILE)
-p4 <- plot_TSNE_all_cancers(tsne_res_file = UMAP_IND_FILE, cancer_color_file = CANCER_COLOR_FILE)
+p3 <- plot_TSNE_all_cancers(tsne_res_file = TNSE_EXPRESSION_FILE,
+                            cancer_color_file = CANCER_COLOR_FILE)
+p4 <- plot_TSNE_all_cancers(tsne_res_file = TSNE_INDEGREE_FILE, 
+                            cancer_color_file = CANCER_COLOR_FILE)
 
-pdf(OUTPUT_FIGURE_FILE, width = 8, height = 8)
-ggarrange(p3, p1, p4, p2, ncol = 2, nrow = 2, labels = c("A.", "C.", "B.", "D."), 
-          font.label = list(size = 16, color = "black", face = "bold"))
+spacer <- ggplot() + theme_void()
+pdf(OUTPUT_FIGURE_FILE, width = 10, height = 10)
+ggarrange(p3, p1, p4, p2, 
+        spacer, spacer,
+        ncol = 2, nrow = 3, labels = c("A.", "C.", "B.", "D."), 
+        font.label = list(size = 16, color = "black", face = "bold"),
+        heights = c(1, 1, 0.2))
 dev.off()

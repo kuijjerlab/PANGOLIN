@@ -51,23 +51,61 @@ make_dataset_for_sanky <- function(data) {
 
 
 
-sanky_plot_viridis <- function(df, cancer) {
-    g1 <- ggplot(df, aes(x = x, 
-                    next_x = next_x, 
-                    node = node, 
-                    next_node = next_node,
-                    fill = factor(node),
-                    label = node)) +
-        geom_sankey(flow.alpha = 0.5, node.color = 1) +
-        geom_sankey_label(size = 2.5, color = 1, fill = "white") +
-        scale_fill_viridis_d() +
-        theme_sankey(base_size = 16) +
-        theme(
-            legend.position = "none",        # Remove legend
-            axis.title.x = element_blank(), # Remove x-axis title
-            axis.text.x = element_blank(),  # Remove x-axis labels
-            axis.ticks.x = element_blank()  # Remove x-axis ticks
+#' Create a Sankey Diagram for a Given Cancer Dataset
+#'
+#' Generates a Sankey plot using ggplot2 and ggsankey for a dataset representing
+#' node transitions or flows.
+#'
+#' @param df A data frame containing Sankey plot data. Must include `x`,
+#'   `next_x`, `node`, and `next_node` columns.
+#' @param cancer Title for the plot (e.g., type of cancer).
+#' @param flow_alpha Transparency of flows (0 to 1). Default is 0.5.
+#' @param node_color Color or number for node outline. Default is 1 (black).
+#' @param label_size Size of node labels. Default is 2.5.
+#' @param label_color Text color for labels. Default is 1 (black).
+#' @param label_fill Background fill for labels. Default is "white".
+#' @param base_size Base font size for theme. Default is 16.
+#' @param title_hjust Horizontal justification of title (0 to 1). 
+#' Default is 0.5.
+#'
+#' @return A ggplot object representing the Sankey diagram.
+#' @export
+sanky_plot_viridis <- function(df,
+                               cancer,
+                               flow_alpha = 0.5,
+                               node_color = 1,
+                               label_size = 2.5,
+                               label_color = 1,
+                               label_fill = "white",
+                               base_size = 16,
+                               title_hjust = 0.5) {
+        g1 <- ggplot(
+            df,
+            aes(
+            x = x,
+            next_x = next_x,
+            node = node,
+            next_node = next_node,
+            fill = factor(node),
+            label = node
+            )
         ) +
-        ggtitle(cancer)
+            geom_sankey(flow.alpha = flow_alpha, node.color = node_color) +
+            geom_sankey_label(
+            size = label_size,
+            color = label_color,
+            fill = label_fill
+            ) +
+            scale_fill_viridis_d() +
+            theme_sankey(base_size = base_size) +
+            theme(
+            legend.position = "none",
+            axis.title.x = element_blank(),
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            plot.title = element_text(hjust = title_hjust)
+            ) +
+            ggtitle(cancer)
+
         return(g1)
-}
+        }
