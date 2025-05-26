@@ -69,7 +69,7 @@ data <- fread(COX_RESULTS_MULTIVARIATE)
 
 tumors <- unique(results_cox_univariate$cancer)
 pfi_cancer <-  c("BRCA", "LGG", "PRAD", "READ", "TGCT", "THCA", "THYM")
-data <- data[data$cancer %in% tumors$cancer, ]
+data <- data[data$cancer %in% tumors, ]
 data <- data %>%
             filter(type == "PFI" & cancer %in% pfi_cancer |
                     type == "OS" & !cancer %in% pfi_cancer) 
