@@ -1,5 +1,5 @@
 # List of packages to be loaded
-required_libraries <- c("circlize", "data.table", 
+required_libraries <- c("circlize", "data.table", "optparse",
             "dplyr", "plyr", "ComplexHeatmap")
 
 for (lib in required_libraries) {
