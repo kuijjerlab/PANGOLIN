@@ -17,7 +17,7 @@ options(stringsAsFactors = FALSE)
 ### Command line options
 option_list <- list(
     optparse::make_option(
-        c("-s", "--sumary_table_PD1"),
+        c("-s", "--summary_table_PD1"),
         type = "character",
         default = NULL,
         help = "Path to the summary PD1 table.",
@@ -34,7 +34,7 @@ opt <- optparse::parse_args(opt_parser)
 
 ## Initialize variable ##
 
-SUMMARY_TABLE_PD1 <- opt$sumary_table_PD1
+SUMMARY_TABLE_PD1 <- opt$summary_table_PD1
 HTML_OUTPUT_FILE <- opt$output_html_file
 
 # Load the summary table

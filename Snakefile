@@ -829,7 +829,7 @@ rule create_circular_pdl1_plot:
             --output {output.out_file}
         """
 
-## plor the comparison of the indegree and expression clusters for PRAD and UVM ##
+## plot the comparison of the indegree and expression clusters for PRAD and UVM ##
 rule plot_tsne_expression_indegree_and_uvm_prad_comparisons:
     input:
         datasets_to_plot_cola_clusters = DATASETS_TO_PLOT_COLA_CLUSTERS,
@@ -848,4 +848,18 @@ rule plot_tsne_expression_indegree_and_uvm_prad_comparisons:
             --tsne_data_indegree {input.tsne_file_indegree} \
             --cancer_color_file {input.cancer_color_file} \
             --ouput_figure_file {output.ouput_figure}
+        """
+## plot PD1 summary table ##
+rule plot_PD1_summary_table:
+    input:
+        summary_table_PD1 = SUMMARY_TABLE_PD1,
+    output:
+        output_html_file = OUTPUT_HTML_TABLE_PD1
+    params:
+        bin = config["bin"],
+    shell:
+        """
+        Rscript {params.bin}/plot_PD1_summary_table.R \
+            --summary_table_PD1 {input.summary_table_PD1} \
+            --output_html_file {input.output_html_file} 
         """
