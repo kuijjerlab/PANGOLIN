@@ -37,7 +37,6 @@ SUMMARY_TABLE_PD1 <- opt$summary_table_PD1
 HTML_OUTPUT_FILE <- opt$output_html_file
 
 # Load the summary table
-# SUMMARY_TABLE_PD1 <- "/storage/kuijjerarea/tatiana/PANGOLIN/data_all/clinical_associations_PD1/summary_table_PD1.txt"
 data <- fread(SUMMARY_TABLE_PD1)
 
 
@@ -75,30 +74,6 @@ table_html <-
 
 # Add meta tag to force UTF-8
 meta_tag <- '<meta charset="UTF-8">'
-
-# # Your custom CSS
-# custom_css <- "
-# <style>
-#   body {
-#     display: flex;
-#     justify-content: center; /* Centers the table horizontally */
-#     padding-top: 40px;
-#   }
-
-#   table {
-#     table-layout: fixed;
-#     width: 80%;
-#     font-family: Arial, 'Segoe UI Symbol', sans-serif;
-#     text-align: left; /* Table content left-aligned */
-#   }
-
-#   th, td {
-#     word-wrap: break-word;
-#     overflow-wrap: break-word;
-#     text-align: left; /* Ensure cell text is left-aligned */
-#   }
-# </style>
-# "
 
 custom_css <- "
 <style>
