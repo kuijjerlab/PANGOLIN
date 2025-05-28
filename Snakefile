@@ -126,6 +126,12 @@ OUTPUT_COMBINED_PATIENT_DATA_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_
 # figure for TNSE plot for all cancers and also comparisons of cola clusters for indegree and expression for PRAD and UVM
 FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS = os.path.join(FIG_DIR, "TSNE_all_cancers_indegree_expression_UVM_PRAD_clusters.pdf")
 
+# producing summary table figure for PD1 pathway 
+#input (manually created)
+SUMMARY_TABLE_PD1 = os.path.join("data_all", "clinical_associations_PD1", "summary_table_PD1.txt")
+#output
+OUTPUT_HTML_TABLE_PD1 = os.path.join("figs", "summary_table_PD1.html")
+
 ## Parameters ##
 ALPHA = config["alpha"]
 NUMBER_FOLDS = config["number_folds"]
@@ -181,7 +187,8 @@ rule all:
         expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
         COX_RESULTS_ALL_MULTIVARIATE, 
         expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX),
-        FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS        
+        FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS,
+        OUTPUT_HTML_TABLE_PD1   
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
@@ -861,5 +868,5 @@ rule plot_PD1_summary_table:
         """
         Rscript {params.bin}/plot_PD1_summary_table.R \
             --summary_table_PD1 {input.summary_table_PD1} \
-            --output_html_file {input.output_html_file} 
+            --output_html_file {output.output_html_file} 
         """

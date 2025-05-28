@@ -1,12 +1,11 @@
 # List of packages to be loaded
 required_libraries <- c("optparse", "ggplot2", "gridExtra",
-                        "knitr", "kableExtra", "data.table")
+                        "kableExtra", "data.table")
 
 for (lib in required_libraries) {
   suppressPackageStartupMessages(library(lib, character.only = TRUE,
                                 quietly = TRUE))
 }
-
 
 ####################
 ## Read arguments ##
@@ -23,7 +22,7 @@ option_list <- list(
         help = "Path to the summary PD1 table.",
         metavar = "character"),
     optparse::make_option(
-        c("-h", "--output_html_file"),
+        c("-m", "--output_html_file"),
         type = "character",
         default = NULL,
         help = "Path to the output html file.",
@@ -38,8 +37,9 @@ SUMMARY_TABLE_PD1 <- opt$summary_table_PD1
 HTML_OUTPUT_FILE <- opt$output_html_file
 
 # Load the summary table
-
+# SUMMARY_TABLE_PD1 <- "/storage/kuijjerarea/tatiana/PANGOLIN/data_all/clinical_associations_PD1/summary_table_PD1.txt"
 data <- fread(SUMMARY_TABLE_PD1)
+
 
 # Helper function to convert "yes"/"no"/other to symbols
 convert_yes_no <- function(x) {
@@ -58,7 +58,14 @@ cols_to_convert <- c("Heterogeneity",
 # Apply the conversion function to each column
 data[, (cols_to_convert) := lapply(.SD, convert_yes_no), .SDcols = cols_to_convert]
 
-
+setnames(data, c("Cancer", "Heterogeneity", 
+                 "Clinical outcome", "PDL1 expression", 
+                 "Clinical features", "Omics clusters", 
+                 "Immune Infiltration (CIBERSORTx)"),
+               c("Cancer", "Heterogeneity", 
+                 "Clinical<br>outcome", "PDL1<br>expression", 
+                 "Clinical<br>features", "Omics<br>clusters", 
+                 "Immune Infiltration<br>(CIBERSORTx)"))
 
 # Create the HTML table
 table_html <- 
@@ -69,26 +76,56 @@ table_html <-
 # Add meta tag to force UTF-8
 meta_tag <- '<meta charset="UTF-8">'
 
-# Your custom CSS
+# # Your custom CSS
+# custom_css <- "
+# <style>
+#   body {
+#     display: flex;
+#     justify-content: center; /* Centers the table horizontally */
+#     padding-top: 40px;
+#   }
+
+#   table {
+#     table-layout: fixed;
+#     width: 80%;
+#     font-family: Arial, 'Segoe UI Symbol', sans-serif;
+#     text-align: left; /* Table content left-aligned */
+#   }
+
+#   th, td {
+#     word-wrap: break-word;
+#     overflow-wrap: break-word;
+#     text-align: left; /* Ensure cell text is left-aligned */
+#   }
+# </style>
+# "
+
 custom_css <- "
 <style>
   body {
-    display: flex;
-    justify-content: center; /* Centers the table horizontally */
-    padding-top: 40px;
+    margin: 0; /* Remove all body margins */
+    padding: 0; /* Remove all padding */
   }
 
   table {
     table-layout: fixed;
     width: 80%;
     font-family: Arial, 'Segoe UI Symbol', sans-serif;
-    text-align: left; /* Table content left-aligned */
+    text-align: left;
+    border-collapse: collapse;
+    margin-left: 0; /* Align to the left */
   }
 
   th, td {
     word-wrap: break-word;
     overflow-wrap: break-word;
-    text-align: left; /* Ensure cell text is left-aligned */
+    text-align: left;
+    padding: 4px 6px; /* Compact cell padding */
+    font-size: 13px;  /* Optional: slightly smaller text */
+  }
+
+  tr {
+    line-height: 1.2; /* Reduce row height */
   }
 </style>
 "
