@@ -1,9 +1,3 @@
-required_libraries <- c("data.table", "ggplot2")
-for (lib in required_libraries) {
-  suppressPackageStartupMessages(library(lib, character.only = TRUE,
-                                quietly = TRUE))
-}
-
 #' Create a legend for a cancer type plot
 #'
 #' This function generates a custom legend for a ggplot, mapping `cancer_type`
@@ -114,7 +108,7 @@ plot_TSNE_all_cancers <- function(tsne_res_file, cancer_color_file,
               toupper(cancer_colors$cancer_type))) +
             scale_shape_manual(values = setNames(cancer_colors$shape,
               toupper(cancer_colors$cancer_type))) +
-            labs(x = "Dim 1", y = "Dim 2") +
+            labs(x = "t-SNE 1", y = "t-SNE 2") +
             theme_minimal(base_size = base_font_size) +
             theme(
               plot.title = element_text(color = "black", size = base_font_size,
