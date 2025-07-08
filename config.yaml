@@ -18,6 +18,8 @@ cancer_types: ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "COAD", "DLBC", "ESCA", "G
               "HNSC", "KICH", "KIRC", "KIRP", "LAML", "LGG", "LIHC", "LUAD", "LUSC", "MESO",
               "OV", "PAAD", "PCPG", "PRAD", "READ", "SARC", "SKCM", "STAD", "TGCT", "THCA",
               "THYM", "UCEC", "UCS", "UVM"]
+
+download_files: "NO" # Set to "YES" to download the expression files (takes very long time)
 datatypes: ["expression", "indegree"]
 threshold_cox: [20, 50]
 output_dir: "data_individual_cancers"

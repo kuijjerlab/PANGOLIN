@@ -5,52 +5,57 @@
 #'
 #' @param cancer Character string specifying the GDC project
 #'   (e.g., "TCGA-BRCA").
-#' @param output_dir Character string specifying the directory where the output
-#'   file will be saved.
+#' @param output_file Character string specifying the file path where the output
+#'   data will be saved.
 #'
 #' @return Saves an RData file containing the gene expression data in the
-#'   specified output directory.
+#'   specified output file.
 #' @details
 #' The function uses the `GDCquery`, `GDCdownload`, and `GDCprepare` functions
 #' from the TCGAbiolinks package to retrieve and process gene expression
 #' quantification data (STAR - Counts workflow) for the given cancer project.
-#' 
-#' @import TCGAbiolinks
-download_gdc_expression <- function(cancer, output_dir) {
-mrna_query <- GDCquery(project = cancer,
-                      data.category = "Transcriptome Profiling",
-                      data.type = "Gene Expression Quantification",
-                      workflow.type = "STAR - Counts")
+#'
+#' @importFrom TCGAbiolinks GDCquery
+#' @importFrom TCGAbiolinks GDCdownload
+#' @importFrom TCGAbiolinks GDCprepare
+download_gdc_expression <- function(cancer, output_file) {
+  mrna_query <- GDCquery(
+    project = cancer,
+    data.category = "Transcriptome Profiling",
+    data.type = "Gene Expression Quantification",
+    workflow.type = "STAR - Counts"
+  )
   cat("downloading data", "\n")
   GDCdownload(mrna_query, method = "api")
   cat("downloading data")
   mrna_df <- GDCprepare(mrna_query)
   cat("saving expression data", "\n")
   save(mrna_df,
-      file = file.path(output_dir, paste0(cancer, ".RData")))
+       file = output_file)
 }
 
 
 #' Download and Save GDC Clinical Data
 #'
 #' This function downloads clinical data for a specified cancer project and
-#' saves it as an RData file in the given output directory.
+#' saves it as an RData file in the given output file.
 #'
-#' @param cancer Character string specifying the GDC project 
+#' @param cancer Character string specifying the GDC project
 #'   (e.g., "TCGA-BRCA").
-#' @param output_dir Character string specifying the directory to save the file.
+#' @param output_file Character string specifying the file path where the output
+#'   data will be saved.
 #'
-#' @return Saves an RData file with clinical data in the specified directory.
-#' @import TCGAbiolinks
-download_gdc_clinical <- function(cancer, output_dir) {
+#' @return Saves an RData file with clinical data in the specified file.
+#' @importFrom TCGAbiolinks GDCquery_clinic
+download_gdc_clinical <- function(cancer, output_file) {
     clinical <- GDCquery_clinic(
-        cancer, 
-        type = "clinical", 
+        project = cancer,
+        type = "clinical",
         save.csv = FALSE
     )
     save(
         clinical,
-        file = file.path(output_dir, paste0(cancer, "_clinical.RData"))
+        file = output_file
     )
 }
 

@@ -44,7 +44,10 @@ TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", 
 TSNE_DIR = os.path.join(OUTPUT_DIR, "tsne_results")
 INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR, "{cancer}", "indegrees_norm")
 
-
+## Output directory for the downloaded GDC data ##
+OUTPUT_GDC_DIR = os.path.join("data_all", "gdc_data")
+OUTPUT_GDC_FILE = os.path.join(OUTPUT_GDC_DIR, "TCGA-{cancer}.RData")
+MARKER_FILE =  os.path.join(OUTPUT_GDC_DIR, "{cancer}.SKIPPED.txt") # in case if we dont want to download the GDC data
 ## Output Files ##
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
@@ -147,48 +150,81 @@ MAX_K = config["max_k"]
 # Rules ##
 rule all:
     input:
-        expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
-        TSNE_DATA_EXPRESSION,
-        TSNE_DATA_INDEGREE,
-        CANCER_LEGEND_PDF,
-        expand(FILTERED_PORCUPINE_FILE, cancer = CANCER_TYPES),
-        PORCUPINE_RESULTS_ALL,
-        FIG_PATHWAY_INTERSECTION,
-        FIG_SHARED_CATEGORIES,
-        expand(OUTPUT_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES),
-        BEST_K_COLA_EXP,
-        BEST_K_COLA_IND,
-        FIG_TSNE_COLA_INDEGREE,
-        FIG_TSNE_COLA_EXPRESSION,
-        FIG_SANKEY,
-        SELECTED_CLUSTERS_COLA_EXP,
-        SELECTED_CLUSTERS_COLA_IND,
-        expand(OUTPUT_CLUSTERS_PER_TUMOR_IND, cancer = CANCER_TYPES),
-        expand(OUTPUT_CLUSTERS_PER_TUMOR_EXP, cancer = CANCER_TYPES),
-        expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer = CANCER_TYPES),
-        OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL,
-        FIG_COX_COLA_CLUSTERS,
-        FIG_PRAD_SURVIVAL,
-        FIG_FGSEA_PRAD, 
-        expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
-        expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
-        expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
-        expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer = CANCER_TYPES),
-        UNIVARIATE_COX_SUMMARY_ALL,
-        UNIVARIATE_COX_PREDICTED_SCORES_ALL,
-        UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer = CANCER_TYPES),
-        FIG_PC_PDL1_EXPRESSION,
-        FIG_PC_IMMUNE_CORRELATION,
-        TUMOR_RESULTS_PD1_GROUPS,
-        TUMOR_RESULTS_PD1_NUMERIC,
-        FIGURE_PC_CLIN_ASSOCIATIONS,
-        FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS,
-        expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
-        COX_RESULTS_ALL_MULTIVARIATE, 
-        expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX),
-        FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS,
-        OUTPUT_HTML_TABLE_PD1   
+        expand(OUTPUT_GDC_FILE, cancer = CANCER_TYPES),
+        expand(MARKER_FILE, cancer = CANCER_TYPES)
+        # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
+        # TSNE_DATA_EXPRESSION,
+        # TSNE_DATA_INDEGREE,
+        # CANCER_LEGEND_PDF,
+        # expand(FILTERED_PORCUPINE_FILE, cancer = CANCER_TYPES),
+        # PORCUPINE_RESULTS_ALL,
+        # FIG_PATHWAY_INTERSECTION,
+        # FIG_SHARED_CATEGORIES,
+        # expand(OUTPUT_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES),
+        # BEST_K_COLA_EXP,
+        # BEST_K_COLA_IND,
+        # FIG_TSNE_COLA_INDEGREE,
+        # FIG_TSNE_COLA_EXPRESSION,
+        # FIG_SANKEY,
+        # SELECTED_CLUSTERS_COLA_EXP,
+        # SELECTED_CLUSTERS_COLA_IND,
+        # expand(OUTPUT_CLUSTERS_PER_TUMOR_IND, cancer = CANCER_TYPES),
+        # expand(OUTPUT_CLUSTERS_PER_TUMOR_EXP, cancer = CANCER_TYPES),
+        # expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer = CANCER_TYPES),
+        # OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL,
+        # FIG_COX_COLA_CLUSTERS,
+        # FIG_PRAD_SURVIVAL,
+        # FIG_FGSEA_PRAD, 
+        # expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES),
+        # expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES),
+        # expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES),
+        # expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer = CANCER_TYPES),
+        # UNIVARIATE_COX_SUMMARY_ALL,
+        # UNIVARIATE_COX_PREDICTED_SCORES_ALL,
+        # UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
+        # expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer = CANCER_TYPES),
+        # FIG_PC_PDL1_EXPRESSION,
+        # FIG_PC_IMMUNE_CORRELATION,
+        # TUMOR_RESULTS_PD1_GROUPS,
+        # TUMOR_RESULTS_PD1_NUMERIC,
+        # FIGURE_PC_CLIN_ASSOCIATIONS,
+        # FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS,
+        # expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES),
+        # COX_RESULTS_ALL_MULTIVARIATE, 
+        # expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX),
+        # FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS,
+        # OUTPUT_HTML_TABLE_PD1   
+
+## Download GDC data for each cancer type ##    
+## if the download_files is set to "YES" in the config file, then it will download the GDC data
+## otherwise it will skip the download and create a marker file indicating that the download was skipped
+## The predownloaded GDC data is in the data_all/gdc_data_predownloaded directory
+
+rule download_gdc_data:
+    output:
+        out_file = OUTPUT_GDC_FILE,
+        marker = MARKER_FILE
+    message:
+        "Downloading GDC data for: {wildcards.cancer}"
+    params:
+        bin = config["bin"]
+    run:
+        if config["download_files"] == "YES":
+            shell(
+                """
+                Rscript {params.bin}/download_TCGA_gd38.R \
+                    --tumor {wildcards.cancer} \
+                    --output_file {output.out_file}
+                """
+            )
+            with open(output.marker, "w") as f:
+                f.write("Downloaded\n")
+        else:
+            print(f"Skipping download for {wildcards.cancer}")
+            os.makedirs(os.path.dirname(output.marker), exist_ok=True)
+            with open(output.marker, "w") as f:
+                f.write("Download skipped.\n")
+            
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
