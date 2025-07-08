@@ -81,6 +81,8 @@ colnames(data)[4] <- c("ntimes")
 data_clean <- data %>%
               filter(ntimes >= THRESHOLD)
 
+
+
 all_tfs <- ddply(data_clean, .(TF), function(x) {
         data.frame(
                 cancer = paste(x$cancer, collapse = ","),
@@ -139,21 +141,24 @@ colnames(links) <- c("reg1", "reg2")
 # read in motif data
 motifs <- fread(MOTIF_FILE)
 motifs <- motifs[grep("^CD274$", motifs$V2),]
-
 # Define label colors based on rownames and motifs
 label_colors <- ifelse(
         rownames(data) %in% motifs$V1, 
         "#638ccc", "black")
 
+# Define color palette for values >= THRESHOLD up to 100
 warm_grey_red_palette <- colorRampPalette(
-        c("#fcbba1", "#fc9272", "#99000d"))(50)
+    c("#fcbba1", "#fc9272", "#99000d")
+)(101 - THRESHOLD)  # number of values from THRESHOLD to 100
 
+# Create full palette: white from 0 to THRESHOLD - 1, then red
+full_palette <- c(rep("white", THRESHOLD), warm_grey_red_palette)
 
+# Color mapping function
 col_fun1 <- colorRamp2(
-        seq(0, 100, length.out = 51), 
-        c("white", warm_grey_red_palette))
-
-
+    seq(0, 100, by = 1),
+    full_palette
+)
 # Define sector labels
 sectors <- rownames(data)
 dir.create(dirname(OUTPUT_FILE), recursive = TRUE, showWarnings = FALSE)
@@ -175,7 +180,7 @@ SAMPLE_LABEL_SIZE <- 0.65
 SAMPLE_LABEL_ADJUST <- 0.3
 LAST_TRACK_INDEX <- length(sectors)
 X_LABEL_OFFSET <- 2
-
+FONTSIZE <- 8
 # Set up the margins so labels can fit in ##
 circos.par(track.margin = rep(MARGIN_ADJUSTMENT, 2)) 
 circos.par(
@@ -246,5 +251,21 @@ circos.track(
     },
     bg.border = NA
 )
+# Define dynamic step size for legend ticks
+legend_by <- if (THRESHOLD %% 2 == 0 && THRESHOLD <= 20) 20 else 10
+legend_col_fun1 <- Legend(
+    at = seq(THRESHOLD, 100, by = legend_by),          # Only show colored range
+    col_fun = col_fun1,
+    title = "TF Frequency",
+    direction = "horizontal",
+    legend_width = unit(4, "cm"),
+    title_position = "topcenter",
+    labels_gp = gpar(fontsize = FONTSIZE),
+    title_gp = gpar(fontsize = FONTSIZE)
+)
+# Place the legend below the circos plot
+pushViewport(viewport(x = 0.5, y = -0.025, width = 1, height = 0.1, just = c("center", "bottom")))
+draw(legend_col_fun1, just = "center")
+popViewport()
 
 dev.off()
