@@ -49,6 +49,12 @@ OUTPUT_GDC_DIR = os.path.join("data_all", "gdc_data")
 OUTPUT_GDC_FILE = os.path.join(OUTPUT_GDC_DIR, "TCGA-{cancer}.RData")
 MARKER_FILE =  os.path.join(OUTPUT_GDC_DIR, "{cancer}.SKIPPED.txt") # in case if we don't want to download the GDC data
 
+# Output directory for the combined downloaded GDC data ##
+EXPRESSION_DIR_GDC = os.path.join("data_all", "gdc_data_predownloaded")
+OUTPUT_DIR_DOWNLOAD_COMBINED = os.path.join("data_all", "combined_gdc_data")
+OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_STAR_counts.RData")
+GROUP_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_sample_groups.tsv")
+FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -151,7 +157,10 @@ MAX_K = config["max_k"]
 rule all:
     input:
         expand(OUTPUT_GDC_FILE, cancer = CANCER_TYPES),
-        expand(MARKER_FILE, cancer = CANCER_TYPES)
+        expand(MARKER_FILE, cancer = CANCER_TYPES),
+        OUTPUT_EXP_COMBINED_FILE, 
+        GROUP_FILE,
+        FEATURE_FILE
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -197,7 +206,8 @@ rule all:
 
 ## Download GDC data for each cancer type ##    
 ## if the download_files is set to "YES" in the config file, then it will download the GDC data
-## otherwise it will skip the download and create a marker file and an empty output file indicating that the download was skipped
+## otherwise it will skip the download and create a marker file 
+## and an empty output file indicating that the download was skipped
 ## The predownloaded GDC data is in the data_all/gdc_data_predownloaded directory
 
 rule download_gdc_data:
@@ -224,7 +234,28 @@ rule download_gdc_data:
             os.makedirs(os.path.dirname(output.marker), exist_ok=True)
             with open(output.marker, "w") as f:
                 f.write("Download skipped.\n")
-            
+
+# Combine the data for all cancer types, including expression, groups and features ##
+rule combine_all_expression_data:
+    input:
+        exp_dir = EXPRESSION_DIR_GDC
+    output:
+        combined_expression_file = OUTPUT_EXP_COMBINED_FILE,
+        group_file = GROUP_FILE,
+        feature_file = FEATURE_FILE,
+    message:
+        "Combining all expression data for all cancers"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/combine_allTCGA_expression.R \
+            --expression_dir {input.exp_dir} \
+            --combined_expression_file {output.combined_expression_file} \
+            --group_file {output.group_file} \
+            --feature_file {output.feature_file}
+        """
+
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:

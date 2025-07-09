@@ -4,7 +4,7 @@
 #####################
 # List of packages to be loaded
 required_libraries <- c("TCGAbiolinks", "SummarizedExperiment", 
-            "dplyr", "DT", "optparse")
+            "dplyr", "DT", "optparse", "data.table")
 
 for (lib in required_libraries) {
   suppressPackageStartupMessages(library(lib, character.only = TRUE,
@@ -18,17 +18,30 @@ options(stringsAsFactors = FALSE)
 ### Command line options
 option_list <- list(
     optparse::make_option(
-        c("-d", "--directory_expression"),
+        c("-d", "--expression_dir"),
         type = "character",
         default = NULL,
         help = "Path to the directory with expression files.",
         metavar = "character"),
     optparse::make_option(
-        c("-o", "--output_dir"),
+        c("-e", "--combined_expression_file"),
+            type = "character",
+            default = NULL,
+            help = "Path to the the output combined expression file.",
+            metavar = "character"),
+    optparse::make_option(
+        c("-g", "--group_file"),
         type = "character",
         default = NULL,
-        help = "Path to the the output directory.",
-        metavar = "character"))
+        help = "Path to the the output group file.",
+        metavar = "character"),
+    optparse::make_option(
+        c("-f", "--feature_file"),
+        type = "character",
+        default = NULL,
+        help = "Path to the the output feature file.",
+        metavar = "character")
+)
 
 ### Parse options ###
 opt_parser <- optparse::OptionParser(option_list = option_list)
@@ -36,8 +49,11 @@ opt <- optparse::parse_args(opt_parser)
 
 ### Initialize variable ###
 
-EXPRESSION_DIR <- opt$directory_expression
-OUTPUT_DIR <- opt$output_dir
+EXPRESSION_DIR <- opt$expression_dir
+OUTPUT_EXPRESSION_FILE <- opt$combined_expression_file
+GROUP_FILE <- opt$group_file
+FEATURE_FILE <- opt$feature_file
+
 
 ### load functions ###
 source("bin/download_gdc_fn.R")
@@ -58,13 +74,11 @@ for (i in 1:length(exp_files)) {
         groups <- data.table("sample_id" = samples, "project" = project_id)
         groups_all <- rbind(groups, groups_all)
 }
-save(exp_all, file = file.path(OUTPUT_DIR, "hg38_STAR_counts.RData"))
-
-write.table(groups_all, file.path(OUTPUT_DIR, "hg38_sample_groups.tsv"),
+save(exp_all, file = OUTPUT_EXPRESSION_FILE)
+write.table(groups_all, GROUP_FILE,
             col.names = F, row.names = F, sep = "\t", quote = FALSE)
 
-
-load(file.path(exp_files_dir, exp_files[1]), data <- new.env())
+load(file.path(EXPRESSION_DIR, exp_files[1]), data <- new.env())
 data <- data[["mrna_df"]]
 features <- rowRanges(data)
-save(features, file = file.path(OUTPUT_DIR, "hg38_features.RData"))
+save(features, file = FEATURE_FILE)
