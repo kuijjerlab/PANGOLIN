@@ -81,3 +81,17 @@ download_gdc_biospecimen <- function(cancer) {
     GDCdownload(query_biospecimen)
 }
 
+#' Read Summarized Experiment Data
+#'
+#' Loads a SummarizedExperiment object and extracts its assay data.
+#'
+#' @param data_file Path to the RData file with a SummarizedExperiment 'mrna_df'.
+#' @return Matrix or data frame with assay data from the SummarizedExperiment.
+#' @import SummarizedExperiment
+#' @export
+readSummarizedExperiment <- function(data_file) {
+    load(data_file, exp <- new.env())
+    mrna_df <- exp[['mrna_df']]
+    mrna_df <- SummarizedExperiment::assay(mrna_df)
+    return(mrna_df)
+}

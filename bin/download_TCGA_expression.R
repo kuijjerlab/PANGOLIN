@@ -29,13 +29,14 @@ option_list <- list(
 opt_parser <- optparse::OptionParser(option_list = option_list)
 opt <- optparse::parse_args(opt_parser)
 
+## Initialize variable ##
 
 TUMOR_TYPE <- opt$tumor
 OUTPUT_FILE <- opt$output_file
 
 source("bin/download_gdc_fn.R")
 
-# Download expression and clinical data for the specified tumor type #
+# Download expression data for the specified tumor type #
 project <- paste0("TCGA-", TUMOR_TYPE)
 download_gdc_expression(project, OUTPUT_FILE)
 

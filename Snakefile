@@ -47,8 +47,8 @@ INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR, "{cancer}", "indegrees_nor
 ## Output directory for the downloaded GDC data ##
 OUTPUT_GDC_DIR = os.path.join("data_all", "gdc_data")
 OUTPUT_GDC_FILE = os.path.join(OUTPUT_GDC_DIR, "TCGA-{cancer}.RData")
-MARKER_FILE =  os.path.join(OUTPUT_GDC_DIR, "{cancer}.SKIPPED.txt") # in case if we dont want to download the GDC data
-## Output Files ##
+MARKER_FILE =  os.path.join(OUTPUT_GDC_DIR, "{cancer}.SKIPPED.txt") # in case if we don't want to download the GDC data
+
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -197,7 +197,7 @@ rule all:
 
 ## Download GDC data for each cancer type ##    
 ## if the download_files is set to "YES" in the config file, then it will download the GDC data
-## otherwise it will skip the download and create a marker file indicating that the download was skipped
+## otherwise it will skip the download and create a marker file and an empty output file indicating that the download was skipped
 ## The predownloaded GDC data is in the data_all/gdc_data_predownloaded directory
 
 rule download_gdc_data:
@@ -212,7 +212,7 @@ rule download_gdc_data:
         if config["download_files"] == "YES":
             shell(
                 """
-                Rscript {params.bin}/download_TCGA_gd38.R \
+                Rscript {params.bin}/download_TCGA_expression.R \
                     --tumor {wildcards.cancer} \
                     --output_file {output.out_file}
                 """
