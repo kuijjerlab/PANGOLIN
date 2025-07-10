@@ -74,7 +74,11 @@ for (i in 1:length(exp_files)) {
         groups <- data.table("sample_id" = samples, "project" = project_id)
         groups_all <- rbind(groups, groups_all)
 }
-save(exp_all, file = OUTPUT_EXPRESSION_FILE)
+write.table(exp_all,
+            file = OUTPUT_EXPRESSION_FILE,
+            col.names = T, row.names = T, sep = "\t", quote = F)
+
+
 write.table(groups_all, GROUP_FILE,
             col.names = F, row.names = F, sep = "\t", quote = FALSE)
 

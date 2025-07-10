@@ -2,6 +2,9 @@
 ## snakemake --cores 1 -np ### For dry run
 ## module load snakemake/7.23.1-foss-2022a
 ## module load R-bundle-Bioconductor/3.15-foss-2022a-R-4.2.1
+## source ~/.bashrc # conda version conda 24.1.2
+## rm -rf .snakemake/conda # remove conda cache
+## snakemake --use-conda --conda-frontend conda --cores 1 
 
 ## Libraries
 import os 
@@ -52,9 +55,12 @@ MARKER_FILE =  os.path.join(OUTPUT_GDC_DIR, "{cancer}.SKIPPED.txt") # in case if
 # Output directory for the combined downloaded GDC data ##
 EXPRESSION_DIR_GDC = os.path.join("data_all", "gdc_data_predownloaded")
 OUTPUT_DIR_DOWNLOAD_COMBINED = os.path.join("data_all", "combined_gdc_data")
-OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_STAR_counts.RData")
+OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_STAR_counts.tsv")
 GROUP_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_sample_groups.tsv")
 FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
+PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "pysnail_normalized_STAR_counts.tsv")
+
+
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -160,7 +166,8 @@ rule all:
         expand(MARKER_FILE, cancer = CANCER_TYPES),
         OUTPUT_EXP_COMBINED_FILE, 
         GROUP_FILE,
-        FEATURE_FILE
+        FEATURE_FILE,
+        PYSNAIL_NORMALIZED_FILE
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -255,6 +262,25 @@ rule combine_all_expression_data:
             --group_file {output.group_file} \
             --feature_file {output.feature_file}
         """
+# SNAIL qsmooth normalization of the combined expression data #
+# to run this rule,you need to download the pysnail package in envs 
+# to download it git clone git@github.com:kuijjerlab/PySNAIL.git
+rule qsmooth_normalization:
+    input:
+        xprs = OUTPUT_EXP_COMBINED_FILE,
+        groups = GROUP_FILE
+    output:
+        norm = PYSNAIL_NORMALIZED_FILE
+    params:
+        threshold = 0.2,
+        bin = config["bin"]
+    conda:
+        "envs/pysnail.yaml"
+    shell:
+        """
+            python {params.bin}/normalize_with_pysnail.py {input.xprs} {input.groups} {output.norm} --threshold {params.threshold}
+        """
+
 
 
 ## Extract clinical data for each cancer type ##

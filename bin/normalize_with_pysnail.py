@@ -1,11 +1,29 @@
-# normalize_with_pysnail.py
+import argparse
 import os
 from pysnail import Dataset, qsmooth
 
-xprs = os.path.realpath(snakemake.input["counts"])
-groups = os.path.realpath(snakemake.input["groups"])
-output_file = os.path.realpath(snakemake.output[0])
+def parse_args():
+    parser = argparse.ArgumentParser(description="Normalize expression data using qsmooth")
+    parser.add_argument("xprs", type=str, help="Path to expression count matrix")
+    parser.add_argument("groups", type=str, help="Path to sample groups file")
+    parser.add_argument("output", type=str, help="Path to output normalized count file")
+    parser.add_argument("--threshold", type=float, default=0.2, help="Threshold for qsmooth (default: 0.2)")
+    return parser.parse_args()
 
-dataset = Dataset(xprs, groups, **{'index_col': 0, 'sep': '\t'})
-xprs_norm, qstat = qsmooth(dataset, aggregation='auto', threshold=0.2)
-xprs_norm.to_csv(output_file, sep='\t')
+def main():
+    args = parse_args()
+
+    xprs_path = os.path.realpath(args.xprs)
+    groups_path = os.path.realpath(args.groups)
+    output_path = os.path.realpath(args.output)
+
+    dataset = Dataset(xprs_path, groups_path, index_col=0, sep='\t')
+    xprs_norm, qstat = qsmooth(dataset, aggregation='auto', threshold=args.threshold)
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    xprs_norm.to_csv(output_path, sep='\t')
+
+if __name__ == "__main__":
+    main()
+
+
