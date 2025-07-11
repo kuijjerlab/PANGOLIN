@@ -27,19 +27,19 @@ option_list <- list(
         c("-e", "--combined_expression_file"),
             type = "character",
             default = NULL,
-            help = "Path to the the output combined expression file.",
+            help = "Path to the output combined expression file.",
             metavar = "character"),
     optparse::make_option(
         c("-g", "--group_file"),
         type = "character",
         default = NULL,
-        help = "Path to the the output group file.",
+        help = "Path to the output group file.",
         metavar = "character"),
     optparse::make_option(
         c("-f", "--feature_file"),
         type = "character",
         default = NULL,
-        help = "Path to the the output feature file.",
+        help = "Path to the output feature file.",
         metavar = "character")
 )
 
