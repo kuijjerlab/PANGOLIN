@@ -1,0 +1,22 @@
+name: mbatch_minimal  # Unique name for the environment
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults  # This prevents conda from using system packages
+dependencies:
+  - python=3.10.*
+  - pandas
+  - numpy>=1.22.3  
+  - matplotlib
+  - scanpy
+  - pillow
+  - jsonpickle
+  - requests
+  - xmltodict
+  - cryptography
+  - urllib3
+  - scipy
+  - numba
+  - pip
+  - pip:
+      - git+https://github.com/MD-Anderson-Bioinformatics/BatchEffectsPackage.git#egg=mbatch&subdirectory=apps/PyMBatch
