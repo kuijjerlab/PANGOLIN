@@ -60,26 +60,35 @@ load_clin_rdata <- function(clin_file) {
 
 
 
+
 #' Batch Process Cancer Data
 #'
 #' Processes gene expression data for a cancer type, performing PCA and batch
 #' effect analysis.
 #'
 #' @param tumor_type Character. Cancer type to process (e.g., "BRCA").
-#' @param log2exp Numeric matrix. Log2-transformed expression data.
-#' @param groups Data frame. Sample IDs and project/cancer type.
-#' @param batch_info Data frame. Batch info for each sample.
-#' @param clin Data frame. Clinical data (not used directly).
-#' @param cancer_output_directory Character. Output directory for results.
-#'
-#' @return List with cancer type, status, and error message (if any).
-#'
+#' @param log2exp Matrix/data.frame. Log2-transformed expression (genes x samples).
+#' @param groups Data.frame. Sample group info, columns V1 (IDs), V2 (project).
+#' @param batch_info Data.frame. Batch info, must have 'Samples' column.
+#' @param clin Data.frame. Clinical data (unused).
+#' @param nthreads Integer. Threads for permutation tests (default: 1).
+#' @param dsc_permutations Integer. DSC permutations for batch effect (default: 1000).
+#' @param min_batch_size Integer. Minimum batch size (default: 2).
+#' @param max_gene_count Integer. Max genes to include (default: 70000).
+#' @param data_version Character. Data version (default: "1.0").
+#' @param test_version Character. Test version (default: "1.0").
 
 batch_process_cancer <- function(tumor_type,
-                                 log2exp,
-                                 groups, 
-                                 batch_info, 
-                                 clin) {
+                                log2exp,
+                                groups, 
+                                batch_info, 
+                                clin,
+                                nthreads = 1,
+                                dsc_permutations = 1000,
+                                min_batch_size = 2,
+                                max_gene_count = 70000,
+                                data_version = "1.0",
+                                test_version = "1.0") {
     cat(sprintf("Processing cancer type: %s\n", tumor_type))
     cat(sprintf("Current working directory: %s\n", getwd()))
     result <- tryCatch({
@@ -139,13 +148,13 @@ batch_process_cancer <- function(tumor_type,
                              theListOfComponentsToPlot = c(1, 2),
                              theDoDSCFlag = TRUE,
                              theDoDscPermsFileFlag = TRUE,
-                             theDSCPermutations = 1000,
-                             theDSCThreads = 1,
-                             theMinBatchSize = 2,
-                             theDataVersion = "1.0",
-                             theTestVersion = "1.0",
+                             theDSCPermutations = dsc_permutations,
+                             theDSCThreads = nthreads,
+                             theMinBatchSize = min_batch_size,
+                             theDataVersion = data_version,
+                             theTestVersion = test_version,
                              theSeed = runif(1),
-                             theMaxGeneCount = 70000)
+                             theMaxGeneCount = max_gene_count)
         # Log success  
         cat(sprintf("Successfully processed %s\n", tumor_type))
         return(list(
