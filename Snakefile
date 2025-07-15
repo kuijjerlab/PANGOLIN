@@ -1,10 +1,35 @@
-## How to run this?
-## snakemake --cores 1 -np ### For dry run
-## module load snakemake/7.23.1-foss-2022a
-## module load R-bundle-Bioconductor/3.15-foss-2022a-R-4.2.1
-## source ~/.bashrc # conda version conda 24.1.2
-## rm -rf .snakemake/conda # remove conda cache
-## snakemake --use-conda --conda-frontend conda --cores 1 
+## PANGOLIN:
+## A comprehensive Snakemake pipeline for TCGA analysis of gene regulatory networks ##
+
+## How to run this pipeline:
+## 1. Dry run (check workflow): snakemake --cores 1 -np
+## 2. Load required modules: 
+##    - module load snakemake/7.23.1-foss-2022a
+##    - module load R-bundle-Bioconductor/3.15-foss-2022a-R-4.2.1
+## 3. Source conda: source ~/.bashrc  # conda version 24.1.2
+## 4. Clean conda cache: rm -rf .snakemake/conda
+## 5. Execute pipeline: snakemake --use-conda --conda-frontend conda --cores 1
+
+## PREREQUISITES:
+## Before running, ensure you have:
+## 1. PySNAIL package for normalization: 
+##    git clone git@github.com:kuijjerlab/PySNAIL.git (place in envs/)
+## 2. MBatch conda environment created from envs/mbatch.yaml:
+##    conda env create -f envs/mbatch.yaml
+## 3. All input data files specified in config.yaml
+
+## WORKFLOW OVERVIEW:
+## This pipeline performs comprehensive pan-cancer analysis including:
+## - Batch effect detection and visualization using MBatch
+## - Gene expression normalization with PySNAIL/qsmooth
+## - Consensus clustering analysis with COLA
+## - Survival analysis with Cox regression models  
+## - Pathway enrichment analysis with PORCUPINE
+## - t-SNE dimensionality reduction and visualization
+## - Clinical associations and immune infiltration analysis
+
+
+
 
 ## Libraries
 import os 
@@ -27,6 +52,7 @@ FIG_DIR = config["fig_dir"]
 
 ## From config ##
 CANCER_TYPES = config["cancer_types"]
+BATCH_FILE = config["batch_file"]
 DATATYPES = config["datatypes"]
 CLINICAL_FILE = config["clinical_file"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
@@ -59,6 +85,15 @@ OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_STAR
 GROUP_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_sample_groups.tsv")
 FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
 PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "pysnail_normalized_STAR_counts.tsv")
+
+# Outpu directory for the individual cancer expression files after normalization with PySNAIL ##
+
+OUTPUT_DIR_PYSNAIL_CANCER = os.path.join("data_all", "pysnail_normalized_individual_cancer_expression")
+
+# Batch effect analysis #
+PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_PYSNAIL_CANCER, "normalized_expression_TCGA-{cancer}.RData")
+CLINICAL_FILE_RDATA =   os.path.join("data_all", "clinical_curated", "clin.RData")
+BATCH_DIR_CANCER = os.path.join("data_all", "batch_analysis", "TCGA-{cancer}")
 
 
 
@@ -162,12 +197,14 @@ MAX_K = config["max_k"]
 # Rules ##
 rule all:
     input:
-        expand(OUTPUT_GDC_FILE, cancer = CANCER_TYPES),
-        expand(MARKER_FILE, cancer = CANCER_TYPES),
-        OUTPUT_EXP_COMBINED_FILE, 
-        GROUP_FILE,
-        FEATURE_FILE,
-        PYSNAIL_NORMALIZED_FILE
+        # expand(OUTPUT_GDC_FILE, cancer = CANCER_TYPES),
+        # expand(MARKER_FILE, cancer = CANCER_TYPES),
+        # OUTPUT_EXP_COMBINED_FILE, 
+        # GROUP_FILE,
+        # FEATURE_FILE,
+        # PYSNAIL_NORMALIZED_FILE,
+        # OUTPUT_DIR_PYSNAIL_CANCER,
+        expand(BATCH_DIR_CANCER, cancer = CANCER_TYPES)
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -217,72 +254,122 @@ rule all:
 ## and an empty output file indicating that the download was skipped
 ## The predownloaded GDC data is in the data_all/gdc_data_predownloaded directory
 
-rule download_gdc_data:
-    output:
-        out_file = OUTPUT_GDC_FILE,
-        marker = MARKER_FILE
-    message:
-        "Downloading GDC data for: {wildcards.cancer}"
-    params:
-        bin = config["bin"]
-    run:
-        if config["download_files"] == "YES":
-            shell(
-                """
-                Rscript {params.bin}/download_TCGA_expression.R \
-                    --tumor {wildcards.cancer} \
-                    --output_file {output.out_file}
-                """
-            )
-            with open(output.marker, "w") as f:
-                f.write("Downloaded\n")
-        else:
-            print(f"Skipping download for {wildcards.cancer}")
-            os.makedirs(os.path.dirname(output.marker), exist_ok=True)
-            with open(output.marker, "w") as f:
-                f.write("Download skipped.\n")
+# rule download_gdc_data:
+#     output:
+#         out_file = OUTPUT_GDC_FILE,
+#         marker = MARKER_FILE
+#     message:
+#         "Downloading GDC data for: {wildcards.cancer}"
+#     params:
+#         bin = config["bin"]
+#     run:
+#         if config["download_files"] == "YES":
+#             shell(
+#                 """
+#                 Rscript {params.bin}/download_TCGA_expression.R \
+#                     --tumor {wildcards.cancer} \
+#                     --output_file {output.out_file}
+#                 """
+#             )
+#             with open(output.marker, "w") as f:
+#                 f.write("Downloaded\n")
+#         else:
+#             print(f"Skipping download for {wildcards.cancer}")
+#             os.makedirs(os.path.dirname(output.marker), exist_ok=True)
+#             with open(output.marker, "w") as f:
+#                 f.write("Download skipped.\n")
 
-# Combine the data for all cancer types, including expression, groups and features ##
-rule combine_all_expression_data:
+# # Combine the data for all cancer types, including expression, groups and features ##
+# rule combine_all_expression_data:
+#     input:
+#         exp_dir = EXPRESSION_DIR_GDC
+#     output:
+#         combined_expression_file = OUTPUT_EXP_COMBINED_FILE,
+#         group_file = GROUP_FILE,
+#         feature_file = FEATURE_FILE
+#     message:
+#         "Combining all expression data for all cancers"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/combine_allTCGA_expression.R \
+#             --expression_dir {input.exp_dir} \
+#             --combined_expression_file {output.combined_expression_file} \
+#             --group_file {output.group_file} \
+#             --feature_file {output.feature_file}
+#         """
+# # SNAIL qsmooth normalization of the combined expression data #
+# # to run this rule,you need to download the pysnail package in envs 
+# # to download it git clone git@github.com:kuijjerlab/PySNAIL.git
+# rule qsmooth_normalization:
+#     input:
+#         xprs = OUTPUT_EXP_COMBINED_FILE,
+#         groups = GROUP_FILE
+#     output:
+#         norm = PYSNAIL_NORMALIZED_FILE
+#     params:
+#         threshold = 0.2,
+#         bin = config["bin"]
+#     conda:
+#         "envs/pysnail.yaml"
+#     shell:
+#         """
+#             python {params.bin}/normalize_with_pysnail.py {input.xprs} {input.groups} {output.norm} --threshold {params.threshold}
+#         """
+
+
+# rule split_expression_by_cancer:
+#     """
+#     Split the large normalized expression file into cancer-specific files.
+#     """
+#     input:
+#         expression_file = PYSNAIL_NORMALIZED_FILE,
+#         group_file = GROUP_FILE
+#     output:
+#         output_directory = directory(OUTPUT_DIR_PYSNAIL_CANCER)
+#     message:
+#         "Splitting expression data into cancer-specific files and saving them"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/save_normalized_exp_per_cancer.R \
+#             --expression_file {input.expression_file} \
+#             --group_file {input.group_file} \
+#             --output_dir {output.output_directory}
+#         """   
+## Check the batch effect in the expression data ##
+
+rule analyze_batch_effect:
     input:
-        exp_dir = EXPRESSION_DIR_GDC
-    output:
-        combined_expression_file = OUTPUT_EXP_COMBINED_FILE,
+        expression_file = PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC,
         group_file = GROUP_FILE,
+        batch_file = BATCH_FILE,
         feature_file = FEATURE_FILE,
-    message:
-        "Combining all expression data for all cancers"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/combine_allTCGA_expression.R \
-            --expression_dir {input.exp_dir} \
-            --combined_expression_file {output.combined_expression_file} \
-            --group_file {output.group_file} \
-            --feature_file {output.feature_file}
-        """
-# SNAIL qsmooth normalization of the combined expression data #
-# to run this rule,you need to download the pysnail package in envs 
-# to download it git clone git@github.com:kuijjerlab/PySNAIL.git
-rule qsmooth_normalization:
-    input:
-        xprs = OUTPUT_EXP_COMBINED_FILE,
-        groups = GROUP_FILE
+        clinical_file = CLINICAL_FILE_RDATA 
     output:
-        norm = PYSNAIL_NORMALIZED_FILE
+        output_dir = directory(BATCH_DIR_CANCER)
+    message:
+        "Analyzing batch effect for: {wildcards.cancer}"   
+
     params:
-        threshold = 0.2,
         bin = config["bin"]
+    # conda:
+    #     "envs/mbatch.yaml"
     conda:
-        "envs/pysnail.yaml"
+        "mbatch_minimal"
     shell:
         """
-            python {params.bin}/normalize_with_pysnail.py {input.xprs} {input.groups} {output.norm} --threshold {params.threshold}
+        Rscript {params.bin}/batch_effect_analysis.R \
+            --tumor_type {wildcards.cancer} \
+            --expression_file {input.expression_file} \
+            --group_file {input.group_file} \
+            --feature_file {input.feature_file} \
+            --batch_file {input.batch_file} \
+            --clin_file {input.clinical_file} \
+            --output_directory {output.output_dir}
         """
-
-
-
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
     input:
