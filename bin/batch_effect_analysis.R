@@ -8,8 +8,6 @@ if (python_env != "" && python_env != "None") {
     stop("No conda environment detected. Make sure Snakemake is using --use-conda")
 }
 
-# Sys.setenv(MBATCH_PYTHON_ENV = "/storage/kuijjerarea/tatiana/anaconda3/envs/mbatch_minimal")
-
 # require package installation
 # devtools::install_github("MD-Anderson-Bioinformatics/BatchEffectsPackage/apps/MBatch", force = TRUE)
 
@@ -67,6 +65,12 @@ option_list <- list(
         help = "Path to the clinical file.",
         metavar = "character"),
     optparse::make_option(
+        c("-n", "--nthreads"),
+        type = "integer",
+        default = 1,
+        help = "Number of threads for permutation tests (default: 1).",
+        metavar = "integer"),
+    optparse::make_option(
         c("-o", "--output_directory"),
         type = "character",
         default = NULL,
@@ -86,7 +90,7 @@ FEATURE_FILE <- opt$feature_file
 BATCH_FILE <- opt$batch_file
 CLIN_FILE <- opt$clin_file
 OUTPUT_DIR <- opt$output_directory
-
+NTHREADS <- opt$nthreads
 
 ### source functions ###
 source("bin/analyze_batch_fn.R")
@@ -120,7 +124,8 @@ batch_process_cancer(tumor_type = TUMOR_TYPE,
                                  log2exp = log2exp,
                                  groups = groups, 
                                  batch_info = batch_info, 
-                                 clin = clin)
+                                 clin = clin,
+                                 nthreads = NTHREADS)
 
 
 
