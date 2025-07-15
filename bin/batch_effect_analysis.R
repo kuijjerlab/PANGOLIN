@@ -47,12 +47,6 @@ option_list <- list(
         help = "Path to the group file.",
         metavar = "character"),
     optparse::make_option(
-        c("-f", "--feature_file"),
-        type = "character",
-        default = NULL,
-        help = "Path to the feature file.",
-        metavar = "character"),
-    optparse::make_option(
         c("-b", "--batch_file"),
         type = "character",
         default = NULL,
@@ -86,7 +80,6 @@ opt <- optparse::parse_args(opt_parser)
 TUMOR_TYPE <- opt$tumor_type
 EXPRESSION_FILE <- opt$expression_file
 GROUP_FILE <- opt$group_file
-FEATURE_FILE <- opt$feature_file
 BATCH_FILE <- opt$batch_file
 CLIN_FILE <- opt$clin_file
 OUTPUT_DIR <- opt$output_directory
@@ -98,10 +91,6 @@ source("bin/analyze_batch_fn.R")
 cat("Loading expression file...\n")
 load(EXPRESSION_FILE, exp <- new.env())
 log2exp <- exp[['exp_proj']]
-
-cat("Loading other data files...\n")
-load(FEATURE_FILE, features <- new.env())
-features <- features[['features']]
 
 groups <- fread(GROUP_FILE, head = F)
 batch_info <- load_batch(BATCH_FILE)
@@ -124,7 +113,6 @@ batch_process_cancer(tumor_type = TUMOR_TYPE,
                                  log2exp = log2exp,
                                  groups = groups, 
                                  batch_info = batch_info, 
-                                 clin = clin,
                                  nthreads = NTHREADS)
 
 
