@@ -82,8 +82,7 @@ batch_process_cancer <- function(tumor_type,
                                  clin,
                                  cancer_output_directory) {
     cat(sprintf("Processing cancer type: %s\n", tumor_type))
-    # Change to cancer-specific directory
-    setwd(cancer_output_directory)
+    cat(sprintf("Current working directory: %s\n", getwd()))
     result <- tryCatch({
         proj <- paste("TCGA", tumor_type, sep = "-")
         samples <- groups$V1[groups$V2 == proj]
@@ -135,7 +134,7 @@ batch_process_cancer <- function(tumor_type,
         myData <- new("BEA_DATA", as.matrix(exp_proj), batches, data.frame())
         PCA_Regular_Structures(theData = myData,
                              theTitle = paste('PCA', tumor_type, sep = '_'),
-                             theOutputDir = cancer_output_directory,
+                             theOutputDir = ".",
                              theBatchTypeAndValuePairsToRemove = NULL,
                              theBatchTypeAndValuePairsToKeep = NULL,
                              theListOfComponentsToPlot = c(1, 2),
