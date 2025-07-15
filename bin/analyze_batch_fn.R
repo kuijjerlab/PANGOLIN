@@ -79,8 +79,7 @@ batch_process_cancer <- function(tumor_type,
                                  log2exp,
                                  groups, 
                                  batch_info, 
-                                 clin,
-                                 cancer_output_directory) {
+                                 clin) {
     cat(sprintf("Processing cancer type: %s\n", tumor_type))
     cat(sprintf("Current working directory: %s\n", getwd()))
     result <- tryCatch({
