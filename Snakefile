@@ -346,7 +346,6 @@ rule analyze_batch_effect:
         expression_file = PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC,
         group_file = GROUP_FILE,
         batch_file = BATCH_FILE,
-        feature_file = FEATURE_FILE,
         clinical_file = CLINICAL_FILE_RDATA 
     output:
         output_dir = directory(BATCH_DIR_CANCER)
@@ -354,7 +353,8 @@ rule analyze_batch_effect:
         "Analyzing batch effect for: {wildcards.cancer}"   
 
     params:
-        bin = config["bin"]
+        bin = config["bin"],
+        nthreads = config["number_cores_mbatch"]
     # conda:
     #     "envs/mbatch.yaml"
     conda:
@@ -365,9 +365,9 @@ rule analyze_batch_effect:
             --tumor_type {wildcards.cancer} \
             --expression_file {input.expression_file} \
             --group_file {input.group_file} \
-            --feature_file {input.feature_file} \
             --batch_file {input.batch_file} \
             --clin_file {input.clinical_file} \
+            --nthreads {params.nthreads} \
             --output_directory {output.output_dir}
         """
 ## Extract clinical data for each cancer type ##

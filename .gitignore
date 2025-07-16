@@ -13,3 +13,5 @@ Snakefile_old
 data_all/gdc_data_predownloaded
 data_all/combined_gdc_data
 envs/PySNAIL/
+data_all/pysnail_normalized_individual_cancer_expression
+data_all/batch_analysis

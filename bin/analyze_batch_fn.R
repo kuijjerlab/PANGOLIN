@@ -82,13 +82,13 @@ batch_process_cancer <- function(tumor_type,
                                 log2exp,
                                 groups, 
                                 batch_info, 
-                                clin,
                                 nthreads = 1,
                                 dsc_permutations = 1000,
                                 min_batch_size = 2,
                                 max_gene_count = 70000,
                                 data_version = "1.0",
-                                test_version = "1.0") {
+                                test_version = "1.0",
+                                random_seed = 314) {
     cat(sprintf("Processing cancer type: %s\n", tumor_type))
     cat(sprintf("Current working directory: %s\n", getwd()))
     result <- tryCatch({
@@ -108,7 +108,6 @@ batch_process_cancer <- function(tumor_type,
         }
         # Filter expression data for the current cancer type
         exp_proj <- log2exp[, colnames(log2exp) %in% samples, drop = FALSE]
-        exp_proj <- exp_proj[rowSums(exp_proj[]) > 0, , drop = FALSE]
         batches <- batch_info[batch_info$Samples %in% colnames(exp_proj), ]
         exp_proj <- 
             exp_proj[, match(batches$Samples, colnames(exp_proj)), drop = FALSE]
@@ -153,7 +152,7 @@ batch_process_cancer <- function(tumor_type,
                              theMinBatchSize = min_batch_size,
                              theDataVersion = data_version,
                              theTestVersion = test_version,
-                             theSeed = runif(1),
+                             theSeed = random_seed,
                              theMaxGeneCount = max_gene_count)
         # Log success  
         cat(sprintf("Successfully processed %s\n", tumor_type))

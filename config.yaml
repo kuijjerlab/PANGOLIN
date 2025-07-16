@@ -13,12 +13,15 @@ gmt_file: "data_all/MSigDb/c2.cp.reactome.v7.1.symbols.gmt"
 pathways_hierarchy_file: "data_all/MSigDb/pathways_hierarchy.txt"
 pathways_hsa_id_file: "data_all/MSigDb/reactome_pathways_hsa_id.txt"
 list_of_pathways_file: "data_all/MSigDb/list_of_pathways.txt"
+batch_file: "data_all/samples/batch_information.txt"
 
 cancer_types: ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "COAD", "DLBC", "ESCA", "GBM",
               "HNSC", "KICH", "KIRC", "KIRP", "LAML", "LGG", "LIHC", "LUAD", "LUSC", "MESO",
               "OV", "PAAD", "PCPG", "PRAD", "READ", "SARC", "SKCM", "STAD", "TGCT", "THCA",
               "THYM", "UCEC", "UCS", "UVM"]
 
+
+number_cores_mbatch: 4
 download_files: "NO" # Set to "YES" to download the expression files (takes very long time)
 datatypes: ["expression", "indegree"]
 threshold_cox: [20, 50]

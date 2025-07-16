@@ -15,14 +15,14 @@ option_list <- list(
         c("-e", "--expression_file"),
         type = "character",
         default = NULL,
-        help = "Path to the normalized expression file (TSV format).",
+        help = "Path to the normalized expression file.",
         metavar = "character"
     ),
     optparse::make_option(
         c("-g", "--group_file"),
         type = "character",
         default = NULL,
-        help = "Path to the sample group file (TSV format).",
+        help = "Path to the sample group file.",
         metavar = "character"
     ),
     optparse::make_option(

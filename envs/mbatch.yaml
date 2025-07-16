@@ -7,7 +7,7 @@ dependencies:
   - python=3.10.*
   - pandas
   - numpy>=1.22.3  
-  - matplotlib
+  - matplotlib=3.5.3
   - scanpy
   - pillow
   - jsonpickle
