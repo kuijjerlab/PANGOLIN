@@ -216,3 +216,92 @@ combine_mbatch_results <- function(output_dir, cancer) {
     }
     return(dsc_data_all)
 }
+
+
+#' Plot DSC values for batches/cancers with faceting and pagination.
+#'
+#' Creates a bar plot of DSC values for batches, faceted by cancer type and
+#' paginated. Horizontal lines show DSC thresholds. Optionally saves to PDF.
+#'
+#' @param data Data frame with 'batch', 'DSC', and 'cancer' columns.
+#' @param output_file Optional PDF file path for saving the plot.
+#' @param colors Optional vector of fill colors for batches.
+#' @param dsc_thresholds Numeric vector of DSC threshold lines.
+#' @param plot_width Plot width (in inches).
+#' @param plot_height Plot height (in inches).
+#' @param facet_ncol Facet grid columns.
+#' @param facet_nrow Facet grid rows.
+#' @param page_num Facet page number.
+#' @param text_size Axis text size.
+#' @param line_size Threshold line thickness.
+#' @param show_legend Logical, show legend.
+#' @param angle_x_text X-axis text angle.
+#'
+#' @return ggplot object for DSC bar plot.
+#'
+#' @examples
+#' # plot_mbatch_dsc(data = my_data, output_file = "dsc_plot.pdf")
+#'
+#' @import ggplot2
+#' @importFrom ggforce facet_wrap_paginate
+plot_mbatch_dsc <- function(
+                data,
+                output_file = NULL,
+                colors = NULL,
+                dsc_thresholds = c(0.6, 1.0),
+                plot_width = 8,
+                plot_height = 8,
+                facet_ncol = 6,
+                facet_nrow = 6,
+                page_num = 1,
+                text_size = 10,
+                line_size = 0.5,
+                show_legend = FALSE,
+                angle_x_text = 90
+            ) {
+    if (is.null(colors)) {
+        colors <- c(
+            "#c85735", "#7c5fcd", "#83a23e", "#cc53ad", "#4eaa76",
+            "#d33f63", "#5792ce", "#c28c42", "#a679bf", "#c06a7e"
+        )
+    }
+    data$DSC <- as.numeric(data$DSC)
+    p <- ggplot(
+        data,
+        aes(x = batch, y = DSC, fill = batch)
+    ) +
+        geom_bar(stat = "identity") +
+        theme_bw() +
+        scale_fill_manual(values = colors) +
+        theme(
+            axis.text.x = element_text(
+                angle = angle_x_text,
+                vjust = 0.5,
+                hjust = 1,
+                size = text_size
+            ),
+            legend.direction = "horizontal",
+            legend.position = if (show_legend) "bottom" else "none"
+        )
+    for (threshold in dsc_thresholds) {
+        p <- p + geom_hline(
+            yintercept = threshold,
+            linetype = "dashed",
+            color = "black",
+            size = line_size
+        )
+    }
+    p <- p + facet_wrap_paginate(
+        ~ cancer,
+        ncol = facet_ncol,
+        nrow = facet_nrow,
+        page = page_num
+    )
+    if (!is.null(output_file)) {
+        pdf(output_file, width = plot_width, height = plot_height)
+        print(p)
+        dev.off()
+        cat("Plot saved to:", output_file, "\n")
+    }
+    return(p)
+}
