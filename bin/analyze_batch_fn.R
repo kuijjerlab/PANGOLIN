@@ -171,3 +171,48 @@ batch_process_cancer <- function(tumor_type,
     })
     return(result)
 }
+
+
+#' Combine DSC results from multiple batches for a cancer type.
+#'
+#' Reads PCA annotation files from batch directories in output_dir/cancer.
+#' Extracts DSC values and p-values for each batch, combines into a data.table.
+#'
+#' @param output_dir Path to output directory with batch results.
+#' @param cancer Name of cancer type subdirectory to process.
+#'
+#' @return data.table with DSC values and p-values for each batch.
+#'
+#' @import data.table
+#' @importFrom data.table fread
+combine_mbatch_results <- function(output_dir, cancer) {
+    files <- list.files(file.path(output_dir, cancer))
+    files <- files[!grepl("ALL__CompListDSC.RData|Purity_singscore", files)]
+    dsc_data_all <- NULL
+    for (batch in files) {
+        annotation_file <- file.path(
+            output_dir, cancer, batch, 
+            "ManyToMany", "1.0", "1.0", "PCAAnnotations.tsv"
+        )
+        if (!file.exists(annotation_file)) {
+            warning(paste("File not found:", annotation_file))
+            next
+        }
+        full_data <- fread(annotation_file)
+        dsc_data <- data.table(
+            "Annotation" = c("DSC all", "DSC (1,2)"),
+            "DSC" = c(
+                full_data[Annotation == "Disp. Sep. Crit. (DSC)", Value],
+                full_data[Annotation == "Disp. Sep. Crit. (DSC) (1,2)", Value]
+            ),
+            "p_value" = c(
+                full_data[Annotation == "DSC pvalue", Value],
+                full_data[Annotation == "DSC pvalue(1,2)", Value]
+            )
+        )
+        dsc_data$batch <- batch
+        dsc_data$cancer <- cancer
+        dsc_data_all <- rbind(dsc_data, dsc_data_all)
+    }
+    return(dsc_data_all)
+}
