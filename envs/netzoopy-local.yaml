@@ -1,0 +1,21 @@
+name: netzoopy-local
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.7
+  - numpy>=1.19.2
+  - pandas
+  - scipy>=1.5.3
+  - matplotlib>=3.3.4
+  - networkx>=2.6.3
+  - python-igraph  # conda package name for igraph
+  - joblib>=1.1.0
+  - statsmodels>=0.12.2
+  - click
+  - h5py
+  - pytables  # conda package name for tables
+  - pip
+  - pip:
+      - -e ./envs/netZooPy
