@@ -66,6 +66,7 @@ PATHWAYS_HIERARCHY_FILE = config["pathways_hierarchy_file"]
 PATHWAYS_HSA_ID_FILE = config["pathways_hsa_id_file"]
 LIST_PATHWAYS_FILE = config["list_of_pathways_file"]
 
+#####
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 PORCUPINE_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "pcp_results_with_variance_{cancer}.txt")
 TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
@@ -79,22 +80,27 @@ OUTPUT_GDC_FILE = os.path.join(OUTPUT_GDC_DIR, "TCGA-{cancer}.RData")
 MARKER_FILE =  os.path.join(OUTPUT_GDC_DIR, "{cancer}.SKIPPED.txt") # in case if we don't want to download the GDC data
 
 # Output directory for the combined downloaded GDC data ##
-EXPRESSION_DIR_GDC = os.path.join("data_all", "gdc_data_predownloaded")
+EXPRESSION_DIR_GDC = os.path.join("data_all", "gdc_data_predownloaded") # directory for predownloaded GDC data
 OUTPUT_DIR_DOWNLOAD_COMBINED = os.path.join("data_all", "combined_gdc_data")
 OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_STAR_counts.tsv")
 GROUP_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_sample_groups.tsv")
 FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
 PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "pysnail_normalized_STAR_counts.tsv")
 
-# Outpu directory for the individual cancer expression files after normalization with PySNAIL ##
+# Output directory for the individual cancer expression files after normalization with PySNAIL ##
 
 OUTPUT_DIR_PYSNAIL_CANCER = os.path.join("data_all", "pysnail_normalized_individual_cancer_expression")
 
-# Batch effect analysis #
+# BATCH EFFECT ANALYSIS #
 PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_PYSNAIL_CANCER, "normalized_expression_TCGA-{cancer}.RData")
 CLINICAL_FILE_RDATA =   os.path.join("data_all", "clinical_curated", "clin.RData")
-BATCH_DIR_CANCER = os.path.join("data_all", "batch_analysis", "TCGA-{cancer}")
+BATCH_DIR_ALL_CANCERS = os.path.join("data_all", "batch_analysis")
+BATCH_DIR_CANCER = os.path.join(BATCH_DIR_ALL_CANCERS, "TCGA-{cancer}")
+BATCH_EFFECT_PDF = os.path.join("figs", "MBatch_DSC.pdf")
 
+# PANDA + LIONESS NETWORK INFERENCE #
+NETWORKS_DIR = os.path.join("data_all", "networks")
+PANDA_NETWORK_FILE = os.path.join(NETWORKS_DIR, "panda_net.txt")
 
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
@@ -204,7 +210,10 @@ rule all:
         # FEATURE_FILE,
         # PYSNAIL_NORMALIZED_FILE,
         # OUTPUT_DIR_PYSNAIL_CANCER,
-        expand(BATCH_DIR_CANCER, cancer = CANCER_TYPES)
+        # expand(BATCH_DIR_CANCER, cancer = CANCER_TYPES),
+        # BATCH_EFFECT_PDF
+        PANDA_NETWORK_FILE,
+        NETWORKS_DIR
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -318,6 +327,49 @@ rule all:
 #             python {params.bin}/normalize_with_pysnail.py {input.xprs} {input.groups} {output.norm} --threshold {params.threshold}
 #         """
 
+# PANDA/LIONESS network inference using netZooPy
+rule run_panda_lioness:
+    """
+    Run PANDA and LIONESS network inference using netZooPy.
+    PANDA builds an initial regulatory network and LIONESS estimates 
+    sample-specific networks for each individual sample.
+    """
+    input:
+        exp_file = EXPRESSION_FILE,
+        motif_file = MOTIF_FILE,
+        ppi_file = PPI_FILE
+    output:
+        panda_net = PANDA_NETWORK_FILE,
+        network_dir = directory(NETWORKS_DIR)
+    params:
+        bin = config["bin"],
+        start_sample = 1,
+        end_sample = 4,  # adjust based on your sample count
+        computing = "cpu",  # change to "gpu" if you have GPU support
+        random_seed = 10
+    conda:
+        "envs/netzoopy-local.yaml"
+    shell:
+        """
+        set +u
+        unset PYTHONPATH
+        unset PYTHONHOME
+        export PYTHONNOUSERSITE=1
+        
+        # Create networks directory
+        mkdir -p data_all/networks/lioness_networks
+        
+        python {params.bin}/run_panda_lioness.py \
+            --exp_file {input.exp_file} \
+            --motif_file {input.motif_file} \
+            --ppi_file {input.ppi_file} \
+            --output_dir {output.network_dir} \
+            --panda_output {output.panda_net} \
+            --start_sample {params.start_sample} \
+            --end_sample {params.end_sample} \
+            --computing {params.computing} \
+            --random_seed {params.random_seed}
+        """
 
 # rule split_expression_by_cancer:
 #     """
@@ -340,7 +392,7 @@ rule all:
 #             --output_dir {output.output_directory}
 #         """   
 ## Check the batch effect in the expression data ##
-
+## This takes a while to run ##
 rule analyze_batch_effect:
     input:
         expression_file = PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC,
@@ -355,8 +407,6 @@ rule analyze_batch_effect:
     params:
         bin = config["bin"],
         nthreads = config["number_cores_mbatch"]
-    # conda:
-    #     "envs/mbatch.yaml"
     conda:
         "mbatch_minimal"
     shell:
@@ -370,6 +420,24 @@ rule analyze_batch_effect:
             --nthreads {params.nthreads} \
             --output_directory {output.output_dir}
         """
+
+## Create a PDF figure for the batch effect analysis ##
+rule plot_mbatch_results:
+    input:
+        batch_dir = BATCH_DIR_ALL_CANCERS
+    output:
+        pdf_file = BATCH_EFFECT_PDF
+    message:
+        "Creating batch effect figure"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/plot_mbatch_results.R \
+            --batch_results_dir {input.batch_dir} \
+            --output_file {output.pdf_file}
+        """
+
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
     input:
