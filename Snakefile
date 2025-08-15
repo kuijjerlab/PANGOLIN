@@ -100,7 +100,7 @@ BATCH_EFFECT_PDF = os.path.join("figs", "MBatch_DSC.pdf")
 
 # PANDA + LIONESS NETWORK INFERENCE #
 NETWORKS_DIR = os.path.join("data_all", "networks")
-PANDA_NETWORK_FILE = os.path.join(NETWORKS_DIR, "panda_net.txt")
+# PANDA_NETWORK_FILE = os.path.join(NETWORKS_DIR, "panda_net.txt")
 
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
@@ -212,7 +212,6 @@ rule all:
         # OUTPUT_DIR_PYSNAIL_CANCER,
         # expand(BATCH_DIR_CANCER, cancer = CANCER_TYPES),
         # BATCH_EFFECT_PDF
-        PANDA_NETWORK_FILE,
         NETWORKS_DIR
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
@@ -339,14 +338,14 @@ rule run_panda_lioness:
         motif_file = MOTIF_FILE,
         ppi_file = PPI_FILE
     output:
-        panda_net = PANDA_NETWORK_FILE,
         network_dir = directory(NETWORKS_DIR)
     params:
         bin = config["bin"],
         start_sample = 1,
-        end_sample = 4,  # adjust based on your sample count
+        end_sample = 10,  # adjust based on your sample count
         computing = "cpu",  # change to "gpu" if you have GPU support
-        random_seed = 10
+        random_seed = 10,
+        ncores = 10
     conda:
         "envs/netzoopy-local.yaml"
     shell:
@@ -357,18 +356,18 @@ rule run_panda_lioness:
         export PYTHONNOUSERSITE=1
         
         # Create networks directory
-        mkdir -p data_all/networks/lioness_networks
+        mkdir -p {output.network_dir}
         
         python {params.bin}/run_panda_lioness.py \
             --exp_file {input.exp_file} \
             --motif_file {input.motif_file} \
             --ppi_file {input.ppi_file} \
             --output_dir {output.network_dir} \
-            --panda_output {output.panda_net} \
             --start_sample {params.start_sample} \
             --end_sample {params.end_sample} \
             --computing {params.computing} \
-            --random_seed {params.random_seed}
+            --random_seed {params.random_seed} \
+            --ncores {params.ncores}
         """
 
 # rule split_expression_by_cancer:
