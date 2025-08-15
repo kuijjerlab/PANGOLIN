@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument("--computing", type=str, default="cpu", choices=["cpu", "gpu"],
                        help="Computing mode: cpu or gpu (default: cpu)")
     parser.add_argument("--ncores", type=int, default=1,
-                       help="Number of cores to use (default: 1)"), # this is only for cpu
+                       help="Number of cores to use (only applicable with --computing cpu, default: 1)")
     parser.add_argument("--save_memory", action="store_true", 
                        help="Enable memory saving mode")
     parser.add_argument("--random_seed", type=int, default=10, 
@@ -34,6 +34,11 @@ def parse_args():
 
 def main():
     args = parse_args()
+    
+    # Validate arguments
+    if args.computing == "gpu" and args.ncores > 1:
+        print("Warning: --ncores parameter is ignored when using GPU computing mode")
+        print("GPU mode uses all available GPU cores automatically")
     
     # Set random seed for reproducibility
     random.seed(args.random_seed)
@@ -54,12 +59,13 @@ def main():
     
     # Run PANDA
     print("Running PANDA network inference...")
+
     panda_obj = Panda(exp_df, motif_file, ppi_file, 
-                      save_tmp=False, 
-                      save_memory=args.save_memory, 
-                      remove_missing=False,
-                      keep_expression_matrix=True, 
-                      computing=args.computing)
+                          save_tmp=False, 
+                          save_memory=args.save_memory, 
+                          remove_missing=False,
+                          keep_expression_matrix=True, 
+                          computing=args.computing)
     
     # Save PANDA results
     panda_output_path = os.path.join(output_dir, args.panda_output)
@@ -82,15 +88,27 @@ def main():
         # Run LIONESS for each sample
         for sample_idx in range(start_sample, end_sample + 1):
             print(f"Processing sample {sample_idx}/{end_sample}")
-            lioness_obj = Lioness(panda_obj, 
-                                computing=args.computing, 
-                                start=sample_idx, 
-                                end=sample_idx, 
-                                save_single=True, 
-                                save_dir=output_dir,
-                                save_fmt='txt', 
-                                save_precision=args.lioness_precision, 
-                                export_filename=None)
+            if args.computing == "cpu":
+                lioness_obj = Lioness(panda_obj, 
+                                    computing=args.computing, 
+                                    ncores=args.ncores,
+                                    start=sample_idx, 
+                                    end=sample_idx, 
+                                    save_single=True, 
+                                    save_dir=output_dir,
+                                    save_fmt='txt', 
+                                    precision=args.lioness_precision, 
+                                    export_filename=None)
+            else:  # GPU mode
+                lioness_obj = Lioness(panda_obj, 
+                                    computing=args.computing, 
+                                    start=sample_idx, 
+                                    end=sample_idx, 
+                                    save_single=True, 
+                                    save_dir=output_dir,
+                                    save_fmt='txt', 
+                                    precision=args.lioness_precision, 
+                                    export_filename=None)
             
             # Clean up memory
             del lioness_obj
