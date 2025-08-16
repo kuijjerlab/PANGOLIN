@@ -55,6 +55,7 @@ CANCER_TYPES = config["cancer_types"]
 BATCH_FILE = config["batch_file"]
 DATATYPES = config["datatypes"]
 CLINICAL_FILE = config["clinical_file"]
+CLINICAL_FILE_RDATA = config["clinical_file_rdata"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
 PPI_FILE = config["ppi_file"]
 MOTIF_FILE = config["motif_file"]
@@ -93,7 +94,6 @@ OUTPUT_DIR_PYSNAIL_CANCER = os.path.join("data_all", "pysnail_normalized_individ
 
 # BATCH EFFECT ANALYSIS #
 PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_PYSNAIL_CANCER, "normalized_expression_TCGA-{cancer}.RData")
-CLINICAL_FILE_RDATA =   os.path.join("data_all", "clinical_curated", "clin.RData")
 BATCH_DIR_ALL_CANCERS = os.path.join("data_all", "batch_analysis")
 BATCH_DIR_CANCER = os.path.join(BATCH_DIR_ALL_CANCERS, "TCGA-{cancer}")
 BATCH_EFFECT_PDF = os.path.join("figs", "MBatch_DSC.pdf")
