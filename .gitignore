@@ -1,4 +1,4 @@
-/resources_needed/
+/resources/priors/
 /data_individual_cancers/
 .snakemake/
 Snakefile_old
