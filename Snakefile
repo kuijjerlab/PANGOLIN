@@ -99,11 +99,12 @@ OUTPUT_DIR_PYSNAIL_CANCER = os.path.join(OUTPUT_DIR_ALL_CANCERS, "pysnail_normal
 PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_PYSNAIL_CANCER, "normalized_expression_TCGA-{cancer}.RData")
 BATCH_DIR_ALL_CANCERS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_analysis")
 BATCH_DIR_CANCER = os.path.join(BATCH_DIR_ALL_CANCERS, "TCGA-{cancer}")
-BATCH_EFFECT_PDF = os.path.join("figs", "MBatch_DSC.pdf")
-
+BATCH_EFFECT_PDF = os.path.join(FIG_DIR, "MBatch_DSC.pdf")
+BATCH_CORRECTED_EXPRESSION_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_corrected_expression", "batch_corrected_expression_all_cancers.RData")
+ 
 # PANDA + LIONESS NETWORK INFERENCE #
 NETWORKS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "networks")
-# PANDA_NETWORK_FILE = os.path.join(NETWORKS_DIR, "panda_net.txt")
+
 
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
@@ -170,8 +171,8 @@ FIG_PC_IMMUNE_CORRELATION = os.path.join(FIG_DIR, "PC_immune_correlations_cibers
 
 TUMOR_RESULTS_PD1_GROUPS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_categorical_results.txt")
 TUMOR_RESULTS_PD1_NUMERIC = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_numeric_results.txt")
-FIGURE_PC_CLIN_ASSOCIATIONS = os.path.join("figs", "PC_all_features_clin_associations.pdf")
-FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS = os.path.join("figs", "PC_individual_features_clin_associations.pdf")
+FIGURE_PC_CLIN_ASSOCIATIONS = os.path.join(FIG_DIR, "PC_all_features_clin_associations.pdf")
+FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS = os.path.join(FIG_DIR, "PC_individual_features_clin_associations.pdf")
 
 ## Output Files for multivariate regularized Cox on PDL1-edges ##
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
@@ -187,9 +188,9 @@ FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS = os.path.join(FIG_DIR, "TSNE_all_canc
 
 # producing summary table figure for PD1 pathway 
 #input (manually created)
-SUMMARY_TABLE_PD1 = os.path.join("data_all", "clinical_associations_PD1", "summary_table_PD1.txt")
+SUMMARY_TABLE_PD1 = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "summary_table_PD1.txt")
 #output
-OUTPUT_HTML_TABLE_PD1 = os.path.join("figs", "summary_table_PD1.html")
+OUTPUT_HTML_TABLE_PD1 = os.path.join(FIG_DIR, "summary_table_PD1.html")
 
 ## Parameters ##
 ALPHA = config["alpha"]
@@ -214,8 +215,9 @@ rule all:
         # PYSNAIL_NORMALIZED_FILE,
         # OUTPUT_DIR_PYSNAIL_CANCER,
         # expand(BATCH_DIR_CANCER, cancer = CANCER_TYPES),
-        # BATCH_EFFECT_PDF
-        NETWORKS_DIR
+        # BATCH_EFFECT_PDF,
+        BATCH_CORRECTED_EXPRESSION_FILE
+        # NETWORKS_DIR
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -330,51 +332,6 @@ rule all:
 #         """
 
 
-
-# PANDA/LIONESS network inference using netZooPy
-rule run_panda_lioness:
-    """
-    Run PANDA and LIONESS network inference using netZooPy.
-    PANDA builds an initial regulatory network and LIONESS estimates 
-    sample-specific networks for each individual sample.
-    """
-    input:
-        exp_file = EXPRESSION_FILE,
-        motif_file = MOTIF_FILE,
-        ppi_file = PPI_FILE
-    output:
-        network_dir = directory(NETWORKS_DIR)
-    params:
-        bin = config["bin"],
-        start_sample = 1,
-        end_sample = 10,  # adjust based on your sample count
-        computing = "cpu",  # change to "gpu" if you have GPU support
-        random_seed = 10,
-        ncores = 10
-    conda:
-        "workflow/envs/netzoopy-local.yaml"
-    shell:
-        """
-        set +u
-        unset PYTHONPATH
-        unset PYTHONHOME
-        export PYTHONNOUSERSITE=1
-        
-        # Create networks directory
-        mkdir -p {output.network_dir}
-        
-        python {params.bin}/run_panda_lioness.py \
-            --exp_file {input.exp_file} \
-            --motif_file {input.motif_file} \
-            --ppi_file {input.ppi_file} \
-            --output_dir {output.network_dir} \
-            --start_sample {params.start_sample} \
-            --end_sample {params.end_sample} \
-            --computing {params.computing} \
-            --random_seed {params.random_seed} \
-            --ncores {params.ncores}
-        """
-
 # rule split_expression_by_cancer:
 #     """
 #     Split the large normalized expression file into cancer-specific files.
@@ -442,8 +399,73 @@ rule plot_mbatch_results:
             --output_file {output.pdf_file}
         """
 
+## BATCH correction
+rule correct_batch_effect:
+    input:
+        expression_file = PYSNAIL_NORMALIZED_FILE,,
+        group_file = GROUP_FILE,
+        batch_file = BATCH_FILE,
+        clinical_file = CLIN_FILE
+    output:
+        batch_corrected_expression_file = BATCH_CORRECTED_EXPRESSION_FILE
+    message:
+        "Correcting batch effect in expression data"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/combat_correct.R \
+            --expression_file {input.expression_file} \
+            --group_file {input.group_file} \
+            --batch_file {input.batch_file} \
+            --clin_file {input.clinical_file} \
+            --output_file {output.batch_corrected_expression_file}
+        """
 
 
+# PANDA/LIONESS network inference using netZooPy
+rule run_panda_lioness:
+    """
+    Run PANDA and LIONESS network inference using netZooPy.
+    PANDA builds an initial regulatory network and LIONESS estimates 
+    sample-specific networks for each individual sample.
+    """
+    input:
+        exp_file = EXPRESSION_FILE,
+        motif_file = MOTIF_FILE,
+        ppi_file = PPI_FILE
+    output:
+        network_dir = directory(NETWORKS_DIR)
+    params:
+        bin = config["bin"],
+        start_sample = 1,
+        end_sample = 10,  # adjust based on your sample count
+        computing = "cpu",  # change to "gpu" if you have GPU support
+        random_seed = 10,
+        ncores = 10
+    conda:
+        "workflow/envs/netzoopy-local.yaml"
+    shell:
+        """
+        set +u
+        unset PYTHONPATH
+        unset PYTHONHOME
+        export PYTHONNOUSERSITE=1
+        
+        # Create networks directory
+        mkdir -p {output.network_dir}
+        
+        python {params.bin}/run_panda_lioness.py \
+            --exp_file {input.exp_file} \
+            --motif_file {input.motif_file} \
+            --ppi_file {input.ppi_file} \
+            --output_dir {output.network_dir} \
+            --start_sample {params.start_sample} \
+            --end_sample {params.end_sample} \
+            --computing {params.computing} \
+            --random_seed {params.random_seed} \
+            --ncores {params.ncores}
+        """
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
