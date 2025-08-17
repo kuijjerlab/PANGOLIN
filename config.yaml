@@ -34,7 +34,10 @@ number_cores_mbatch: 4
 download_files: "NO" # Set to "YES" to download the expression files (takes very long time)
 datatypes: ["expression", "indegree"]
 threshold_cox: [20, 50]
-output_dir: "data_individual_cancers"
+output_dir: "results"
+output_dir_individual_cancers: "data_individual_cancers"
+output_dir_all_cancers: "data_all"
+
 fig_dir: "figs"
 alpha: 0.3
 number_cores: 20

@@ -48,6 +48,8 @@ configfile: CONFIG_PATH
 
 ## Directories ##
 OUTPUT_DIR = config["output_dir"]
+OUTPUT_DIR_INDIVIDUAL_CANCERS = config["output_dir_individual_cancers"]
+OUTPUT_DIR_ALL_CANCERS = config["output_dir_all_cancers"]
 FIG_DIR = config["fig_dir"]
 
 ## From config ##
@@ -68,21 +70,22 @@ PATHWAYS_HSA_ID_FILE = config["pathways_hsa_id_file"]
 LIST_PATHWAYS_FILE = config["list_of_pathways_file"]
 
 #####
-TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
-PORCUPINE_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "pcp_results_with_variance_{cancer}.txt")
-TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data")
-TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
-TSNE_DIR = os.path.join(OUTPUT_DIR, "tsne_results")
-INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR, "{cancer}", "indegrees_norm")
+TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
+PORCUPINE_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "pcp_results_with_variance_{cancer}.txt")
+TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data")
+TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
+INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "indegrees_norm")
+TSNE_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "tsne_results")
+
 
 ## Output directory for the downloaded GDC data ##
-OUTPUT_GDC_DIR = os.path.join("data_all", "gdc_data")
+OUTPUT_GDC_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "gdc_data")
 OUTPUT_GDC_FILE = os.path.join(OUTPUT_GDC_DIR, "TCGA-{cancer}.RData")
 MARKER_FILE =  os.path.join(OUTPUT_GDC_DIR, "{cancer}.SKIPPED.txt") # in case if we don't want to download the GDC data
 
 # Output directory for the combined downloaded GDC data ##
-EXPRESSION_DIR_GDC = os.path.join("data_all", "gdc_data_predownloaded") # directory for predownloaded GDC data
-OUTPUT_DIR_DOWNLOAD_COMBINED = os.path.join("data_all", "combined_gdc_data")
+EXPRESSION_DIR_GDC = os.path.join(OUTPUT_DIR_ALL_CANCERS, "gdc_data_predownloaded") # directory for predownloaded GDC data
+OUTPUT_DIR_DOWNLOAD_COMBINED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "combined_gdc_data")
 OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_STAR_counts.tsv")
 GROUP_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_sample_groups.tsv")
 FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
@@ -90,33 +93,33 @@ PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "pysnail_no
 
 # Output directory for the individual cancer expression files after normalization with PySNAIL ##
 
-OUTPUT_DIR_PYSNAIL_CANCER = os.path.join("data_all", "pysnail_normalized_individual_cancer_expression")
+OUTPUT_DIR_PYSNAIL_CANCER = os.path.join(OUTPUT_DIR_ALL_CANCERS, "pysnail_normalized_individual_cancer_expression")
 
 # BATCH EFFECT ANALYSIS #
 PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_PYSNAIL_CANCER, "normalized_expression_TCGA-{cancer}.RData")
-BATCH_DIR_ALL_CANCERS = os.path.join("data_all", "batch_analysis")
+BATCH_DIR_ALL_CANCERS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_analysis")
 BATCH_DIR_CANCER = os.path.join(BATCH_DIR_ALL_CANCERS, "TCGA-{cancer}")
 BATCH_EFFECT_PDF = os.path.join("figs", "MBatch_DSC.pdf")
 
 # PANDA + LIONESS NETWORK INFERENCE #
-NETWORKS_DIR = os.path.join("data_all", "networks")
+NETWORKS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "networks")
 # PANDA_NETWORK_FILE = os.path.join(NETWORKS_DIR, "panda_net.txt")
 
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
-OUTPUT_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
+OUTPUT_CANCER = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 
 ## output files for filtered porcupine results ##
-FILTERED_PORCUPINE_FILE = os.path.join(OUTPUT_DIR, "{cancer}", "porcupine", "pcp_results_filtered_{cancer}.txt")
-PORCUPINE_RESULTS_ALL = os.path.join("data_all", "porcupine", "porcupine_results_all_cancers.txt")
+FILTERED_PORCUPINE_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "pcp_results_filtered_{cancer}.txt")
+PORCUPINE_RESULTS_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "porcupine", "porcupine_results_all_cancers.txt")
 FIG_PATHWAY_INTERSECTION = os.path.join(FIG_DIR, "pathways_intersection_pcp.pdf")
 FIG_SHARED_CATEGORIES = os.path.join(FIG_DIR, "combined_figure_pcp_results_shared_categories.pdf")
 
 ## output directory for COLA-consesus clustering results for each cancer type ##
-OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR, "{cancer}", "consensus_clustering", "{datatype}")
+OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "consensus_clustering", "{datatype}")
 
 ## output directory for COLA-consesus clustering results for ALL cancer types ##
-OUTPUT_ALL_CANCERS_CONSENSUS_DIR = os.path.join("data_all", "cola_consensus_clustering")
+OUTPUT_ALL_CANCERS_CONSENSUS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cola_consensus_clustering")
 ## output files  for COLA-consesus clustering results for ALL cancer types ##
 BEST_K_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_expression.txt")
 BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_indegree.txt")
@@ -133,50 +136,50 @@ FIG_TSNE_COLA_EXPRESSION = os.path.join(FIG_DIR, "TSNE_cola_clusters_expression_
 FIG_SANKEY = os.path.join(FIG_DIR, "sankey_plot_indegree_expression.pdf")
 
 ## output dir and files for saving cola clusters for each cancer type ##
-OUTPUT_CLUSTERS_PER_TUMOR_IND = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_indegree_{cancer}.txt")
-OUTPUT_CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "final_clusters_expression_{cancer}.txt")
+OUTPUT_CLUSTERS_PER_TUMOR_IND = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "final_clusters", "final_clusters_indegree_{cancer}.txt")
+OUTPUT_CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "final_clusters", "final_clusters_expression_{cancer}.txt")
 
 ## output file for cox univariate results comparing cola clustering results for each cancer type ##
-OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS = os.path.join(OUTPUT_DIR, "{cancer}", "final_clusters", "cox_results_final_clusters_indegree_expression_{cancer}.txt")
-OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL = os.path.join("data_all", "cox_results_all", "cox_results_final_clusters_indegree_expression_all.txt")
+OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "final_clusters", "cox_results_final_clusters_indegree_expression_{cancer}.txt")
+OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "cox_results_final_clusters_indegree_expression_all.txt")
 
 ## output figure for cox univariate results comparing cola clustering results for all cancer types ##
 FIG_COX_COLA_CLUSTERS = os.path.join(FIG_DIR, "cox_results_final_clusters_indegree_expression_all_cancers.pdf") 
 
 ## analysis of PRAD COLA CLUSTERS k = 4 ##
-CLUSTER_INDEGREE_PRAD = os.path.join(OUTPUT_DIR, "PRAD", "final_clusters", "final_clusters_indegree_PRAD.txt")
-PRAD_CLIN_FILE = os.path.join(OUTPUT_DIR, "PRAD", "clinical", "curated_clinical_PRAD.txt")
-PRAD_PD1_DIR = os.path.join(OUTPUT_DIR, "PRAD", "pd1_data")
-PRAD_IND_FILE = os.path.join(OUTPUT_DIR, "PRAD", "indegrees_norm", "indegree_norm_PRAD.RData")
+CLUSTER_INDEGREE_PRAD = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "PRAD", "final_clusters", "final_clusters_indegree_PRAD.txt")
+PRAD_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "PRAD", "clinical", "curated_clinical_PRAD.txt")
+PRAD_PD1_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "PRAD", "pd1_data")
+PRAD_IND_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "PRAD", "indegrees_norm", "indegree_norm_PRAD.RData")
 FIG_PRAD_SURVIVAL = os.path.join(FIG_DIR, "PRAD_clusters_survival.pdf")
 FIG_FGSEA_PRAD = os.path.join(FIG_DIR, "PRAD_clusters_fgsea.pdf")
 
 ## output directory for plot TSNE cola clusters ##
-TSNE_DATA_DIR = os.path.join("data_all", "tsne_results")
+TSNE_DATA_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "tsne_results")
 TSNE_DATA_EXPRESSION = os.path.join(TSNE_DATA_DIR, "tsne_expression_all_cancers.txt")
 TSNE_DATA_INDEGREE = os.path.join(TSNE_DATA_DIR, "tsne_expression_all_indegree.txt")
 
 ## Output Files for Univariate Cox on PD1-pathway based heterogeneity scores ##
-OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
-OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_predited_risk_scores.txt")
-UNIVARIATE_COX_SUMMARY_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_model_summary_all.txt")
-UNIVARIATE_COX_SUMMARY_ALL_FILTERED = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_model_summary_filtered.txt")
-UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join("data_all", "cox_results_all", "PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
+OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
+OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_predited_risk_scores.txt")
+UNIVARIATE_COX_SUMMARY_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "PD1_pathway_cox_univariate_model_summary_all.txt")
+UNIVARIATE_COX_SUMMARY_ALL_FILTERED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "PD1_pathway_cox_univariate_model_summary_filtered.txt")
+UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
 FIG_PC_PDL1_EXPRESSION = os.path.join(FIG_DIR, "PDL1_exp_PC_component_HR.pdf")
 FIG_PC_IMMUNE_CORRELATION = os.path.join(FIG_DIR, "PC_immune_correlations_cibersort.png")
 
-TUMOR_RESULTS_PD1_GROUPS = os.path.join("data_all", "clinical_associations_PD1", "pd1_pathway_categorical_results.txt")
-TUMOR_RESULTS_PD1_NUMERIC = os.path.join("data_all", "clinical_associations_PD1", "pd1_pathway_numeric_results.txt")
+TUMOR_RESULTS_PD1_GROUPS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_categorical_results.txt")
+TUMOR_RESULTS_PD1_NUMERIC = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_numeric_results.txt")
 FIGURE_PC_CLIN_ASSOCIATIONS = os.path.join("figs", "PC_all_features_clin_associations.pdf")
 FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS = os.path.join("figs", "PC_individual_features_clin_associations.pdf")
 
 ## Output Files for multivariate regularized Cox on PDL1-edges ##
-OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
-OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
-COX_RESULTS_ALL_MULTIVARIATE = os.path.join("data_all", "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
+OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
+OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
+COX_RESULTS_ALL_MULTIVARIATE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
 PDL1_CIRCULAR_PLOT = os.path.join(FIG_DIR, "circular_pdl1_plot_{threshold_cox}.pdf")
-OUTPUT_PDL1_EXP_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "pdl1_expression_{cancer}.txt")
-OUTPUT_COMBINED_PATIENT_DATA_CANCER = os.path.join(OUTPUT_DIR, "{cancer}", "pd1_data", "combined_patient_data_{cancer}.txt")
+OUTPUT_PDL1_EXP_CANCER = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pdl1_expression_{cancer}.txt")
+OUTPUT_COMBINED_PATIENT_DATA_CANCER = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "combined_patient_data_{cancer}.txt")
 
 
 # figure for TNSE plot for all cancers and also comparisons of cola clusters for indegree and expression for PRAD and UVM
