@@ -320,11 +320,13 @@ rule all:
 #         threshold = 0.2,
 #         bin = config["bin"]
 #     conda:
-#         "envs/pysnail.yaml"
+#         "workflow/envs/pysnail.yaml"
 #     shell:
 #         """
 #             python {params.bin}/normalize_with_pysnail.py {input.xprs} {input.groups} {output.norm} --threshold {params.threshold}
 #         """
+
+
 
 # PANDA/LIONESS network inference using netZooPy
 rule run_panda_lioness:
@@ -347,7 +349,7 @@ rule run_panda_lioness:
         random_seed = 10,
         ncores = 10
     conda:
-        "envs/netzoopy-local.yaml"
+        "workflow/envs/netzoopy-local.yaml"
     shell:
         """
         set +u
@@ -436,6 +438,9 @@ rule plot_mbatch_results:
             --batch_results_dir {input.batch_dir} \
             --output_file {output.pdf_file}
         """
+
+
+
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:

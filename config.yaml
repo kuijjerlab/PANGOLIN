@@ -1,5 +1,5 @@
 ## Bin
-bin: "bin"
+bin: "workflow/bin"
 
 ## clinical data
 clinical_file: "resources/clinical_curated/NIHMS978596-supplement-1.xlsx"
