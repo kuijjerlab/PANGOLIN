@@ -305,3 +305,46 @@ plot_mbatch_dsc <- function(
     }
     return(p)
 }
+
+#' Perform batch correction using ComBat
+#'
+#' Applies ComBat from `sva` to correct batch effects in expression data.
+#'
+#' @param data Numeric matrix/data.frame, genes x samples.
+#' @param batch_info Data.frame with batch info (e.g., year, sample IDs).
+#' @param clin Data.frame with clinical info (platform, sample IDs).
+#' @param batch_parameter Batch variable ("platform" or other).
+#'
+#' @return Batch-corrected expression matrix.
+#' @importFrom sva ComBat
+#' @export
+combat_correct <- function(data, batch_info, clin, batch_parameter) {
+    samples <- colnames(data)
+    if (batch_parameter %in% c("platform")) {
+        batch <- clin$gdc_platform[
+            match(samples,
+                  clin$gdc_cases.samples.portions.analytes.aliquots.submitter_id)
+        ]
+        cat("Samples without platform info:",
+            length(batch[is.na(batch)]), "\n")
+        print(samples[is.na(batch)])
+        data <- data[, !is.na(batch)]
+        batch <- batch[!is.na(batch)]
+        batch <- as.factor(batch)
+        combat_exp <- sva::ComBat(dat = data, batch = batch, mod = NULL,
+                                  par.prior = TRUE, prior.plots = FALSE)
+    } else {
+        batch <- batch_info$Year[
+            match(samples, batch_info$Samples)
+        ]
+        cat("Samples without year info:",
+            length(batch[is.na(batch)]), "\n")
+        print(samples[is.na(batch)])
+        data <- data[, !is.na(batch)]
+        batch <- batch[!is.na(batch)]
+        batch <- as.factor(batch)
+        combat_exp <- sva::ComBat(dat = data, batch = batch, mod = NULL,
+                                  par.prior = TRUE, prior.plots = FALSE)
+    }
+    return(combat_exp)
+}
