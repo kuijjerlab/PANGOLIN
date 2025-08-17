@@ -33,6 +33,12 @@ option_list <- list(
         metavar = "character"
     ),
     optparse::make_option(
+        c("-c", "--clin_file"),
+        type = "character",
+        default = NULL,
+        help = "Path to the clinical file.",
+        metavar = "character"),
+    optparse::make_option(
         c("-o", "--output_file"),
         type = "character",
         default = NULL,
@@ -47,11 +53,14 @@ opt <- optparse::parse_args(opt_parser)
 EXPRESSION_FILE <- opt$expression_file
 GROUP_FILE <- opt$group_file
 BATCH_FILE <- opt$batch_file
+CLIN_FILE <- opt$clin_file
 OUTPUT_FILE <- opt$output_file
 
-source("bin/analyze_batch_fn.R")
+
+source("workflow/bin/analyze_batch_fn.R")
 
 cat("Loading expression file (this may take a while)...\n")
+
 log2exp <- log2_transform_snail(EXPRESSION_FILE)
 cat(sprintf(
     "Loaded expression matrix: %d genes x %d samples\n",
@@ -61,9 +70,9 @@ cat("Loading group file...\n")
 groups <- fread(GROUP_FILE, head = FALSE)
 
 cat("Loading batch file...\n")
-batch_info <- fread(BATCH_FILE, head = FALSE)
+batch_info <- fread(BATCH_FILE, head = TRUE)
 
-
+clin <- load_clin_rdata(CLIN_FILE)
 
 # UCEC 
 ucec_samples <- groups$V1[groups$V2 == c("TCGA-UCEC")]
