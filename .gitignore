@@ -17,3 +17,4 @@ workflow/envs/PySNAIL/
 workflow/envs/netZooPy/
 results/data_all/pysnail_normalized_individual_cancer_expression
 results/data_all/batch_analysis
+/results/data_all/batch_corrected_expression

@@ -1,6 +1,12 @@
 ## Bin
 bin: "workflow/bin"
 
+## Directories
+resources_dir: "resources"
+results_dir: "results"
+workflow_dir: "workflow"
+
+## Files that should be available in resources_dir
 ## clinical data
 clinical_file: "resources/clinical_curated/NIHMS978596-supplement-1.xlsx"
 clinical_file_rdata: "resources/clinical_curated/clin.RData"
@@ -35,10 +41,10 @@ download_files: "NO" # Set to "YES" to download the expression files (takes very
 datatypes: ["expression", "indegree"]
 threshold_cox: [20, 50]
 output_dir: "results"
-output_dir_individual_cancers: "data_individual_cancers"
-output_dir_all_cancers: "data_all"
+output_dir_individual_cancers: "results/data_individual_cancers"
+output_dir_all_cancers: "results/data_all"
 
-fig_dir: "figs"
+fig_dir: "results/figs"
 alpha: 0.3
 number_cores: 20
 number_folds: 5

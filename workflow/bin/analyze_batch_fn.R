@@ -319,10 +319,11 @@ plot_mbatch_dsc <- function(
 #' @param verbose Logical, whether to print progress messages (default TRUE)
 #'
 #' @return Expression matrix (batch corrected or filtered)
-correct_cancer_batch <- function(cancer_type, log2exp, groups, batch_info,
-        plates_to_remove = NULL, apply_combat = TRUE, verbose = TRUE) {
-    if (verbose)
-        cat(sprintf("Processing batch correction for %s...\n", cancer_type))
+correct_cancer_batch <- function(cancer_type, 
+        log2exp, groups, batch_info,
+        plates_to_remove = NULL, apply_combat = TRUE, 
+        verbose = TRUE) {
+    cat(sprintf("Processing batch correction for %s...\n", cancer_type))
     samples <- groups$V1[groups$V2 == cancer_type]
     if (length(samples) == 0) {
             cat(sprintf(
@@ -332,23 +333,16 @@ correct_cancer_batch <- function(cancer_type, log2exp, groups, batch_info,
             cat(sprintf("No samples found for %s, returning NULL\n", cancer_type))
         return(NULL)
     }
-    if (verbose)
-        cat(sprintf("Found %d samples for %s\n", length(samples), cancer_type))
     exp_proj <- log2exp[, colnames(log2exp) %in% samples, drop = FALSE]
     batches <- batch_info[batch_info$Samples %in% colnames(exp_proj), ]
     if (nrow(batches) == 0) {
-    exp_proj <- exp_proj[
-        , match(batches$Samples, colnames(exp_proj)), drop = FALSE
-    ]
-            cat(sprintf("No batch info found for %s\n", cancer_type))
+        exp_proj <- exp_proj[
+            , match(batches$Samples, colnames(exp_proj)), drop = FALSE]
+        cat(sprintf("No batch info found for %s\n", cancer_type))
         return(exp_proj)
     }
-    exp_proj <- 
-    exp_proj[, match(batches$Samples, colnames(exp_proj)), drop = FALSE]
-    if (verbose) {
-        cat("Plate distribution before filtering:\n")
-        print(table(batches$Plates))
-    }
+    exp_proj <- exp_proj[
+        , match(batches$Samples, colnames(exp_proj)), drop = FALSE]
     plate_counts <- table(batches$Plates)
     single_sample_plates <- names(plate_counts)[plate_counts == 1]
     if (!is.null(plates_to_remove)) {
@@ -359,7 +353,7 @@ correct_cancer_batch <- function(cancer_type, log2exp, groups, batch_info,
         plates_to_exclude <- single_sample_plates
     }
     if (length(plates_to_exclude) > 0) {
-        if (verbose) {
+        if (verbose == TRUE) {
             cat(sprintf(
                 "Removing plates: %s\n",
                 paste(plates_to_exclude, collapse = ", ")
@@ -372,14 +366,14 @@ correct_cancer_batch <- function(cancer_type, log2exp, groups, batch_info,
     }
     remaining_plates <- length(unique(batches$Plates))
     remaining_samples <- ncol(exp_proj)
-    if (verbose) {
+    if (verbose == TRUE) {
         cat(sprintf(
             "After filtering: %d samples across %d plates\n",
             remaining_samples, remaining_plates
         ))
     }
     if (!apply_combat || remaining_plates < 2) {
-        if (verbose) {
+        if (verbose == TRUE) {
             if (!apply_combat)
                 cat("Batch correction disabled, returning filtered data\n")
             else
@@ -388,12 +382,12 @@ correct_cancer_batch <- function(cancer_type, log2exp, groups, batch_info,
         return(exp_proj)
     }
     if (remaining_samples < 3) {
-        if (verbose)
+        if (verbose == TRUE)
             cat("Too few samples for batch correction\n")
         return(exp_proj)
     }
-    if (verbose)
-        cat("Applying ComBat correction...\n")
+    
+    cat("Applying ComBat correction...\n")
     tryCatch({
         combat_exp <- sva::ComBat(
             dat = exp_proj,
@@ -403,14 +397,11 @@ correct_cancer_batch <- function(cancer_type, log2exp, groups, batch_info,
             prior.plots = FALSE
         )
         combat_exp[combat_exp < 0] <- 0
-        if (verbose)
-            cat("ComBat correction completed successfully\n")
+        cat("ComBat correction completed successfully\n")
         return(combat_exp)
     }, error = function(e) {
-        if (verbose) {
-            cat(sprintf("Error in ComBat: %s\n", e$message))
-            cat("Returning uncorrected data\n")
-        }
+        cat(sprintf("Error in ComBat: %s\n", e$message))
+        cat("Returning uncorrected data\n")
         return(exp_proj)
     })
 }

@@ -402,10 +402,10 @@ rule plot_mbatch_results:
 ## BATCH correction
 rule correct_batch_effect:
     input:
-        expression_file = PYSNAIL_NORMALIZED_FILE,,
+        expression_file = PYSNAIL_NORMALIZED_FILE,
         group_file = GROUP_FILE,
         batch_file = BATCH_FILE,
-        clinical_file = CLIN_FILE
+        clinical_file = CLINICAL_FILE_RDATA 
     output:
         batch_corrected_expression_file = BATCH_CORRECTED_EXPRESSION_FILE
     message:

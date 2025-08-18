@@ -78,7 +78,7 @@ batch_info$platform <-
     clin$gdc_cases.samples.portions.analytes.aliquots.submitter_id)]
 batch_info[is.na(batch_info)] <- c("not_available")
 
-## Batch correct the cancers
+# Batch correct the cancers
 # Define cancer-specific configurations
 cancer_configs <- list(
     "TCGA-COAD" = list(plates_to_remove = 2066, 
