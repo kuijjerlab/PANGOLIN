@@ -147,7 +147,7 @@ cat(sprintf("Loaded %d clean samples\n", nrow(samples_clean)))
 
 # Load groups file
 cat("Loading groups information...\n")
-groups <- fread(GROUPS_FILE)
+groups <- fread(GROUPS_FILE, head = F)
 colnames(groups) <- c("sample_id", "cancer_type")
 
 
@@ -307,14 +307,16 @@ write.table(log2exp_clean, OUTPUT_EXPRESSION_FILE,
 cat(sprintf("Expression data written to: %s\n", OUTPUT_EXPRESSION_FILE))
 
 # Write samples list
-samples_output <- data.table(sample_id = colnames(log2exp_clean))
-write.table(samples_output, OUTPUT_SAMPLES_FILE,
-            col.names = FALSE, sep = "\t", row.names = FALSE, quote = FALSE)
+samples <- data.table(colnames(log2exp_clean))
+write.table(samples, OUTPUT_SAMPLES_FILE,
+            col.names = FALSE, sep = "\t", row.names = TRUE, quote = FALSE)
+
 cat(sprintf("Samples list written to: %s\n", OUTPUT_SAMPLES_FILE))
 
 # Write samples with cancer types
-cancers <- groups[match(colnames(log2exp_clean), groups$sample_id), ]
-colnames(cancers) <- c("sample_id", "cancer_type")
+
+cancers <- data.table(groups[match(colnames(log2exp_clean), groups$sample_id), ])
+colnames(cancers) <- c("sample_id", "cancer")
 write.table(cancers, OUTPUT_SAMPLES_FILE_CANCER_TYPE,
             col.names = TRUE, sep = "\t", row.names = FALSE, quote = FALSE)
 cat(sprintf("Samples with cancer types written to: %s\n", 

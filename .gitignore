@@ -6,7 +6,7 @@ workflow/bin/move_files.sh
 workflow/bin/remove_files.sh
 workflow/bin/rename_pd1_net_files.R
 workflow/bin/rename_pd1_net_files_fn.R
-results/panda_input_primary/
+results/panda_input/
 workflow/bin/test_V1.R
 workflow/bin/test.R
 workflow/bin/prad_limma_indegree_clusters.R
