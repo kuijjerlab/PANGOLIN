@@ -62,67 +62,73 @@ source("workflow/bin/analyze_batch_fn.R")
 cat("Loading expression file (this may take a while)...\n")
 
 log2exp <- log2_transform_snail(EXPRESSION_FILE)
-cat(sprintf(
-    "Loaded expression matrix: %d genes x %d samples\n",
-    nrow(log2exp), ncol(log2exp)
-))
+
 cat("Loading group file...\n")
 groups <- fread(GROUP_FILE, head = FALSE)
 
 cat("Loading batch file...\n")
 batch_info <- fread(BATCH_FILE, head = TRUE)
-
+batch_info <- batch_info[batch_info$Tissues %in% c("cancer")]
+batch_info$Tissues <- NULL
+cat("Loading clinical file...\n")
 clin <- load_clin_rdata(CLIN_FILE)
 
-# UCEC 
-ucec_samples <- groups$V1[groups$V2 == c("TCGA-UCEC")]
-exp_ucec <- log2exp[, colnames(log2exp) %in% ucec_samples]
-exp_combat_ucec <- combat_correct(exp_ucec, batch_info, clin, "platform")
-# combat is generating negative values which can be replaced with 0s
-exp_combat_ucec[exp_combat_ucec < 0] <- 0
+batch_info$platform <- 
+    clin$gdc_platform[match(batch_info$Samples, 
+    clin$gdc_cases.samples.portions.analytes.aliquots.submitter_id)]
+batch_info[is.na(batch_info)] <- c("not_available")
 
-# READ
-read_samples <- groups$V1[groups$V2 == c("TCGA-READ")]
-exp_read <- log2exp[, colnames(log2exp) %in% read_samples]
-exp_combat_read <- combat_correct(exp_read, batch_info, clin, "platform")
-# combat is generating negative values which can be replaced with 0s
-exp_combat_read[exp_combat_read < 0] <- 0
+## Batch correct the cancers
+# Define cancer-specific configurations
+cancer_configs <- list(
+    "TCGA-COAD" = list(plates_to_remove = 2066, 
+        apply_combat = TRUE, 
+        verbose = FALSE),
+    "TCGA-DLBC" = list(plates_to_remove = 2404, 
+        apply_combat = TRUE, 
+        verbose = FALSE),
+    "TCGA-LUAD" = list(plates_to_remove = NULL, 
+        apply_combat = TRUE, 
+        verbose = FALSE),
+    "TCGA-PRAD" = list(plates_to_remove = 2302, 
+        apply_combat = FALSE, 
+        verbose = FALSE),  # No combat, just filter
+    "TCGA-READ" = list(plates_to_remove = "A32Y", 
+        apply_combat = TRUE, 
+        verbose = FALSE),
+    "TCGA-UCEC" = list(plates_to_remove = NULL,
+        apply_combat = TRUE, 
+        verbose = FALSE)
+)
 
+# Apply batch correction to specified cancers only
+corrected_data <- list()
+cancer_types <- names(cancer_configs)
 
-# COAD
-coad_samples <- groups$V1[groups$V2 == c("TCGA-COAD")]
-exp_coad <- log2exp[, colnames(log2exp) %in% coad_samples]
-exp_combat_coad <- combat_correct(exp_coad, batch_info, clin, "platform")
-# combat is generating negative values which can be replaced with 0s
-exp_combat_coad[exp_combat_coad < 0] <- 0
+for (cancer in cancer_types) {
+    config <- cancer_configs[[cancer]]
+    corrected_data[[cancer]] <- correct_cancer_batch(
+        cancer_type = cancer,
+        log2exp = log2exp,
+        groups = groups,
+        batch_info = batch_info,
+        plates_to_remove = config$plates_to_remove,
+        apply_combat = config$apply_combat,
+        verbose = TRUE
+    )
+}
+corrected_matrices <- as.data.frame(do.call("cbind", corrected_data))
+dim(corrected_matrices)
+# Remove the original data for these cancer types from log2exp
+cancers_to_replace <- names(cancer_configs)
+data_to_replace <- groups[groups$V2 %in% cancers_to_replace, ]
+log2exp_filtered <- log2exp[, !colnames(log2exp) %in% data_to_replace$V1]
 
+# Include only cancer samples (remove healthy tissues)
+log2exp_filtered <-
+     log2exp_filtered[, colnames(log2exp_filtered) %in% batch_info$Samples]
 
-# STAD 
-stad_samples <- groups$V1[groups$V2 == c("TCGA-STAD")]
-batch_stad <- batch_info[batch_info$Samples %in% stad_samples,]
-batch_stad$Year <- ifelse(batch_stad$Year == 2011, "A_batch", "B_batch")
-exp_stad <- log2exp[, colnames(log2exp) %in% stad_samples]
-exp_combat_stad <- combat_correct(exp_stad, batch_stad, clin, "Year")
-# combat is generating negative values which can be replaced with 0s
-exp_combat_stad[exp_combat_stad < 0] <- 0
-
-# DLBC 
-dlbc_samples <- groups$V1[groups$V2 == c("TCGA-DLBC")]
-batch_dlbc <- batch_info[batch_info$Samples %in% dlbc_samples,]
-batch_dlbc$Year <- ifelse(batch_dlbc$Year == 2012, "A_batch", "B_batch")
-exp_dlbc <- log2exp[, colnames(log2exp) %in% dlbc_samples]
-exp_combat_dlbc <- combat_correct(exp_dlbc, batch_dlbc, clin, "Year")
-# combat is generating negative values which can be replaced with 0s
-exp_combat_dlbc[exp_combat_dlbc < 0] <- 0
-
-# replace the original data with combat-modified
-samples_to_replace <- c(ucec_samples, read_samples, coad_samples,
-                        stad_samples, dlbc_samples)
-
-
-exp_combat_mod <- cbind(exp_combat_ucec, exp_combat_read, exp_combat_coad ,
-                    exp_combat_stad, exp_combat_dlbc)
-log2exp_mod  <- log2exp[, !colnames(log2exp) %in% samples_to_replace]
-log2exp_update <- cbind(log2exp_mod, exp_combat_mod )
-save(log2exp_update, file = OUTPUT_FILE)
-
+# Combine filtered data with corrected data
+cat("Combining corrected data with remaining samples...\n")
+log2exp_new <- cbind(log2exp_filtered, corrected_matrices)
+save(log2exp_new, file = OUTPUT_FILE)
