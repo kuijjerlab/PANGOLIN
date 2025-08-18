@@ -6,15 +6,15 @@
 #' @param exp_file Path to the RData file with "exp" object. The first column is
 #'   assumed non-numeric (e.g., gene IDs), others are numeric expression values.
 #'
-#' @return Matrix of log2-transformed expression values 
+#' @return Matrix of log2-transformed expression values
 #'
-
+#' @importFrom data.table fread
 log2_transform_snail <- function(exp_file) {
-    exp <- fread(exp_file, header = F)
+    exp <- fread(exp_file, header = FALSE)
     colnms <- exp[2, ]
     exp <- exp[-c(1:2), ]
     colnames(exp) <- as.character(colnms)
-    colnames(exp)[1] <- c("gene_id")
+    colnames(exp)[1] <- "gene_id"
     exp_mat <- apply(exp[, -1], 2, function(x) as.numeric(x))
     exp_mat <- round(exp_mat)
     log2exp <- apply(exp_mat, 2, function(x) log2(x + 1))
@@ -34,10 +34,10 @@ log2_transform_snail <- function(exp_file) {
 #' @export
 load_batch <- function(batch_file) {
     batch_info <- fread(batch_file)
-    batch_info$Year[is.na(batch_info$Year)] <- c("uknown")
-    batch_info$Plates[is.na(batch_info$Plates)] <- c("uknown")
-    batch_info$TSS[is.na(batch_info$TSS)] <- c("uknown")
-    batch_info$Center[is.na(batch_info$Center)] <- c("uknown")
+    batch_info$Year[is.na(batch_info$Year)] <- "uknown"
+    batch_info$Plates[is.na(batch_info$Plates)] <- "uknown"
+    batch_info$TSS[is.na(batch_info$TSS)] <- "uknown"
+    batch_info$Center[is.na(batch_info$Center)] <- "uknown"
     return(batch_info)
 }
 
@@ -56,45 +56,42 @@ load_clin_rdata <- function(clin_file) {
     clin <- clin[["clin"]]
     return(clin)
 }
-
-
-
-
-
 #' Batch Process Cancer Data
 #'
 #' Processes gene expression data for a cancer type, performing PCA and batch
 #' effect analysis.
 #'
 #' @param tumor_type Character. Cancer type to process (e.g., "BRCA").
-#' @param log2exp Matrix/data.frame. Log2-transformed expression (genes x samples).
+#' @param log2exp Matrix/data.frame. Log2-transformed expression (genes x
+#'   samples).
 #' @param groups Data.frame. Sample group info, columns V1 (IDs), V2 (project).
 #' @param batch_info Data.frame. Batch info, must have 'Samples' column.
 #' @param clin Data.frame. Clinical data (unused).
 #' @param nthreads Integer. Threads for permutation tests (default: 1).
-#' @param dsc_permutations Integer. DSC permutations for batch effect (default: 1000).
+#' @param dsc_permutations Integer. DSC permutations for batch effect
+#'   (default: 1000).
 #' @param min_batch_size Integer. Minimum batch size (default: 2).
 #' @param max_gene_count Integer. Max genes to include (default: 70000).
 #' @param data_version Character. Data version (default: "1.0").
 #' @param test_version Character. Test version (default: "1.0").
-
-batch_process_cancer <- function(tumor_type,
-                                log2exp,
-                                groups, 
-                                batch_info, 
-                                nthreads = 1,
-                                dsc_permutations = 1000,
-                                min_batch_size = 2,
-                                max_gene_count = 70000,
-                                data_version = "1.0",
-                                test_version = "1.0",
-                                random_seed = 314) {
+batch_process_cancer <- function(
+                    tumor_type,
+                    log2exp,
+                    groups,
+                    batch_info,
+                    nthreads = 1,
+                    dsc_permutations = 1000,
+                    min_batch_size = 2,
+                    max_gene_count = 70000,
+                    data_version = "1.0",
+                    test_version = "1.0",
+                    random_seed = 314
+                ) {
     cat(sprintf("Processing cancer type: %s\n", tumor_type))
     cat(sprintf("Current working directory: %s\n", getwd()))
     result <- tryCatch({
         proj <- paste("TCGA", tumor_type, sep = "-")
         samples <- groups$V1[groups$V2 == proj]
-        # Check if samples exist for this cancer type
         if (length(samples) == 0) {
             cat(sprintf(
                 "No samples found for %s, skipping...\n",
@@ -106,12 +103,11 @@ batch_process_cancer <- function(tumor_type,
                 error = NULL
             ))
         }
-        # Filter expression data for the current cancer type
         exp_proj <- log2exp[, colnames(log2exp) %in% samples, drop = FALSE]
         batches <- batch_info[batch_info$Samples %in% colnames(exp_proj), ]
-        exp_proj <- 
-            exp_proj[, match(batches$Samples, colnames(exp_proj)), drop = FALSE]
-        # Check if the samples in expression data match the batch info
+        exp_proj <- exp_proj[
+            , match(batches$Samples, colnames(exp_proj)), drop = FALSE
+        ]
         if (!all(colnames(exp_proj) == batches$Samples)) {
             cat(sprintf(
                 "Sample mismatch for %s, skipping...\n",
@@ -123,9 +119,7 @@ batch_process_cancer <- function(tumor_type,
                 error = NULL
             ))
         }
-        # Check if there are enough samples for PCA
-        # Minimum sample check
-        if (ncol(exp_proj) < 10) {  # Minimum sample check
+        if (ncol(exp_proj) < 10) {
             cat(sprintf(
                 "Too few samples for %s (%d), skipping...\n",
                 tumor_type,
@@ -238,10 +232,6 @@ combine_mbatch_results <- function(output_dir, cancer) {
 #' @param angle_x_text X-axis text angle.
 #'
 #' @return ggplot object for DSC bar plot.
-#'
-#' @examples
-#' # plot_mbatch_dsc(data = my_data, output_file = "dsc_plot.pdf")
-#'
 #' @import ggplot2
 #' @importFrom ggforce facet_wrap_paginate
 plot_mbatch_dsc <- function(
