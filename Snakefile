@@ -443,7 +443,7 @@ rule prepare_files_for_PANDA:
     """
     input:
         expression_file = BATCH_CORRECTED_EXPRESSION_FILE,
-        batch_file = BATCH_FILE
+        batch_file = BATCH_FILE,
         motif_file = MOTIF_FILE,
         ppi_file = PPI_FILE,
         samples_file = SAMPLES_FILE,
@@ -456,10 +456,11 @@ rule prepare_files_for_PANDA:
         samples_filtered = SAMPLES_PANDA_FILE,
         samples_with_cancer = SAMPLES_WITH_CANCER_FILE
     params:
+        bin = config["bin"],
         min_sample_expression = 20
     shell:
         """
-        Rscript {input.script} \
+        Rscript {params.bin}/prepare_for_PANDA.R \
             --expression_file {input.expression_file} \
             --batch_file {input.batch_file} \
             --motif_file {input.motif_file} \
@@ -484,9 +485,9 @@ rule run_panda_lioness:
     sample-specific networks for each individual sample.
     """
     input:
-        exp_file = EXPRESSION_FILE, #FIX
-        motif_file = MOTIF_FILE, #FIX
-        ppi_file = PPI_FILE #TODO FIX
+        exp_file = EXPRESSION_PANDA_FILE, 
+        motif_file = MOTIF_PANDA_FILE, 
+        ppi_file = PPI_PANDA_FILE 
     output:
         network_dir = directory(NETWORKS_DIR)
     params:
@@ -542,8 +543,8 @@ rule extract_clinical_data:
 ## Run T-SNE on expression and gene indegree data for all cancers ##
 rule run_tsne:
     input:
-        expression_file = EXPRESSION_FILE,
-        samples_file = SAMPLES_FILE,
+        expression_file = EXPRESSION_PANDA_FILE,
+        samples_file = SAMPLES_PANDA_FILE,
         tumor_main_dir = OUTPUT_DIR
     output:
         out_file_expression = TSNE_DATA_EXPRESSION,
@@ -638,8 +639,8 @@ rule plot_porcupine_results:
 # cola consensus clustering on gene indegree and expression data ##
 rule run_cola_clustering:
     input:
-        expression_file = EXPRESSION_FILE,
-        samples_file = SAMPLES_FILE,
+        expression_file = EXPRESSION_PANDA_FILE,
+        samples_file = SAMPLES_PANDA_FILE,
         indegree_dir = INPUT_CANCER_INDEGREE_DIR
     output:
         output_cancer_consensus_dir = directory(OUTPUT_CANCER_CONSENSUS_DIR)
@@ -821,8 +822,8 @@ rule plot_PRAD_clusters_survival:
         prad_pd1_dir = PRAD_PD1_DIR,
         prad_cluster_file_ind = CLUSTER_INDEGREE_PRAD,
         prad_indegree_file = PRAD_IND_FILE,
-        expression_file = EXPRESSION_FILE,
-        samples_file = SAMPLES_FILE, 
+        expression_file = EXPRESSION_PANDA_FILE,
+        samples_file = SAMPLES_PANDA_FILE,
         gmt_file = GMT_FILE
     output:
         fig_prad_survival = FIG_PRAD_SURVIVAL,
@@ -850,8 +851,8 @@ rule plot_PRAD_clusters_survival:
 
 rule extract_PDL1_gene_expression:
     input:
-        expression_file = EXPRESSION_FILE,
-        samples_file = SAMPLES_FILE
+        expression_file = EXPRESSION_PANDA_FILE,
+        samples_file = SAMPLES_PANDA_FILE
     output:
         out_file = OUTPUT_PDL1_EXP_CANCER
     message:

@@ -19,13 +19,9 @@ list_of_pathways_file: "resources/MSigDb/list_of_pathways.txt"
 batch_file: "resources/samples/batch_information.txt"
 cancer_color_file: "resources/samples/cancer_colors.txt"
 # priors
-
-
-ppi_file: "panda_input_primary/ppi_tcga_primary.tsv"
-motif_file: "panda_input_primary/motif_tcga_primary.tsv"
-expression_file: "panda_input_primary/exp_tcga_primary.tsv"
-samples_file: "panda_input_primary/samples_cancers_primary.tsv"
-
+ppi_file: "resources/priors/ppi_prior.tsv"
+motif_file: "resources/priors/tf_prior_names_fixed.tsv"
+samples_file: "resources/samples/samples_cancers_clean.tsv"
 
 immune_file: "data_all/cibersortx/CIBERSORTx_Results.txt"
 
