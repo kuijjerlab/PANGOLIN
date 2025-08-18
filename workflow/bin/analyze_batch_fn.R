@@ -306,45 +306,111 @@ plot_mbatch_dsc <- function(
     return(p)
 }
 
-#' Perform batch correction using ComBat
+
+#' Correct batch effects for a specific cancer type
 #'
-#' Applies ComBat from `sva` to correct batch effects in expression data.
+#' @param cancer_type Character string of cancer type (e.g., "TCGA-COAD")
+#' @param log2exp Expression matrix (genes x samples)
+#' @param groups Data frame with sample groups (V1=samples, V2=cancer_type)
+#' @param batch_info Data frame with batch info (Samples, Plates columns)
+#' @param plates_to_remove Vector of plate IDs to remove (optional)
+#' @param apply_combat Logical, whether to apply ComBat correction 
+#'   (default TRUE)
+#' @param verbose Logical, whether to print progress messages (default TRUE)
 #'
-#' @param data Numeric matrix/data.frame, genes x samples.
-#' @param batch_info Data.frame with batch info (e.g., year, sample IDs).
-#' @param clin Data.frame with clinical info (platform, sample IDs).
-#' @param batch_parameter Batch variable ("platform" or other).
-#'
-#' @return Batch-corrected expression matrix.
-#' @importFrom sva ComBat
-#' @export
-combat_correct <- function(data, batch_info, clin, batch_parameter) {
-    samples <- colnames(data)
-    if (batch_parameter %in% c("platform")) {
-        batch <- clin$gdc_platform[
-            match(samples,
-                  clin$gdc_cases.samples.portions.analytes.aliquots.submitter_id)
-        ]
-        cat("Samples without platform info:",
-            length(batch[is.na(batch)]), "\n")
-        print(samples[is.na(batch)])
-        data <- data[, !is.na(batch)]
-        batch <- batch[!is.na(batch)]
-        batch <- as.factor(batch)
-        combat_exp <- sva::ComBat(dat = data, batch = batch, mod = NULL,
-                                  par.prior = TRUE, prior.plots = FALSE)
-    } else {
-        batch <- batch_info$Year[
-            match(samples, batch_info$Samples)
-        ]
-        cat("Samples without year info:",
-            length(batch[is.na(batch)]), "\n")
-        print(samples[is.na(batch)])
-        data <- data[, !is.na(batch)]
-        batch <- batch[!is.na(batch)]
-        batch <- as.factor(batch)
-        combat_exp <- sva::ComBat(dat = data, batch = batch, mod = NULL,
-                                  par.prior = TRUE, prior.plots = FALSE)
+#' @return Expression matrix (batch corrected or filtered)
+correct_cancer_batch <- function(cancer_type, log2exp, groups, batch_info,
+        plates_to_remove = NULL, apply_combat = TRUE, verbose = TRUE) {
+    if (verbose)
+        cat(sprintf("Processing batch correction for %s...\n", cancer_type))
+    samples <- groups$V1[groups$V2 == cancer_type]
+    if (length(samples) == 0) {
+            cat(sprintf(
+                "No samples found for %s, returning NULL\n", 
+                cancer_type
+            ))
+            cat(sprintf("No samples found for %s, returning NULL\n", cancer_type))
+        return(NULL)
     }
-    return(combat_exp)
+    if (verbose)
+        cat(sprintf("Found %d samples for %s\n", length(samples), cancer_type))
+    exp_proj <- log2exp[, colnames(log2exp) %in% samples, drop = FALSE]
+    batches <- batch_info[batch_info$Samples %in% colnames(exp_proj), ]
+    if (nrow(batches) == 0) {
+    exp_proj <- exp_proj[
+        , match(batches$Samples, colnames(exp_proj)), drop = FALSE
+    ]
+            cat(sprintf("No batch info found for %s\n", cancer_type))
+        return(exp_proj)
+    }
+    exp_proj <- 
+    exp_proj[, match(batches$Samples, colnames(exp_proj)), drop = FALSE]
+    if (verbose) {
+        cat("Plate distribution before filtering:\n")
+        print(table(batches$Plates))
+    }
+    plate_counts <- table(batches$Plates)
+    single_sample_plates <- names(plate_counts)[plate_counts == 1]
+    if (!is.null(plates_to_remove)) {
+        plates_to_exclude <- unique(
+            c(single_sample_plates, as.character(plates_to_remove))
+        )
+    } else {
+        plates_to_exclude <- single_sample_plates
+    }
+    if (length(plates_to_exclude) > 0) {
+        if (verbose) {
+            cat(sprintf(
+                "Removing plates: %s\n",
+                paste(plates_to_exclude, collapse = ", ")
+            ))
+        }
+        batches <- batches[!batches$Plates %in% plates_to_exclude, ]
+        exp_proj <- exp_proj[
+            , match(batches$Samples, colnames(exp_proj)), drop = FALSE
+        ]
+    }
+    remaining_plates <- length(unique(batches$Plates))
+    remaining_samples <- ncol(exp_proj)
+    if (verbose) {
+        cat(sprintf(
+            "After filtering: %d samples across %d plates\n",
+            remaining_samples, remaining_plates
+        ))
+    }
+    if (!apply_combat || remaining_plates < 2) {
+        if (verbose) {
+            if (!apply_combat)
+                cat("Batch correction disabled, returning filtered data\n")
+            else
+                cat("Only 1 plate remaining, skipping batch correction\n")
+        }
+        return(exp_proj)
+    }
+    if (remaining_samples < 3) {
+        if (verbose)
+            cat("Too few samples for batch correction\n")
+        return(exp_proj)
+    }
+    if (verbose)
+        cat("Applying ComBat correction...\n")
+    tryCatch({
+        combat_exp <- sva::ComBat(
+            dat = exp_proj,
+            batch = as.factor(batches$Plates),
+            mod = NULL,
+            par.prior = TRUE,
+            prior.plots = FALSE
+        )
+        combat_exp[combat_exp < 0] <- 0
+        if (verbose)
+            cat("ComBat correction completed successfully\n")
+        return(combat_exp)
+    }, error = function(e) {
+        if (verbose) {
+            cat(sprintf("Error in ComBat: %s\n", e$message))
+            cat("Returning uncorrected data\n")
+        }
+        return(exp_proj)
+    })
 }
