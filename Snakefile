@@ -176,11 +176,16 @@ SAMPLES_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_primary.tsv")
 SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_cancers_primary.tsv")
 
 
+###############################################################################
+### PANDA + LIONESS NETWORK INFERENCE                                      ###
+###############################################################################
 
+#------------------------------------------------------------------------------
+# Network Inference Output Directory
+#------------------------------------------------------------------------------
+## Primary output directory for PANDA consensus and LIONESS sample-specific networks
 
-
-
-
+NETWORKS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "networks")
 
 
 #####
@@ -190,20 +195,6 @@ TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_dat
 TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
 INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "indegrees_norm")
 TSNE_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "tsne_results")
-
-
-
-
-
-
-
-
-
-
-
-# PANDA + LIONESS NETWORK INFERENCE #
-NETWORKS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "networks")
-
 
 
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
