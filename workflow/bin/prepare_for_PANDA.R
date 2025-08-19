@@ -17,7 +17,7 @@ option_list <- list(
         c("-e", "--expression_file"),
         type = "character",
         default = NULL,
-        help = "Path to the normalized batch corrected expression file (RData).",
+        help = "Path to the normalized batch corrected expression file.",
         metavar = "character"
     ),
     optparse::make_option(
@@ -225,7 +225,7 @@ log2exp_clean <- log2exp_clean[,
 
 ####
 
-log2exp_clean <- log2exp_clean[rowSums(log2exp_clean) > 0, ] #19556 genes, 10283 samples
+log2exp_clean <- log2exp_clean[rowSums(log2exp_clean) > 0, ] 
 non_zero <- apply(log2exp_clean, 1, function(i) sum(i > 0))
 log2exp_clean <- log2exp_clean[non_zero >= MIN_SAMPLE_EXPRESSION, ]
 
