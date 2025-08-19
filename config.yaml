@@ -33,7 +33,7 @@ cancer_types: ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "COAD", "DLBC", "ESCA", "G
 
 
 number_cores_mbatch: 4
-download_files: "NO" # Set to "YES" to download the expression files (takes very long time)
+download_files: "NO" # Set to "YES" to download the expression files (takes a while to download it)
 datatypes: ["expression", "indegree"]
 threshold_cox: [20, 50]
 output_dir: "results"

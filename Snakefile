@@ -61,13 +61,127 @@ CLINICAL_FILE_RDATA = config["clinical_file_rdata"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
 PPI_FILE = config["ppi_file"]
 MOTIF_FILE = config["motif_file"]
-# EXPRESSION_FILE = config["expression_file"]
 SAMPLES_FILE = config["samples_file"]
 IMMUNE_FILE = config["immune_file"]
 GMT_FILE = config["gmt_file"]
 PATHWAYS_HIERARCHY_FILE = config["pathways_hierarchy_file"]
 PATHWAYS_HSA_ID_FILE = config["pathways_hsa_id_file"]
 LIST_PATHWAYS_FILE = config["list_of_pathways_file"]
+
+
+###############################################################################
+### DATA DOWNLOAD AND NORMALIZATION PIPELINE PATHS                        ###
+###############################################################################
+
+## Primary output directory for downloaded TCGA GDC data
+OUTPUT_GDC_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "gdc_data")
+
+## Individual cancer type expression GDC files (RData format)
+## Pattern: TCGA-{cancer}.RData (e.g., TCGA-BRCA.RData, TCGA-LUAD.RData)
+OUTPUT_GDC_FILE = os.path.join(OUTPUT_GDC_DIR, "TCGA-{cancer}.RData")
+
+## Marker files to indicate skipped downloads when download_files="NO" in config
+## These files track which cancer types were intentionally skipped
+MARKER_FILE = os.path.join(OUTPUT_GDC_DIR, "{cancer}.SKIPPED.txt")
+
+#------------------------------------------------------------------------------
+# Pre-downloaded Data and Combined Processing
+#------------------------------------------------------------------------------
+## Directory containing pre-downloaded GDC data (alternative to fresh download)
+## Use this when download_files="NO" to work with existing data
+EXPRESSION_DIR_GDC = os.path.join(OUTPUT_DIR_ALL_CANCERS, "gdc_data_predownloaded")
+
+## Output directory for combined multi-cancer datasets
+OUTPUT_DIR_DOWNLOAD_COMBINED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "combined_gdc_data")
+
+## Combined expression matrix across all cancer types
+## Contains raw STAR gene counts in TSV format (genes x samples)
+OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_STAR_counts.tsv")
+
+## Sample-to-cancer type mapping file
+## Maps individual sample IDs to their respective cancer types
+GROUP_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_sample_groups.tsv")
+
+## Gene annotation and feature information (RData format)
+## Contains gene IDs, symbols, biotypes, and genomic coordinates
+FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
+
+#------------------------------------------------------------------------------
+# Normalized Expression Data
+#------------------------------------------------------------------------------
+## PySNAIL normalized expression file (all cancers combined)
+## Contains qsmooth-normalized gene expression values
+PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "pysnail_normalized_STAR_counts.tsv")
+
+## Directory for cancer-specific normalized expression files
+## Contains individual RData files for each cancer type post-normalization
+## Pattern: normalized_expression_TCGA-{cancer}.RData
+OUTPUT_DIR_PYSNAIL_CANCER = os.path.join(OUTPUT_DIR_ALL_CANCERS, "pysnail_normalized_individual_cancer_expression")
+PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_PYSNAIL_CANCER, "normalized_expression_TCGA-{cancer}.RData")
+
+
+###############################################################################
+### BATCH EFFECT ANALYSIS PIPELINE PATHS                                  ###
+###############################################################################
+
+#------------------------------------------------------------------------------
+# Batch Effect Detection and Analysis
+#------------------------------------------------------------------------------
+## Primary output directory for batch effect analysis results across all cancers
+## Contains MBatch DSC analysis results and diagnostic files
+BATCH_DIR_ALL_CANCERS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_analysis")
+
+## Cancer-specific batch analysis directories  
+## Each directory contains PCA plots, DSC statistics, and batch effect diagnostics
+BATCH_DIR_CANCER = os.path.join(BATCH_DIR_ALL_CANCERS, "TCGA-{cancer}")
+
+## Summary figure showing Dispersive Separation Criterion (DSC) values
+BATCH_EFFECT_PDF = os.path.join(FIG_DIR, "MBatch_DSC.pdf")
+
+#------------------------------------------------------------------------------
+# Batch-Corrected Expression Data
+#------------------------------------------------------------------------------
+## ComBat-corrected expression matrix (all cancers combined)
+## Contains batch-effect corrected log2-transformed gene expression values
+BATCH_CORRECTED_EXPRESSION_FILE = os.path.join(
+    OUTPUT_DIR_ALL_CANCERS, 
+    "batch_corrected_expression", 
+    "batch_corrected_expression_all_cancers.RData"
+)
+
+###############################################################################
+### PANDA NETWORK INFERENCE INPUT FILES                                    ###
+###############################################################################
+
+#------------------------------------------------------------------------------
+# PANDA-Ready Prior Networks and Expression Data
+#------------------------------------------------------------------------------
+## Directory: panda_input/ contains all filtered input files for PANDA/LIONESS
+
+## Transcription factor binding motif prior network (filtered)
+MOTIF_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/motif_tcga_primary.tsv")
+
+## Protein-protein interaction prior network (filtered)  
+PPI_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/ppi_tcga_primary.tsv")
+
+## Gene expression matrix (batch-corrected and filtered)
+EXPRESSION_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/exp_tcga_primary.tsv")
+
+## Sample identifier list (primary tumors only)
+## Contains TCGA sample IDs in order matching expression matrix columns
+SAMPLES_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_primary.tsv")
+
+## Sample-to-cancer mapping file (primary tumors only)
+## Maps each sample to its corresponding cancer type for downstream analysis
+SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_cancers_primary.tsv")
+
+
+
+
+
+
+
+
 
 #####
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -78,36 +192,14 @@ INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cance
 TSNE_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "tsne_results")
 
 
-## Output directory for the downloaded GDC data ##
-OUTPUT_GDC_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "gdc_data")
-OUTPUT_GDC_FILE = os.path.join(OUTPUT_GDC_DIR, "TCGA-{cancer}.RData")
-MARKER_FILE =  os.path.join(OUTPUT_GDC_DIR, "{cancer}.SKIPPED.txt") # in case if we don't want to download the GDC data
 
-# Output directory for the combined downloaded GDC data ##
-EXPRESSION_DIR_GDC = os.path.join(OUTPUT_DIR_ALL_CANCERS, "gdc_data_predownloaded") # directory for predownloaded GDC data
-OUTPUT_DIR_DOWNLOAD_COMBINED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "combined_gdc_data")
-OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_STAR_counts.tsv")
-GROUP_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_sample_groups.tsv")
-FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
-PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "pysnail_normalized_STAR_counts.tsv")
 
-# Output directory for the individual cancer expression files after normalization with PySNAIL ##
 
-OUTPUT_DIR_PYSNAIL_CANCER = os.path.join(OUTPUT_DIR_ALL_CANCERS, "pysnail_normalized_individual_cancer_expression")
 
-# BATCH EFFECT ANALYSIS #
-PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_PYSNAIL_CANCER, "normalized_expression_TCGA-{cancer}.RData")
-BATCH_DIR_ALL_CANCERS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_analysis")
-BATCH_DIR_CANCER = os.path.join(BATCH_DIR_ALL_CANCERS, "TCGA-{cancer}")
-BATCH_EFFECT_PDF = os.path.join(FIG_DIR, "MBatch_DSC.pdf")
-BATCH_CORRECTED_EXPRESSION_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_corrected_expression", "batch_corrected_expression_all_cancers.RData")
 
-# PREPARING FILES FOR PANDA #
-MOTIF_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/motif_tcga_primary.tsv")
-PPI_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/ppi_tcga_primary.tsv")
-EXPRESSION_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/exp_tcga_primary.tsv")
-SAMPLES_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_primary.tsv")
-SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_cancers_primary.tsv")
+
+
+
 
 # PANDA + LIONESS NETWORK INFERENCE #
 NETWORKS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "networks")
@@ -520,6 +612,7 @@ rule run_panda_lioness:
             --random_seed {params.random_seed} \
             --ncores {params.ncores}
         """
+
 
 ## Extract clinical data for each cancer type ##
 rule extract_clinical_data:
