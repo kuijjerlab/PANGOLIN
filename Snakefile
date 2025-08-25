@@ -184,23 +184,43 @@ SAMPLES_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_primary.tsv")
 
 ## Sample-to-cancer mapping file (primary tumors only)
 ## Maps each sample to its corresponding cancer type for downstream analysis
-SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_cancers_primary.tsv")
-
+# SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_cancers_primary.tsv")
+SAMPLES_WITH_CANCER_FILE = "/fp/projects01/ec31/kuijjer-group/tatiana/networks_tcga_primary/input/samples_cancers_primary.tsv"
 
 ###############################################################################
-### PANDA + LIONESS NETWORK INFERENCE                                      ###
+### PANDA + LIONESS NETWORK INFERENCE AND POST-PROCESSING                    ###
 ###############################################################################
 
 #------------------------------------------------------------------------------
-# Network Inference Output Directory
+# Raw LIONESS Network Inference Output
 #------------------------------------------------------------------------------
 ## Primary output directory for PANDA aggregate and LIONESS sample-specific networks
-
+## Contains individual .txt files for each sample's regulatory network
 NETWORKS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "networks")
+
+## Comprehensive mapping file linking LIONESS network files to sample metadata
 LIONESS_SAMPLE_MAPPING = os.path.join(NETWORKS_DIR, "information_networks_primary.txt")
 
-## Directory for the merged networks
+#------------------------------------------------------------------------------
+# Cancer-Specific Network Aggregation
+#------------------------------------------------------------------------------
+## Directory for cancer-specific merged network RData files
+## Contains combined networks for each cancer type in efficient RData format
+## Files: net_BRCA.RData, net_LUAD.RData, etc.
+## Large cancer types (≥300 samples) are split into multiple files (e.g., net_BRCA1.RData, net_BRCA2.RData)
 OUTPUT_DIR_FINAL_MERGED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_networks")
+
+#------------------------------------------------------------------------------
+# Quantile-Normalized Networks
+#------------------------------------------------------------------------------
+## Directory for quantile-normalized cancer-specific networks
+## Contains normalized versions of merged networks 
+## Files: net_norm_TCGA-BRCA.RData, net_norm_TCGA-LUAD.RData, etc.
+OUTPUT_DIR_NORMALIZED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_networks_normalized")
+
+
+
+
 
 #####
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -317,8 +337,9 @@ rule all:
         # SAMPLES_PANDA_FILE,
         # SAMPLES_WITH_CANCER_FILE,
         # NETWORKS_DIR,
-        LIONESS_SAMPLE_MAPPING,
-        OUTPUT_DIR_FINAL_MERGED_NETWORKS
+        # LIONESS_SAMPLE_MAPPING,
+        # OUTPUT_DIR_FINAL_MERGED_NETWORKS,
+        OUTPUT_DIR_NORMALIZED_NETWORKS
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -610,54 +631,76 @@ rule all:
 #             --ncores {params.ncores}
 #         """
 
-## Create LIONESS sample-to-network mapping file
-rule create_lioness_mapping_file:
+# ## Create LIONESS sample-to-network mapping file
+# rule create_lioness_mapping_file:
+#     """
+#     Create a comprehensive mapping file that associates each LIONESS
+#     sample-specific network file with its corresponding sample ID and cancer type.
+#     """
+#     input:
+#         network_dir = NETWORKS_DIR,
+#         samples_file = SAMPLES_WITH_CANCER_FILE
+#     output:
+#         mapping_file = LIONESS_SAMPLE_MAPPING
+
+#     message:
+#         "Creating LIONESS sample-to-network mapping file from {input.network_dir}"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/create_lioness_sample_mapping_file.R \
+#             --network_dir {input.network_dir} \
+#             --samples_panda_file {input.samples_file} \
+#             --output_file {output.mapping_file}
+#         """
+
+
+# ## Save cancer-specific LIONESS networks
+# rule save_cancer_specific_lioness_networks:
+#     """
+#     Save LIONESS sample-specific networks to cancer-specific RData files.
+#     If the number of networks is large, split them into multiple files.
+#     """
+#     input:
+#         network_dir = NETWORKS_DIR,
+#         lioness_sample_mapping = LIONESS_SAMPLE_MAPPING
+#     output:
+#         output_dir_merged = directory(OUTPUT_DIR_FINAL_MERGED_NETWORKS)
+#     message:
+#         "Saving cancer-specific LIONESS networks"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#          Rscript {params.bin}/save_networks.R \
+#             --network_dir {input.network_dir} \
+#             --lioness_sample_mapping {input.lioness_sample_mapping} \
+#             --output_dir {output.output_dir_merged}
+#         """
+
+
+## Apply quantile normalization on the networks
+rule normalize_networks:
     """
-    Create a comprehensive mapping file that associates each LIONESS
-    sample-specific network file with its corresponding sample ID and cancer type.
+    Apply quantile normalization to cancer-specific LIONESS networks.
     """
     input:
-        network_dir = NETWORKS_DIR,
-        samples_file = SAMPLES_WITH_CANCER_FILE
+        network_dir = OUTPUT_DIR_FINAL_MERGED_NETWORKS,
+        sample_file = SAMPLES_WITH_CANCER_FILE
     output:
-        mapping_file = LIONESS_SAMPLE_MAPPING
-
+        output_dir = directory(OUTPUT_DIR_NORMALIZED_NETWORKS)
     message:
-        "Creating LIONESS sample-to-network mapping file from {input.network_dir}"
+        "Applying quantile normalization to networks"
     params:
         bin = config["bin"]
     shell:
         """
-        Rscript {params.bin}/create_lioness_sample_mapping_file.R \
+        Rscript {params.bin}/quantile_normalize_networks.R \
             --network_dir {input.network_dir} \
-            --samples_panda_file {input.samples_file} \
-            --output_file {output.mapping_file}
+            --output_dir {output.output_dir} \
+            --sample_file {input.sample_file}
         """
-
-
-## Save cancer-specific LIONESS networks
-rule save_cancer_specific_lioness_networks:
-    """
-    Save LIONESS sample-specific networks to cancer-specific RData files.
-    If the number of networks is large, split them into multiple files.
-    """
-    input:
-        network_dir = NETWORKS_DIR,
-        lioness_sample_mapping = LIONESS_SAMPLE_MAPPING
-    output:
-        output_dir_merged = directory(OUTPUT_DIR_FINAL_MERGED_NETWORKS)
-    message:
-        "Saving cancer-specific LIONESS networks"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-         Rscript {params.bin}/save_networks.R \
-            --network_dir {input.network_dir} \
-            --lioness_sample_mapping {input.lioness_sample_mapping} \
-            --output_dir {output.output_dir_merged}
-        """
-# Apply quantile normalization on the networks and save the normalized networks
 
 
 # ## Extract clinical data for each cancer type ##
