@@ -40,10 +40,17 @@ option_list <- list(
 opt_parser <- optparse::OptionParser(option_list = option_list)
 opt <- optparse::parse_args(opt_parser)
 
+
+NETWORK_DIR <- opt$network_dir
+SAMPLES_PANDA_FILE <- opt$samples_panda_file
+OUTPUT_FILE <- opt$output_file
+
+
 cat("Creating LIONESS sample mapping file...\n")
 cat(sprintf("Network directory: %s\n", NETWORK_DIR))
 cat(sprintf("PANDA samples file: %s\n", SAMPLES_PANDA_FILE))
 cat(sprintf("Output file: %s\n", OUTPUT_FILE))
+
 
 ####################
 ## Process data   ##
@@ -115,10 +122,6 @@ if (unmatched_files > 0) {
 matched_files <- sum(!is.na(filelist_dat$tcga_id))
 cat(sprintf("Successfully matched %d files to TCGA samples\n", matched_files))
 
-# Display cancer type distribution
-cancer_counts <- table(filelist_dat$cancer, useNA = "ifany")
-cat("Cancer type distribution:\n")
-print(cancer_counts)
 
 ####################
 ## Save output    ##
@@ -127,10 +130,3 @@ print(cancer_counts)
 cat("Writing LIONESS sample mapping file...\n")
 write.table(filelist_dat, OUTPUT_FILE,
             col.names = TRUE, row.names = FALSE, sep = "\t", quote = FALSE)
-
-cat("\n=== LIONESS MAPPING CREATION SUMMARY ===\n")
-cat(sprintf("Total LIONESS files found: %d\n", nrow(filelist_dat)))
-cat(sprintf("Successfully matched files: %d\n", matched_files))
-cat(sprintf("Unmatched files: %d\n", unmatched_files))
-cat(sprintf("Cancer types: %d\n", 
-    length(unique(filelist_dat$cancer[!is.na(filelist_dat$cancer)]))))
