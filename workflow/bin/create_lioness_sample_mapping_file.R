@@ -58,7 +58,7 @@ cat(sprintf("Output file: %s\n", OUTPUT_FILE))
 
 # Find all LIONESS network files
 cat("Scanning for LIONESS network files...\n")
-filelist <- list.files(NETWORK_DIR, pattern = "lioness.*\\.txt$", recursive = TRUE)
+filelist <- list.files(NETWORK_DIR, pattern = "lioness.*\\.txt$", recursive = TRUE, full.names = T)
 
 if (length(filelist) == 0) {
     cat("Error: No LIONESS network files found in directory:", NETWORK_DIR, "\n")
