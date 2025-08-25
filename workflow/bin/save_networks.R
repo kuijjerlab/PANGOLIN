@@ -44,7 +44,6 @@ NETWORK_DIR <- opt$network_dir
 LIONESS_SAMPLE_MAPPING <- opt$lioness_sample_mapping
 OUTPUT_DIR <- opt$output_dir
 
-
 cat("Starting LIONESS network combination and saving...\n")
 cat(sprintf("Network directory: %s\n", NETWORK_DIR))
 cat(sprintf("Sample mapping file: %s\n", LIONESS_SAMPLE_MAPPING))
@@ -59,7 +58,7 @@ source("workflow/bin/split_save_networks_fn.R")
 
 # Load LIONESS network manifest
 cat("Loading LIONESS sample mapping...\n")
-info_net <- fread(LIONESS_SAMPLE_MAPPING)
+info_net <- fread(LIONESS_MAPPING_FILE)
 
 # Get unique cancer types
 cancers <- unique(info_net$cancer)
