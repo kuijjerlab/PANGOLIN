@@ -194,10 +194,13 @@ SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_cancers
 #------------------------------------------------------------------------------
 # Network Inference Output Directory
 #------------------------------------------------------------------------------
-## Primary output directory for PANDA consensus and LIONESS sample-specific networks
+## Primary output directory for PANDA aggregate and LIONESS sample-specific networks
 
 NETWORKS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "networks")
+LIONESS_SAMPLE_MAPPING = os.path.join(NETWORKS_DIR, "information_networks_primary.txt")
 
+## Directory for the merged networks
+OUTPUT_DIR_FINAL_MERGED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_networks")
 
 #####
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -308,12 +311,14 @@ rule all:
         # expand(BATCH_DIR_CANCER, cancer = CANCER_TYPES),
         # BATCH_EFFECT_PDF,
         # BATCH_CORRECTED_EXPRESSION_FILE,
-        MOTIF_PANDA_FILE,
-        PPI_PANDA_FILE,
-        EXPRESSION_PANDA_FILE,
-        SAMPLES_PANDA_FILE,
-        SAMPLES_WITH_CANCER_FILE,
-        # NETWORKS_DIR
+        # MOTIF_PANDA_FILE,
+        # PPI_PANDA_FILE,
+        # EXPRESSION_PANDA_FILE,
+        # SAMPLES_PANDA_FILE,
+        # SAMPLES_WITH_CANCER_FILE,
+        # NETWORKS_DIR,
+        LIONESS_SAMPLE_MAPPING,
+        OUTPUT_DIR_FINAL_MERGED_NETWORKS
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -450,839 +455,888 @@ rule all:
 #         """   
 ## Check the batch effect in the expression data ##
 ## This takes a while to run ##
-rule analyze_batch_effect:
-    input:
-        expression_file = PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC,
-        group_file = GROUP_FILE,
-        batch_file = BATCH_FILE,
-        clinical_file = CLINICAL_FILE_RDATA 
-    output:
-        output_dir = directory(BATCH_DIR_CANCER)
-    message:
-        "Analyzing batch effect for: {wildcards.cancer}"   
+# rule analyze_batch_effect:
+#     input:
+#         expression_file = PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC,
+#         group_file = GROUP_FILE,
+#         batch_file = BATCH_FILE,
+#         clinical_file = CLINICAL_FILE_RDATA 
+#     output:
+#         output_dir = directory(BATCH_DIR_CANCER)
+#     message:
+#         "Analyzing batch effect for: {wildcards.cancer}"   
 
-    params:
-        bin = config["bin"],
-        nthreads = config["number_cores_mbatch"]
-    conda:
-        "mbatch_minimal"
-    shell:
-        """
-        Rscript {params.bin}/batch_effect_analysis.R \
-            --tumor_type {wildcards.cancer} \
-            --expression_file {input.expression_file} \
-            --group_file {input.group_file} \
-            --batch_file {input.batch_file} \
-            --clin_file {input.clinical_file} \
-            --nthreads {params.nthreads} \
-            --output_directory {output.output_dir}
-        """
+#     params:
+#         bin = config["bin"],
+#         nthreads = config["number_cores_mbatch"]
+#     conda:
+#         "mbatch_minimal"
+#     shell:
+#         """
+#         Rscript {params.bin}/batch_effect_analysis.R \
+#             --tumor_type {wildcards.cancer} \
+#             --expression_file {input.expression_file} \
+#             --group_file {input.group_file} \
+#             --batch_file {input.batch_file} \
+#             --clin_file {input.clinical_file} \
+#             --nthreads {params.nthreads} \
+#             --output_directory {output.output_dir}
+#         """
 
-## Create a PDF figure for the batch effect analysis ##
-rule plot_mbatch_results:
-    input:
-        batch_dir = BATCH_DIR_ALL_CANCERS
-    output:
-        pdf_file = BATCH_EFFECT_PDF
-    message:
-        "Creating batch effect figure"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/plot_mbatch_results.R \
-            --batch_results_dir {input.batch_dir} \
-            --output_file {output.pdf_file}
-        """
+# ## Create a PDF figure for the batch effect analysis ##
+# rule plot_mbatch_results:
+#     input:
+#         batch_dir = BATCH_DIR_ALL_CANCERS
+#     output:
+#         pdf_file = BATCH_EFFECT_PDF
+#     message:
+#         "Creating batch effect figure"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_mbatch_results.R \
+#             --batch_results_dir {input.batch_dir} \
+#             --output_file {output.pdf_file}
+#         """
 
-## BATCH correction
-rule correct_batch_effect:
-    input:
-        expression_file = PYSNAIL_NORMALIZED_FILE,
-        group_file = GROUP_FILE,
-        batch_file = BATCH_FILE,
-        clinical_file = CLINICAL_FILE_RDATA 
-    output:
-        batch_corrected_expression_file = BATCH_CORRECTED_EXPRESSION_FILE
-    message:
-        "Correcting batch effect in expression data"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/combat_correct.R \
-            --expression_file {input.expression_file} \
-            --group_file {input.group_file} \
-            --batch_file {input.batch_file} \
-            --clin_file {input.clinical_file} \
-            --output_file {output.batch_corrected_expression_file}
-        """
+# ## BATCH correction
+# rule correct_batch_effect:
+#     input:
+#         expression_file = PYSNAIL_NORMALIZED_FILE,
+#         group_file = GROUP_FILE,
+#         batch_file = BATCH_FILE,
+#         clinical_file = CLINICAL_FILE_RDATA 
+#     output:
+#         batch_corrected_expression_file = BATCH_CORRECTED_EXPRESSION_FILE
+#     message:
+#         "Correcting batch effect in expression data"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/combat_correct.R \
+#             --expression_file {input.expression_file} \
+#             --group_file {input.group_file} \
+#             --batch_file {input.batch_file} \
+#             --clin_file {input.clinical_file} \
+#             --output_file {output.batch_corrected_expression_file}
+#         """
 
-## PREPARE FOR PANDA
-rule prepare_files_for_PANDA:
-    """
-    Prepare expression data, motif priors, and PPI priors for PANDA analysis.
-    Filters for protein coding genes, removes duplicates, applies expression
-    thresholds, and creates PANDA-compatible input files.
-    """
-    input:
-        expression_file = BATCH_CORRECTED_EXPRESSION_FILE,
-        batch_file = BATCH_FILE,
-        motif_file = MOTIF_FILE,
-        ppi_file = PPI_FILE,
-        samples_file = SAMPLES_FILE,
-        feature_file = FEATURE_FILE,
-        groups_file = GROUP_FILE,
-    output:
-        motif_filtered = MOTIF_PANDA_FILE,
-        ppi_filtered = PPI_PANDA_FILE,
-        expression_filtered = EXPRESSION_PANDA_FILE,
-        samples_filtered = SAMPLES_PANDA_FILE,
-        samples_with_cancer = SAMPLES_WITH_CANCER_FILE
-    params:
-        bin = config["bin"],
-        min_sample_expression = 20
-    shell:
-        """
-        Rscript {params.bin}/prepare_for_PANDA.R \
-            --expression_file {input.expression_file} \
-            --batch_file {input.batch_file} \
-            --motif_file {input.motif_file} \
-            --ppi_file {input.ppi_file} \
-            --samples_file {input.samples_file} \
-            --feature_file {input.feature_file} \
-            --groups_file {input.groups_file} \
-            --output_motif_file_filtered {output.motif_filtered} \
-            --output_ppi_file_filtered {output.ppi_filtered} \
-            --output_expression_file_filtered {output.expression_filtered} \
-            --output_samples_file_filtered {output.samples_filtered} \
-            --output_samples_file_filtered_with_cancer_type {output.samples_with_cancer} \
-            --min_sample_expression {params.min_sample_expression} \
-        """
+# ## PREPARE FOR PANDA
+# rule prepare_files_for_PANDA:
+#     """
+#     Prepare expression data, motif priors, and PPI priors for PANDA analysis.
+#     Filters for protein coding genes, removes duplicates, applies expression
+#     thresholds, and creates PANDA-compatible input files.
+#     """
+#     input:
+#         expression_file = BATCH_CORRECTED_EXPRESSION_FILE,
+#         batch_file = BATCH_FILE,
+#         motif_file = MOTIF_FILE,
+#         ppi_file = PPI_FILE,
+#         samples_file = SAMPLES_FILE,
+#         feature_file = FEATURE_FILE,
+#         groups_file = GROUP_FILE,
+#     output:
+#         motif_filtered = MOTIF_PANDA_FILE,
+#         ppi_filtered = PPI_PANDA_FILE,
+#         expression_filtered = EXPRESSION_PANDA_FILE,
+#         samples_filtered = SAMPLES_PANDA_FILE,
+#         samples_with_cancer = SAMPLES_WITH_CANCER_FILE
+#     params:
+#         bin = config["bin"],
+#         min_sample_expression = 20
+#     shell:
+#         """
+#         Rscript {params.bin}/prepare_for_PANDA.R \
+#             --expression_file {input.expression_file} \
+#             --batch_file {input.batch_file} \
+#             --motif_file {input.motif_file} \
+#             --ppi_file {input.ppi_file} \
+#             --samples_file {input.samples_file} \
+#             --feature_file {input.feature_file} \
+#             --groups_file {input.groups_file} \
+#             --output_motif_file_filtered {output.motif_filtered} \
+#             --output_ppi_file_filtered {output.ppi_filtered} \
+#             --output_expression_file_filtered {output.expression_filtered} \
+#             --output_samples_file_filtered {output.samples_filtered} \
+#             --output_samples_file_filtered_with_cancer_type {output.samples_with_cancer} \
+#             --min_sample_expression {params.min_sample_expression} \
+#         """
 
 
-# PANDA/LIONESS network inference using netZooPy
-rule run_panda_lioness:
-    """
-    Run PANDA and LIONESS network inference using netZooPy.
-    PANDA builds an initial regulatory network and LIONESS estimates 
-    sample-specific networks for each individual sample.
-    """
-    input:
-        exp_file = EXPRESSION_PANDA_FILE, 
-        motif_file = MOTIF_PANDA_FILE, 
-        ppi_file = PPI_PANDA_FILE 
-    output:
-        network_dir = directory(NETWORKS_DIR)
-    params:
-        bin = config["bin"],
-        start_sample = 1,
-        end_sample = 10,  # adjust based on your sample count
-        computing = "cpu",  # change to "gpu" if you have GPU support
-        random_seed = 10,
-        ncores = 10
-    conda:
-        "workflow/envs/netzoopy-local.yaml"
-    shell:
-        """
-        set +u
-        unset PYTHONPATH
-        unset PYTHONHOME
-        export PYTHONNOUSERSITE=1
+# # PANDA/LIONESS network inference using netZooPy
+# rule run_panda_lioness:
+#     """
+#     Run PANDA and LIONESS network inference using netZooPy.
+#     PANDA builds an initial regulatory network and LIONESS estimates 
+#     sample-specific networks for each individual sample.
+#     """
+#     input:
+#         exp_file = EXPRESSION_PANDA_FILE, 
+#         motif_file = MOTIF_PANDA_FILE, 
+#         ppi_file = PPI_PANDA_FILE 
+#     output:
+#         network_dir = directory(NETWORKS_DIR)
+#     params:
+#         bin = config["bin"],
+#         start_sample = 1,
+#         end_sample = 10,  # adjust based on your sample count
+#         computing = "cpu",  # change to "gpu" if you have GPU support
+#         random_seed = 10,
+#         ncores = 10
+#     conda:
+#         "workflow/envs/netzoopy-local.yaml"
+#     shell:
+#         """
+#         set +u
+#         unset PYTHONPATH
+#         unset PYTHONHOME
+#         export PYTHONNOUSERSITE=1
         
-        # Create networks directory
-        mkdir -p {output.network_dir}
+#         # Create networks directory
+#         mkdir -p {output.network_dir}
         
-        python {params.bin}/run_panda_lioness.py \
-            --exp_file {input.exp_file} \
-            --motif_file {input.motif_file} \
-            --ppi_file {input.ppi_file} \
-            --output_dir {output.network_dir} \
-            --start_sample {params.start_sample} \
-            --end_sample {params.end_sample} \
-            --computing {params.computing} \
-            --random_seed {params.random_seed} \
-            --ncores {params.ncores}
-        """
+#         python {params.bin}/run_panda_lioness.py \
+#             --exp_file {input.exp_file} \
+#             --motif_file {input.motif_file} \
+#             --ppi_file {input.ppi_file} \
+#             --output_dir {output.network_dir} \
+#             --start_sample {params.start_sample} \
+#             --end_sample {params.end_sample} \
+#             --computing {params.computing} \
+#             --random_seed {params.random_seed} \
+#             --ncores {params.ncores}
+#         """
 
-
-## Extract clinical data for each cancer type ##
-rule extract_clinical_data:
+## Create LIONESS sample-to-network mapping file
+rule create_lioness_mapping_file:
+    """
+    Create a comprehensive mapping file that associates each LIONESS
+    sample-specific network file with its corresponding sample ID and cancer type.
+    """
     input:
-        clin_file = CLINICAL_FILE
+        network_dir = NETWORKS_DIR,
+        samples_file = SAMPLES_WITH_CANCER_FILE
     output:
-        out_file = OUTPUT_CANCER
+        mapping_file = LIONESS_SAMPLE_MAPPING
+
     message:
-        "Extracting clinical data for: {wildcards.cancer}"
+        "Creating LIONESS sample-to-network mapping file from {input.network_dir}"
     params:
         bin = config["bin"]
     shell:
         """
-        Rscript {params.bin}/extract_clinical_data.R \
-            --clinical {input.clin_file} \
-            --tumor {wildcards.cancer} \
-            --output {output.out_file}
+        Rscript {params.bin}/create_lioness_sample_mapping_file.R \
+            --network_dir {input.network_dir} \
+            --samples_panda_file {input.samples_file} \
+            --output_file {output.mapping_file}
         """
 
 
-## Run T-SNE on expression and gene indegree data for all cancers ##
-rule run_tsne:
+## Save cancer-specific LIONESS networks
+rule save_cancer_specific_lioness_networks:
+    """
+    Save LIONESS sample-specific networks to cancer-specific RData files.
+    If the number of networks is large, split them into multiple files.
+    """
     input:
-        expression_file = EXPRESSION_PANDA_FILE,
-        samples_file = SAMPLES_PANDA_FILE,
-        tumor_main_dir = OUTPUT_DIR
+        network_dir = NETWORKS_DIR,
+        lioness_sample_mapping = LIONESS_SAMPLE_MAPPING
     output:
-        out_file_expression = TSNE_DATA_EXPRESSION,
-        out_file_indegree = TSNE_DATA_INDEGREE
+        output_dir_merged = directory(OUTPUT_DIR_FINAL_MERGED_NETWORKS)
     message:
-        "Running T-SNE on the indegree and expression"
+        "Saving cancer-specific LIONESS networks"
     params:
         bin = config["bin"]
     shell:
         """
-        Rscript {params.bin}/run_tsne.R \
-            --exp_file {input.expression_file} \
-            --samples_file {input.samples_file} \
-            --tumor_dir {input.tumor_main_dir} \
-            --output_file_expression {output.out_file_expression} \
-            --output_file_indegree {output.out_file_indegree} 
+         Rscript {params.bin}/save_networks.R \
+            --network_dir {input.network_dir} \
+            --lioness_sample_mapping {input.lioness_sample_mapping} \
+            --output_dir {output.output_dir_merged}
+        """
+# Apply quantile normalization on the networks and save the normalized networks
+
+
+# ## Extract clinical data for each cancer type ##
+# rule extract_clinical_data:
+#     input:
+#         clin_file = CLINICAL_FILE
+#     output:
+#         out_file = OUTPUT_CANCER
+#     message:
+#         "Extracting clinical data for: {wildcards.cancer}"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/extract_clinical_data.R \
+#             --clinical {input.clin_file} \
+#             --tumor {wildcards.cancer} \
+#             --output {output.out_file}
+#         """
+
+
+# ## Run T-SNE on expression and gene indegree data for all cancers ##
+# rule run_tsne:
+#     input:
+#         expression_file = EXPRESSION_PANDA_FILE,
+#         samples_file = SAMPLES_PANDA_FILE,
+#         tumor_main_dir = OUTPUT_DIR
+#     output:
+#         out_file_expression = TSNE_DATA_EXPRESSION,
+#         out_file_indegree = TSNE_DATA_INDEGREE
+#     message:
+#         "Running T-SNE on the indegree and expression"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/run_tsne.R \
+#             --exp_file {input.expression_file} \
+#             --samples_file {input.samples_file} \
+#             --tumor_dir {input.tumor_main_dir} \
+#             --output_file_expression {output.out_file_expression} \
+#             --output_file_indegree {output.out_file_indegree} 
             
-        """
+#         """
 
-## Create cancer legend for the cancer types ##
-rule create_cancer_legend:
-    input:
-        cancer_color_file = CANCER_COLOR_FILE
-    output:
-        CANCER_LEGEND_PDF
-    params:
-        bin = config["bin"],
-        fig_dir = FIG_DIR
-    shell:
-        """
-        Rscript {params.bin}/create_cancer_legend.R \
-            --cancer_color_file {input.cancer_color_file} \
-            --figure_dir {params.fig_dir}
-        """
-# filter PORCUPINE results
-rule filter_porcupine_results:
-    input:
-        porcupine_file = PORCUPINE_FILE
-    output:
-        filtered_porcupine_file = FILTERED_PORCUPINE_FILE
-    message:
-        "Running filtering of porcupine results for: {wildcards.cancer}" 
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/preprocess_PORCUPINE_results.R \
-            --porcpupine_file_path {input.porcupine_file} \
-            --filtered_porcupine_file_path {output.filtered_porcupine_file}
-        """
-# combine filtered PORCUPINE results
-rule combine_porcupine_results:
-    input:
-        expand(FILTERED_PORCUPINE_FILE, cancer=CANCER_TYPES)
-    output:
-        PORCUPINE_RESULTS_ALL
-    message:
-        "Combining all filtered PORCUPINE results into one table."
-    shell:
-        """
-        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
-        for file in {input}; do
-            cancer=$(basename $(dirname $(dirname $file)))
-            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
-        done
-        """
-# plot PORCUPINE results
-rule plot_porcupine_results:
-    input:
-        porcupine_file_all = PORCUPINE_RESULTS_ALL,
-        pathways_hierarchy_file = PATHWAYS_HIERARCHY_FILE,
-        pathways_hsa_id_file = PATHWAYS_HSA_ID_FILE,
-        list_of_pathways_file = LIST_PATHWAYS_FILE
-    output:
-        figure_pathway_intersection = FIG_PATHWAY_INTERSECTION,
-        figure_shared_categories = FIG_SHARED_CATEGORIES
-    message:
-        "Creating plots for the PORCUPINE results" 
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/plot_PORCUPINE_results.R \
-            --pcp_results_all_cancers_file {input.porcupine_file_all} \
-            --pathways_hierarchy_file {input.pathways_hierarchy_file} \
-            --pathways_hsa_id_file {input.pathways_hsa_id_file} \
-            --list_of_pathways_file {input.list_of_pathways_file} \
-            --figure_pathway_intersection {output.figure_pathway_intersection} \
-            --figure_shared_categories {output.figure_shared_categories}
-        """
+# ## Create cancer legend for the cancer types ##
+# rule create_cancer_legend:
+#     input:
+#         cancer_color_file = CANCER_COLOR_FILE
+#     output:
+#         CANCER_LEGEND_PDF
+#     params:
+#         bin = config["bin"],
+#         fig_dir = FIG_DIR
+#     shell:
+#         """
+#         Rscript {params.bin}/create_cancer_legend.R \
+#             --cancer_color_file {input.cancer_color_file} \
+#             --figure_dir {params.fig_dir}
+#         """
+# # filter PORCUPINE results
+# rule filter_porcupine_results:
+#     input:
+#         porcupine_file = PORCUPINE_FILE
+#     output:
+#         filtered_porcupine_file = FILTERED_PORCUPINE_FILE
+#     message:
+#         "Running filtering of porcupine results for: {wildcards.cancer}" 
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/preprocess_PORCUPINE_results.R \
+#             --porcpupine_file_path {input.porcupine_file} \
+#             --filtered_porcupine_file_path {output.filtered_porcupine_file}
+#         """
+# # combine filtered PORCUPINE results
+# rule combine_porcupine_results:
+#     input:
+#         expand(FILTERED_PORCUPINE_FILE, cancer=CANCER_TYPES)
+#     output:
+#         PORCUPINE_RESULTS_ALL
+#     message:
+#         "Combining all filtered PORCUPINE results into one table."
+#     shell:
+#         """
+#         echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+#         for file in {input}; do
+#             cancer=$(basename $(dirname $(dirname $file)))
+#             tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+#         done
+#         """
+# # plot PORCUPINE results
+# rule plot_porcupine_results:
+#     input:
+#         porcupine_file_all = PORCUPINE_RESULTS_ALL,
+#         pathways_hierarchy_file = PATHWAYS_HIERARCHY_FILE,
+#         pathways_hsa_id_file = PATHWAYS_HSA_ID_FILE,
+#         list_of_pathways_file = LIST_PATHWAYS_FILE
+#     output:
+#         figure_pathway_intersection = FIG_PATHWAY_INTERSECTION,
+#         figure_shared_categories = FIG_SHARED_CATEGORIES
+#     message:
+#         "Creating plots for the PORCUPINE results" 
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_PORCUPINE_results.R \
+#             --pcp_results_all_cancers_file {input.porcupine_file_all} \
+#             --pathways_hierarchy_file {input.pathways_hierarchy_file} \
+#             --pathways_hsa_id_file {input.pathways_hsa_id_file} \
+#             --list_of_pathways_file {input.list_of_pathways_file} \
+#             --figure_pathway_intersection {output.figure_pathway_intersection} \
+#             --figure_shared_categories {output.figure_shared_categories}
+#         """
 
-# cola consensus clustering on gene indegree and expression data ##
-rule run_cola_clustering:
-    input:
-        expression_file = EXPRESSION_PANDA_FILE,
-        samples_file = SAMPLES_PANDA_FILE,
-        indegree_dir = INPUT_CANCER_INDEGREE_DIR
-    output:
-        output_cancer_consensus_dir = directory(OUTPUT_CANCER_CONSENSUS_DIR)
-    message:
-        "Running cola clustering on: {wildcards.cancer} with datatype: {wildcards.datatype}"
-    params:
-        bin = config["bin"],
-        number_cores_cola = NUMBER_CORES_COLA,
-        partition_method = PARTITION_METHOD,
-        top_value_method = TOP_VALUE_METHOD,
-        max_k = MAX_K
-    shell:
-        """
-        Rscript {params.bin}/cola_clustering.R \
-            --tumor {wildcards.cancer} \
-            --exp_file {input.expression_file} \
-            --samples_file {input.samples_file} \
-            --indegree_dir {input.indegree_dir} \
-            --datatype {wildcards.datatype} \
-            --number_cores {params.number_cores_cola} \
-            --top_value_method {params.top_value_method} \
-            --partition_method {params.partition_method} \
-            --max_k {params.max_k} \
-            --output {output.output_cancer_consensus_dir}
-        """
+# # cola consensus clustering on gene indegree and expression data ##
+# rule run_cola_clustering:
+#     input:
+#         expression_file = EXPRESSION_PANDA_FILE,
+#         samples_file = SAMPLES_PANDA_FILE,
+#         indegree_dir = INPUT_CANCER_INDEGREE_DIR
+#     output:
+#         output_cancer_consensus_dir = directory(OUTPUT_CANCER_CONSENSUS_DIR)
+#     message:
+#         "Running cola clustering on: {wildcards.cancer} with datatype: {wildcards.datatype}"
+#     params:
+#         bin = config["bin"],
+#         number_cores_cola = NUMBER_CORES_COLA,
+#         partition_method = PARTITION_METHOD,
+#         top_value_method = TOP_VALUE_METHOD,
+#         max_k = MAX_K
+#     shell:
+#         """
+#         Rscript {params.bin}/cola_clustering.R \
+#             --tumor {wildcards.cancer} \
+#             --exp_file {input.expression_file} \
+#             --samples_file {input.samples_file} \
+#             --indegree_dir {input.indegree_dir} \
+#             --datatype {wildcards.datatype} \
+#             --number_cores {params.number_cores_cola} \
+#             --top_value_method {params.top_value_method} \
+#             --partition_method {params.partition_method} \
+#             --max_k {params.max_k} \
+#             --output {output.output_cancer_consensus_dir}
+#         """
 
-# select best K suggested by cola for each cancer type (indegree and expression) ##
-rule select_best_k_cola:
-    input:
-        tumor_main_dir = OUTPUT_DIR
-    output:
-        best_k_cola_ind_file = BEST_K_COLA_IND,
-        best_k_cola_exp_file = BEST_K_COLA_EXP
-    message:
-        "Selecting best number of clusters for each cancer"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/select_best_k_cola.R \
-            --tumor_dir {input.tumor_main_dir} \
-            --best_cola_k_indegree {output.best_k_cola_ind_file} \
-            --best_cola_k_expression {output.best_k_cola_exp_file} \
-        """
-# plot TSNE with the selected cola clusters for each cancer type (indegree and expression) ##
-rule plot_TSNE_cola_clusters:
-    input:
-        tumor_main_dir = OUTPUT_DIR,
-        best_k_cola_ind_file = BEST_K_COLA_IND,
-        best_k_cola_exp_file = BEST_K_COLA_EXP,
-    output:
-        fig_tsne_indegree = FIG_TSNE_COLA_INDEGREE,
-        fig_tsne_expression = FIG_TSNE_COLA_EXPRESSION
-    message:
-        "Plotting T-SNE with cola clusters for all cancer types"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/TSNE_plot_cola_clusters.R \
-            --tumor_dir {input.tumor_main_dir} \
-            --best_cola_k_indegree {input.best_k_cola_ind_file} \
-            --best_cola_k_expression {input.best_k_cola_exp_file} \
-            --figure_TSNE_indegree {output.fig_tsne_indegree} \
-            --figure_TSNE_expression {output.fig_tsne_expression} 
-        """
-
-
-## Sanky plot comparing the indegree and expression clusters for each cancer type ##
-rule plot_SANKEY_cola_clusters:
-    input:
-        tumor_main_dir = OUTPUT_DIR,
-        best_k_cola_ind_file = BEST_K_COLA_IND,
-        best_k_cola_exp_file = BEST_K_COLA_EXP
-    output:
-        fig_sankey_plot = FIG_SANKEY,
-        selected_cola_ind_clusters_file = SELECTED_CLUSTERS_COLA_IND,
-        selected_cola_exp_clusters_file = SELECTED_CLUSTERS_COLA_EXP,
-        datasets_to_plot_cola_clusters = DATASETS_TO_PLOT_COLA_CLUSTERS
-    message:
-        "Plotting sankey plot comparing indegree and expression clusters"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/cola_clusters_sanky_plots.R \
-            --tumor_dir {input.tumor_main_dir} \
-            --best_cola_k_indegree {input.best_k_cola_ind_file} \
-            --best_cola_k_expression {input.best_k_cola_exp_file} \
-            --clusters_indegree {output.selected_cola_ind_clusters_file} \
-            --clusters_expression {output.selected_cola_exp_clusters_file} \
-            --datasets_to_plot_cola_clusters {output.datasets_to_plot_cola_clusters} \
-            --figure_sanky {output.fig_sankey_plot}  
-        """
-
-## Extract cola clusters for each cancer type and write to a separate files ##
-rule save_final_cola_clusters_per_tumor:
-    input:
-        cluster_file_expression = SELECTED_CLUSTERS_COLA_EXP,
-        cluster_file_indegree = SELECTED_CLUSTERS_COLA_IND,
-    output:
-        cluster_file_exp_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_EXP,
-        cluster_file_ind_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_IND
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/extract_cola_clusters_per_tumor.R \
-            --cluster_file_expression {input.cluster_file_expression} \
-            --cluster_file_indegree {input.cluster_file_indegree} \
-            --tumor {wildcards.cancer} \
-            --cluster_expression_per_tumor {output.cluster_file_exp_per_cancer} \
-            --cluster_indegree_per_tumor {output.cluster_file_ind_per_cancer}
-        """
-
-## Run univariate COX regression comparing cola clusters (expression and indegree) ##
-rule run_univariate_cox_cola_clusters:
-    input:
-        clin_file = TUMOR_CLIN_FILE,
-        tumor_pd1_dir = TUMOR_PD1_DIR,
-        cluster_file_exp_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_EXP,
-        cluster_file_ind_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_IND
-    output:
-        out_file_summary = OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS
-    message:
-        "Running univariate Cox model comparing cola clusters for: {wildcards.cancer}"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/cola_clusters_survival.R \
-            --clinical_file_tumor {input.clin_file} \
-            --tumor_pd1_directory {input.tumor_pd1_dir} \
-            --cluster_file_expression {input.cluster_file_exp_per_cancer} \
-            --cluster_file_indegree {input.cluster_file_ind_per_cancer} \
-            --output_file {output.out_file_summary}
-        """
-## Combine all COX regression results for comparing cola clusters (expression and indegree) ##
-rule combine_univariate_cox_cola_clusters_results:
-    input:
-        expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer=CANCER_TYPES)
-    output:
-        OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL
-    message:
-        "Combining all univariate cox results (comparing cola clusters) into one table."
-    shell:
-        """
-        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
-        for file in {input}; do
-            cancer=$(basename $(dirname $(dirname $file)))
-            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
-        done
-        """
-
-## Create a plot with COX results for cola clusters (expression and indegree) ##
-rule plot_univariate_cox_cola_clusters_results:
-    input:
-        cox_cola_clusters_results = OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL,
-        cancer_color_file = CANCER_COLOR_FILE
-    output:
-        fig_cox_cola_clusters = FIG_COX_COLA_CLUSTERS
-    message:
-        "Pltting all univariate cox results (comparing cola clusters)"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/plot_cox_cola_clusters.R \
-            --cox_results_cluster_file {input.cox_cola_clusters_results} \
-            --cancer_color_file {input.cancer_color_file} \
-            --output_file {output.fig_cox_cola_clusters} \
-        """
+# # select best K suggested by cola for each cancer type (indegree and expression) ##
+# rule select_best_k_cola:
+#     input:
+#         tumor_main_dir = OUTPUT_DIR
+#     output:
+#         best_k_cola_ind_file = BEST_K_COLA_IND,
+#         best_k_cola_exp_file = BEST_K_COLA_EXP
+#     message:
+#         "Selecting best number of clusters for each cancer"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/select_best_k_cola.R \
+#             --tumor_dir {input.tumor_main_dir} \
+#             --best_cola_k_indegree {output.best_k_cola_ind_file} \
+#             --best_cola_k_expression {output.best_k_cola_exp_file} \
+#         """
+# # plot TSNE with the selected cola clusters for each cancer type (indegree and expression) ##
+# rule plot_TSNE_cola_clusters:
+#     input:
+#         tumor_main_dir = OUTPUT_DIR,
+#         best_k_cola_ind_file = BEST_K_COLA_IND,
+#         best_k_cola_exp_file = BEST_K_COLA_EXP,
+#     output:
+#         fig_tsne_indegree = FIG_TSNE_COLA_INDEGREE,
+#         fig_tsne_expression = FIG_TSNE_COLA_EXPRESSION
+#     message:
+#         "Plotting T-SNE with cola clusters for all cancer types"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/TSNE_plot_cola_clusters.R \
+#             --tumor_dir {input.tumor_main_dir} \
+#             --best_cola_k_indegree {input.best_k_cola_ind_file} \
+#             --best_cola_k_expression {input.best_k_cola_exp_file} \
+#             --figure_TSNE_indegree {output.fig_tsne_indegree} \
+#             --figure_TSNE_expression {output.fig_tsne_expression} 
+#         """
 
 
-## Create a survival plot for PRAD indegree cola clusters (k=4) ##
-rule plot_PRAD_clusters_survival:
-    input:
-        prad_clin_file = PRAD_CLIN_FILE,
-        prad_pd1_dir = PRAD_PD1_DIR,
-        prad_cluster_file_ind = CLUSTER_INDEGREE_PRAD,
-        prad_indegree_file = PRAD_IND_FILE,
-        expression_file = EXPRESSION_PANDA_FILE,
-        samples_file = SAMPLES_PANDA_FILE,
-        gmt_file = GMT_FILE
-    output:
-        fig_prad_survival = FIG_PRAD_SURVIVAL,
-        fig_fgsea_prad = FIG_FGSEA_PRAD 
-    message:
-        "Pltting the survival plot and fgsea results for PRAD indegree cola clusters"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/plot_prad_clusters_survival.R \
-            --prad_clin_file_path {input.prad_clin_file} \
-            --prad_pd1_dir {input.prad_pd1_dir} \
-            --prad_cluster_file_indegree {input.prad_cluster_file_ind} \
-            --indegree_file {input.prad_indegree_file} \
-            --exp_file {input.expression_file} \
-            --samples_file {input.samples_file} \
-            --gmt_file {input.gmt_file} \
-            --output_survival_plot {output.fig_prad_survival} \
-            --output_fgsea_plot {output.fig_fgsea_prad}
-        """
+# ## Sanky plot comparing the indegree and expression clusters for each cancer type ##
+# rule plot_SANKEY_cola_clusters:
+#     input:
+#         tumor_main_dir = OUTPUT_DIR,
+#         best_k_cola_ind_file = BEST_K_COLA_IND,
+#         best_k_cola_exp_file = BEST_K_COLA_EXP
+#     output:
+#         fig_sankey_plot = FIG_SANKEY,
+#         selected_cola_ind_clusters_file = SELECTED_CLUSTERS_COLA_IND,
+#         selected_cola_exp_clusters_file = SELECTED_CLUSTERS_COLA_EXP,
+#         datasets_to_plot_cola_clusters = DATASETS_TO_PLOT_COLA_CLUSTERS
+#     message:
+#         "Plotting sankey plot comparing indegree and expression clusters"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/cola_clusters_sanky_plots.R \
+#             --tumor_dir {input.tumor_main_dir} \
+#             --best_cola_k_indegree {input.best_k_cola_ind_file} \
+#             --best_cola_k_expression {input.best_k_cola_exp_file} \
+#             --clusters_indegree {output.selected_cola_ind_clusters_file} \
+#             --clusters_expression {output.selected_cola_exp_clusters_file} \
+#             --datasets_to_plot_cola_clusters {output.datasets_to_plot_cola_clusters} \
+#             --figure_sanky {output.fig_sankey_plot}  
+#         """
+
+# ## Extract cola clusters for each cancer type and write to a separate files ##
+# rule save_final_cola_clusters_per_tumor:
+#     input:
+#         cluster_file_expression = SELECTED_CLUSTERS_COLA_EXP,
+#         cluster_file_indegree = SELECTED_CLUSTERS_COLA_IND,
+#     output:
+#         cluster_file_exp_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_EXP,
+#         cluster_file_ind_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_IND
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/extract_cola_clusters_per_tumor.R \
+#             --cluster_file_expression {input.cluster_file_expression} \
+#             --cluster_file_indegree {input.cluster_file_indegree} \
+#             --tumor {wildcards.cancer} \
+#             --cluster_expression_per_tumor {output.cluster_file_exp_per_cancer} \
+#             --cluster_indegree_per_tumor {output.cluster_file_ind_per_cancer}
+#         """
+
+# ## Run univariate COX regression comparing cola clusters (expression and indegree) ##
+# rule run_univariate_cox_cola_clusters:
+#     input:
+#         clin_file = TUMOR_CLIN_FILE,
+#         tumor_pd1_dir = TUMOR_PD1_DIR,
+#         cluster_file_exp_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_EXP,
+#         cluster_file_ind_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_IND
+#     output:
+#         out_file_summary = OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS
+#     message:
+#         "Running univariate Cox model comparing cola clusters for: {wildcards.cancer}"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/cola_clusters_survival.R \
+#             --clinical_file_tumor {input.clin_file} \
+#             --tumor_pd1_directory {input.tumor_pd1_dir} \
+#             --cluster_file_expression {input.cluster_file_exp_per_cancer} \
+#             --cluster_file_indegree {input.cluster_file_ind_per_cancer} \
+#             --output_file {output.out_file_summary}
+#         """
+# ## Combine all COX regression results for comparing cola clusters (expression and indegree) ##
+# rule combine_univariate_cox_cola_clusters_results:
+#     input:
+#         expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer=CANCER_TYPES)
+#     output:
+#         OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL
+#     message:
+#         "Combining all univariate cox results (comparing cola clusters) into one table."
+#     shell:
+#         """
+#         echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+#         for file in {input}; do
+#             cancer=$(basename $(dirname $(dirname $file)))
+#             tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+#         done
+#         """
+
+# ## Create a plot with COX results for cola clusters (expression and indegree) ##
+# rule plot_univariate_cox_cola_clusters_results:
+#     input:
+#         cox_cola_clusters_results = OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL,
+#         cancer_color_file = CANCER_COLOR_FILE
+#     output:
+#         fig_cox_cola_clusters = FIG_COX_COLA_CLUSTERS
+#     message:
+#         "Pltting all univariate cox results (comparing cola clusters)"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_cox_cola_clusters.R \
+#             --cox_results_cluster_file {input.cox_cola_clusters_results} \
+#             --cancer_color_file {input.cancer_color_file} \
+#             --output_file {output.fig_cox_cola_clusters} \
+#         """
 
 
-## Extract PDL1 gene expression for each cancer type ##
-
-rule extract_PDL1_gene_expression:
-    input:
-        expression_file = EXPRESSION_PANDA_FILE,
-        samples_file = SAMPLES_PANDA_FILE
-    output:
-        out_file = OUTPUT_PDL1_EXP_CANCER
-    message:
-        "Extracting expression data for PDL1: {wildcards.cancer}"
-    params:
-        bin = config["bin"],
-        gene_id = GENE_ID # this is how it shouldbe
-
-    shell:
-        """
-        Rscript {params.bin}/extract_PDL1_expression.R \
-            --exp_file {input.expression_file} \
-            --samples_file {input.samples_file} \
-            --tumor {wildcards.cancer} \
-            --gene_id {params.gene_id} \
-            --output {output.out_file}
-        """
-
-## Extract PD1 pathway-based individual mappings (heterogeneity scores) ##        
-rule extract_pd1_pathway_individual_mappings:
-    input:
-       tumor_pathways_mapping_path = TUMOR_PATHWAYS_MAPPING_PATH
-    output:
-        out_file = OUTPUT_CANCER_PD1_MAPPINGS
-    params:
-        bin = config["bin"]
-    message:
-        "Extracting PD1 pathway individual mappings: {wildcards.cancer}"
-    shell:
-        """
-        Rscript {params.bin}/extract_pd1_pathway_individual_scores.R \
-            --tumor_pathways_mapping_path {input.tumor_pathways_mapping_path} \
-            --output {output.out_file}
-        """
+# ## Create a survival plot for PRAD indegree cola clusters (k=4) ##
+# rule plot_PRAD_clusters_survival:
+#     input:
+#         prad_clin_file = PRAD_CLIN_FILE,
+#         prad_pd1_dir = PRAD_PD1_DIR,
+#         prad_cluster_file_ind = CLUSTER_INDEGREE_PRAD,
+#         prad_indegree_file = PRAD_IND_FILE,
+#         expression_file = EXPRESSION_PANDA_FILE,
+#         samples_file = SAMPLES_PANDA_FILE,
+#         gmt_file = GMT_FILE
+#     output:
+#         fig_prad_survival = FIG_PRAD_SURVIVAL,
+#         fig_fgsea_prad = FIG_FGSEA_PRAD 
+#     message:
+#         "Pltting the survival plot and fgsea results for PRAD indegree cola clusters"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_prad_clusters_survival.R \
+#             --prad_clin_file_path {input.prad_clin_file} \
+#             --prad_pd1_dir {input.prad_pd1_dir} \
+#             --prad_cluster_file_indegree {input.prad_cluster_file_ind} \
+#             --indegree_file {input.prad_indegree_file} \
+#             --exp_file {input.expression_file} \
+#             --samples_file {input.samples_file} \
+#             --gmt_file {input.gmt_file} \
+#             --output_survival_plot {output.fig_prad_survival} \
+#             --output_fgsea_plot {output.fig_fgsea_prad}
+#         """
 
 
-## Run univatiate cox model on pd1-pathway based scores for each cancer ##        
-rule run_univariate_cox_pd1_pathway:
-    input:
-        clin_file = TUMOR_CLIN_FILE,
-        tumor_pd1_dir = TUMOR_PD1_DIR
-    output:
-        out_file_summary = OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY,
-        out_file_predicted_scores = OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES
-    params:
-        bin = config["bin"]
-    message:
-        "Running univariate Cox model on pd1-pathway based scores for: {wildcards.cancer}"
-    shell:
-        """
-        Rscript {params.bin}/run_univariate_cox_pd1_pathway.R \
-            --tumor_clin_file_path {input.clin_file} \
-            --tumor_pd1_dir {input.tumor_pd1_dir} \
-            --cox_model_summary {output.out_file_summary} \
-            --cox_predicted_risk {output.out_file_predicted_scores}
-        """
-rule combine_pd1_pathway_univariate_summary_results:
-    input:
-        expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer=CANCER_TYPES)
-    output:
-        UNIVARIATE_COX_SUMMARY_ALL
-    message:
-        "Combining all univariate Cox regression results into one table."
-    shell:
-        """
-        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
-        for file in {input}; do
-            cancer=$(basename $(dirname $(dirname $file)))
-            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
-        done
-        """
+# ## Extract PDL1 gene expression for each cancer type ##
 
-rule combine_pd1_pathway_univariate_prediction_scores:
-    input:
-        expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer=CANCER_TYPES)
-    output:
-        UNIVARIATE_COX_PREDICTED_SCORES_ALL
-    message:
-        "Combining all univariate Cox prediction risk results into one table."
-    shell:
-        """
-        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
-        for file in {input}; do
-            cancer=$(basename $(dirname $(dirname $file)))
-            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
-        done
-        """
+# rule extract_PDL1_gene_expression:
+#     input:
+#         expression_file = EXPRESSION_PANDA_FILE,
+#         samples_file = SAMPLES_PANDA_FILE
+#     output:
+#         out_file = OUTPUT_PDL1_EXP_CANCER
+#     message:
+#         "Extracting expression data for PDL1: {wildcards.cancer}"
+#     params:
+#         bin = config["bin"],
+#         gene_id = GENE_ID # this is how it shouldbe
 
-## Clean the univatiate cox model on pd1-pathway results based of the PORCUPINE results ##        
-rule clean_univariate_cox_pd1_pathway:
-    input:
-        univarite_cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL,
-        porcupine_results_all_filtered = PORCUPINE_RESULTS_ALL
-    output:
-        univarite_cox_summary_all_filtered = UNIVARIATE_COX_SUMMARY_ALL_FILTERED
-    params:
-        bin = config["bin"]
-    message:
-        "Cleaning the univariate Cox model on pd1-pathway results based on the PORCUPINE results"
-    shell:
-        """
-        Rscript {params.bin}/clean_pd1_pathway_cox_results_by_porcupine.R \
-            --cox_summary_all_cancers {input.univarite_cox_summary_all} \
-            --porcupine_filtered_results {input.porcupine_results_all_filtered} \
-            --cox_summary_all_cancers_filtered {output.univarite_cox_summary_all_filtered} 
-        """
+#     shell:
+#         """
+#         Rscript {params.bin}/extract_PDL1_expression.R \
+#             --exp_file {input.expression_file} \
+#             --samples_file {input.samples_file} \
+#             --tumor {wildcards.cancer} \
+#             --gene_id {params.gene_id} \
+#             --output {output.out_file}
+#         """
+
+# ## Extract PD1 pathway-based individual mappings (heterogeneity scores) ##        
+# rule extract_pd1_pathway_individual_mappings:
+#     input:
+#        tumor_pathways_mapping_path = TUMOR_PATHWAYS_MAPPING_PATH
+#     output:
+#         out_file = OUTPUT_CANCER_PD1_MAPPINGS
+#     params:
+#         bin = config["bin"]
+#     message:
+#         "Extracting PD1 pathway individual mappings: {wildcards.cancer}"
+#     shell:
+#         """
+#         Rscript {params.bin}/extract_pd1_pathway_individual_scores.R \
+#             --tumor_pathways_mapping_path {input.tumor_pathways_mapping_path} \
+#             --output {output.out_file}
+#         """
 
 
+# ## Run univatiate cox model on pd1-pathway based scores for each cancer ##        
+# rule run_univariate_cox_pd1_pathway:
+#     input:
+#         clin_file = TUMOR_CLIN_FILE,
+#         tumor_pd1_dir = TUMOR_PD1_DIR
+#     output:
+#         out_file_summary = OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY,
+#         out_file_predicted_scores = OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES
+#     params:
+#         bin = config["bin"]
+#     message:
+#         "Running univariate Cox model on pd1-pathway based scores for: {wildcards.cancer}"
+#     shell:
+#         """
+#         Rscript {params.bin}/run_univariate_cox_pd1_pathway.R \
+#             --tumor_clin_file_path {input.clin_file} \
+#             --tumor_pd1_dir {input.tumor_pd1_dir} \
+#             --cox_model_summary {output.out_file_summary} \
+#             --cox_predicted_risk {output.out_file_predicted_scores}
+#         """
+# rule combine_pd1_pathway_univariate_summary_results:
+#     input:
+#         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer=CANCER_TYPES)
+#     output:
+#         UNIVARIATE_COX_SUMMARY_ALL
+#     message:
+#         "Combining all univariate Cox regression results into one table."
+#     shell:
+#         """
+#         echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+#         for file in {input}; do
+#             cancer=$(basename $(dirname $(dirname $file)))
+#             tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+#         done
+#         """
 
-### Combine the PD1 pathway heterogeneity scores  with PDL1 expression and PD1 pathway scores ###
-### and immune infiltration ###
+# rule combine_pd1_pathway_univariate_prediction_scores:
+#     input:
+#         expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer=CANCER_TYPES)
+#     output:
+#         UNIVARIATE_COX_PREDICTED_SCORES_ALL
+#     message:
+#         "Combining all univariate Cox prediction risk results into one table."
+#     shell:
+#         """
+#         echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+#         for file in {input}; do
+#             cancer=$(basename $(dirname $(dirname $file)))
+#             tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+#         done
+#         """
 
-rule merge_patient_data:
-    input:
-        tumor_pd1_dir = TUMOR_PD1_DIR,
-        risk_score = OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES,
-        immune_file = IMMUNE_FILE
-    output:
-        out_file = OUTPUT_COMBINED_PATIENT_DATA_CANCER
-    message:
-        "Merging patient data for: {wildcards.cancer}"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/merge_patient_data.R \
-            --tumor_pd1_dir {input.tumor_pd1_dir} \
-            --risk_score {input.risk_score} \
-            --immune_file {input.immune_file} \
-            --output_file {output.out_file}
-        """
-
-## Plot the PC components vs PDL1 exp with risk scores from the univariate COX model ##
-
-rule plot_PC_PDL1_expression:
-    input:
-        cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        tumor_main_dir = OUTPUT_DIR
-    output:
-        out_file = FIG_PC_PDL1_EXPRESSION
-    message:
-        "Generating a figure for the selected cancer types of PDL1 exp vs corresponding PC component"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/plot_PC_PDL1_exp.R \
-            --cox_summary_all_cancers {input.cox_summary_all} \
-            --tumor_dir {input.tumor_main_dir} \
-            --output {output.out_file}
-        """
-
-## Plot the correlation of the PC components and the immune cell types ##
-
-rule plot_PC_immune_correlations:
-    input:
-        cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        tumor_main_dir = OUTPUT_DIR
-    output:
-        out_file = FIG_PC_IMMUNE_CORRELATION
-    message:
-        "Generating a figure of the correlation between the PC and immune cells for selected cancer types"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/plot_PC_immune_correlations.R \
-            --cox_summary_all_cancers {input.cox_summary_all} \
-            --tumor_dir {input.tumor_main_dir} \
-            --output {output.out_file}
-        """
-## Perform the association analysis between the PD1 pathway heterogeneity scores and clinical features (categorical and numeric) ##
-
-rule calculate_association_clinical_features_pd1_heterogeneity_scores:
-    input:
-        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        tumor_main_dir = OUTPUT_DIR
-    output:
-        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
-        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC
-
-    message:
-        "Calculating PD1 heterogeneity clinical associations"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/clinical_associations_pd1.R \
-            --cox_results_file {input.cox_res_file} \
-            --tumor_main_dir {input.tumor_main_dir} \
-            --results_pd1_groups {output.results_pd1_groups} \
-            --results_pd1_numeric {output.results_pd1_numeric}
-        """
-
-## Plot the Associations between the PD1 pathway-based patient heterogeneity scores and clinical features
-
-rule plot_association_clinical_features_pd1_heterogeneity_scores:
-    input:
-        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
-        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC,
-        cancer_color_file = CANCER_COLOR_FILE
-    output:
-        figure_pc_clin_associations = FIGURE_PC_CLIN_ASSOCIATIONS 
-    message:
-        "Plot PD1 heterogeneity clinical associations"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/plot_clinical_associations_pd1.R \
-            --cox_results_file {input.cox_res_file} \
-            --results_pd1_groups {input.results_pd1_groups} \
-            --results_pd1_numeric {input.results_pd1_numeric} \
-            --cancer_color_file {input.cancer_color_file} \
-            --pc_clinical_association_figure {output.figure_pc_clin_associations}
-
-        """
-
-## Plot the Associations between the PD1 pathway-based patient heterogeneity scores and individual clinical features
-
-rule plot_individual_clinical_features_pd1_heterogeneity_scores:
-    input:
-        cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
-        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC,
-        tumor_main_dir = OUTPUT_DIR
-    output:
-        figure_pc_individual_clin_associations = FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS 
-    message:
-        "Plot PD1 heterogeneity clinical associations for individual features in the selected cancers"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/plot_individual_clinical_features_pd1_pathway.R \
-            --cox_results_file {input.cox_res_file} \
-            --results_pd1_groups {input.results_pd1_groups} \
-            --results_pd1_numeric {input.results_pd1_numeric} \
-            --tumor_main_dir {input.tumor_main_dir} \
-            --output_figure_file {output.figure_pc_individual_clin_associations}
-
-        """
+# ## Clean the univatiate cox model on pd1-pathway results based of the PORCUPINE results ##        
+# rule clean_univariate_cox_pd1_pathway:
+#     input:
+#         univarite_cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL,
+#         porcupine_results_all_filtered = PORCUPINE_RESULTS_ALL
+#     output:
+#         univarite_cox_summary_all_filtered = UNIVARIATE_COX_SUMMARY_ALL_FILTERED
+#     params:
+#         bin = config["bin"]
+#     message:
+#         "Cleaning the univariate Cox model on pd1-pathway results based on the PORCUPINE results"
+#     shell:
+#         """
+#         Rscript {params.bin}/clean_pd1_pathway_cox_results_by_porcupine.R \
+#             --cox_summary_all_cancers {input.univarite_cox_summary_all} \
+#             --porcupine_filtered_results {input.porcupine_results_all_filtered} \
+#             --cox_summary_all_cancers_filtered {output.univarite_cox_summary_all_filtered} 
+#         """
 
 
-## Run multivariate regularized cox regression on PDL1 edges ##  
-rule run_regularized_cox:
-    input:
-        clin_file = OUTPUT_CANCER,
-        tumor_pd1_dir = TUMOR_PD1_DIR
-    output:
-        out_file = OUTPUT_CANCER_COX
-    message:
-        "Running regularized cox for: {wildcards.cancer}"
-    params:
-        bin = config["bin"],
-        alpha = ALPHA,
-        number_folds = NUMBER_FOLDS,
-        number_cores = NUMBER_CORES,
-        number_times = NUMBER_TIMES
-    shell:
-        """
-        Rscript {params.bin}/cox_regression_tumor.R \
-            --tumor_clin_file_path {input.clin_file} \
-            --tumor_pd1_dir {input.tumor_pd1_dir} \
-            --number_folds {params.number_folds} \
-            --number_times {params.number_times} \
-            --number_cores {params.number_cores} \
-            --alpha {params.alpha} \
-            --output {output.out_file}
-        """
-## Combine all multivarite cox results in one table ##  
 
-rule combine_multivarite_cox_results:
-    input:
-        expand(OUTPUT_CANCER_COX, cancer=CANCER_TYPES)
-    output:
-        COX_RESULTS_ALL_MULTIVARIATE
-    message:
-        "Combining all multivariate Cox regression results into one table."
-    shell:
-        """
-        echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
-        for file in {input}; do
-            cancer=$(basename $(dirname $(dirname $file)))
-            tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
-        done
-        """
+# ### Combine the PD1 pathway heterogeneity scores  with PDL1 expression and PD1 pathway scores ###
+# ### and immune infiltration ###
 
-## Create a circilar PDL1 plot with the selected TFs passing a threshold ##  
+# rule merge_patient_data:
+#     input:
+#         tumor_pd1_dir = TUMOR_PD1_DIR,
+#         risk_score = OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES,
+#         immune_file = IMMUNE_FILE
+#     output:
+#         out_file = OUTPUT_COMBINED_PATIENT_DATA_CANCER
+#     message:
+#         "Merging patient data for: {wildcards.cancer}"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/merge_patient_data.R \
+#             --tumor_pd1_dir {input.tumor_pd1_dir} \
+#             --risk_score {input.risk_score} \
+#             --immune_file {input.immune_file} \
+#             --output_file {output.out_file}
+#         """
 
-rule create_circular_pdl1_plot:
-    input:
-        cox_univariate_results_pd1_pathway = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        cox_results_all_multivariate = COX_RESULTS_ALL_MULTIVARIATE,
-        ppi_file = PPI_FILE,
-        motif_file = MOTIF_FILE
-    output:
-        out_file = PDL1_CIRCULAR_PLOT
-    message:
-        "Making a PDL1 circular plot with threshold: {wildcards.threshold_cox}"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/circular_plot_PDL1.R \
-            --cox_univariate_results_pd1_pathway {input.cox_univariate_results_pd1_pathway} \
-            --cox_results_multivariate {input.cox_results_all_multivariate} \
-            --ppi_file {input.ppi_file} \
-            --motif_file {input.motif_file} \
-            --threshold {wildcards.threshold_cox} \
-            --output {output.out_file}
-        """
+# ## Plot the PC components vs PDL1 exp with risk scores from the univariate COX model ##
 
-## plot the comparison of the indegree and expression clusters for PRAD and UVM ##
-rule plot_tsne_expression_indegree_and_uvm_prad_comparisons:
-    input:
-        datasets_to_plot_cola_clusters = DATASETS_TO_PLOT_COLA_CLUSTERS,
-        tsne_file_expression = TSNE_DATA_EXPRESSION,
-        tsne_file_indegree = TSNE_DATA_INDEGREE,
-        cancer_color_file = CANCER_COLOR_FILE
-    output:
-        ouput_figure = FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/plot_TSNE_all_cancers.R \
-            --datasets_to_plot_cola_clusters {input.datasets_to_plot_cola_clusters} \
-            --tsne_data_expression {input.tsne_file_expression} \
-            --tsne_data_indegree {input.tsne_file_indegree} \
-            --cancer_color_file {input.cancer_color_file} \
-            --ouput_figure_file {output.ouput_figure}
-        """
-## plot PD1 summary table ##
-rule plot_PD1_summary_table:
-    input:
-        summary_table_PD1 = SUMMARY_TABLE_PD1,
-    output:
-        output_html_file = OUTPUT_HTML_TABLE_PD1
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/plot_PD1_summary_table.R \
-            --summary_table_PD1 {input.summary_table_PD1} \
-            --output_html_file {output.output_html_file} 
-        """
+# rule plot_PC_PDL1_expression:
+#     input:
+#         cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
+#         tumor_main_dir = OUTPUT_DIR
+#     output:
+#         out_file = FIG_PC_PDL1_EXPRESSION
+#     message:
+#         "Generating a figure for the selected cancer types of PDL1 exp vs corresponding PC component"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_PC_PDL1_exp.R \
+#             --cox_summary_all_cancers {input.cox_summary_all} \
+#             --tumor_dir {input.tumor_main_dir} \
+#             --output {output.out_file}
+#         """
+
+# ## Plot the correlation of the PC components and the immune cell types ##
+
+# rule plot_PC_immune_correlations:
+#     input:
+#         cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
+#         tumor_main_dir = OUTPUT_DIR
+#     output:
+#         out_file = FIG_PC_IMMUNE_CORRELATION
+#     message:
+#         "Generating a figure of the correlation between the PC and immune cells for selected cancer types"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_PC_immune_correlations.R \
+#             --cox_summary_all_cancers {input.cox_summary_all} \
+#             --tumor_dir {input.tumor_main_dir} \
+#             --output {output.out_file}
+#         """
+# ## Perform the association analysis between the PD1 pathway heterogeneity scores and clinical features (categorical and numeric) ##
+
+# rule calculate_association_clinical_features_pd1_heterogeneity_scores:
+#     input:
+#         cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
+#         tumor_main_dir = OUTPUT_DIR
+#     output:
+#         results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
+#         results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC
+
+#     message:
+#         "Calculating PD1 heterogeneity clinical associations"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/clinical_associations_pd1.R \
+#             --cox_results_file {input.cox_res_file} \
+#             --tumor_main_dir {input.tumor_main_dir} \
+#             --results_pd1_groups {output.results_pd1_groups} \
+#             --results_pd1_numeric {output.results_pd1_numeric}
+#         """
+
+# ## Plot the Associations between the PD1 pathway-based patient heterogeneity scores and clinical features
+
+# rule plot_association_clinical_features_pd1_heterogeneity_scores:
+#     input:
+#         cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
+#         results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
+#         results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC,
+#         cancer_color_file = CANCER_COLOR_FILE
+#     output:
+#         figure_pc_clin_associations = FIGURE_PC_CLIN_ASSOCIATIONS 
+#     message:
+#         "Plot PD1 heterogeneity clinical associations"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_clinical_associations_pd1.R \
+#             --cox_results_file {input.cox_res_file} \
+#             --results_pd1_groups {input.results_pd1_groups} \
+#             --results_pd1_numeric {input.results_pd1_numeric} \
+#             --cancer_color_file {input.cancer_color_file} \
+#             --pc_clinical_association_figure {output.figure_pc_clin_associations}
+
+#         """
+
+# ## Plot the Associations between the PD1 pathway-based patient heterogeneity scores and individual clinical features
+
+# rule plot_individual_clinical_features_pd1_heterogeneity_scores:
+#     input:
+#         cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
+#         results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
+#         results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC,
+#         tumor_main_dir = OUTPUT_DIR
+#     output:
+#         figure_pc_individual_clin_associations = FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS 
+#     message:
+#         "Plot PD1 heterogeneity clinical associations for individual features in the selected cancers"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_individual_clinical_features_pd1_pathway.R \
+#             --cox_results_file {input.cox_res_file} \
+#             --results_pd1_groups {input.results_pd1_groups} \
+#             --results_pd1_numeric {input.results_pd1_numeric} \
+#             --tumor_main_dir {input.tumor_main_dir} \
+#             --output_figure_file {output.figure_pc_individual_clin_associations}
+
+#         """
+
+
+# ## Run multivariate regularized cox regression on PDL1 edges ##  
+# rule run_regularized_cox:
+#     input:
+#         clin_file = OUTPUT_CANCER,
+#         tumor_pd1_dir = TUMOR_PD1_DIR
+#     output:
+#         out_file = OUTPUT_CANCER_COX
+#     message:
+#         "Running regularized cox for: {wildcards.cancer}"
+#     params:
+#         bin = config["bin"],
+#         alpha = ALPHA,
+#         number_folds = NUMBER_FOLDS,
+#         number_cores = NUMBER_CORES,
+#         number_times = NUMBER_TIMES
+#     shell:
+#         """
+#         Rscript {params.bin}/cox_regression_tumor.R \
+#             --tumor_clin_file_path {input.clin_file} \
+#             --tumor_pd1_dir {input.tumor_pd1_dir} \
+#             --number_folds {params.number_folds} \
+#             --number_times {params.number_times} \
+#             --number_cores {params.number_cores} \
+#             --alpha {params.alpha} \
+#             --output {output.out_file}
+#         """
+# ## Combine all multivarite cox results in one table ##  
+
+# rule combine_multivarite_cox_results:
+#     input:
+#         expand(OUTPUT_CANCER_COX, cancer=CANCER_TYPES)
+#     output:
+#         COX_RESULTS_ALL_MULTIVARIATE
+#     message:
+#         "Combining all multivariate Cox regression results into one table."
+#     shell:
+#         """
+#         echo -e "cancer\\t$(head -n 1 {input[0]})" > {output}
+#         for file in {input}; do
+#             cancer=$(basename $(dirname $(dirname $file)))
+#             tail -n +2 $file | awk -v cancer=$cancer '{{print cancer"\\t"$0}}' >> {output}
+#         done
+#         """
+
+# ## Create a circilar PDL1 plot with the selected TFs passing a threshold ##  
+
+# rule create_circular_pdl1_plot:
+#     input:
+#         cox_univariate_results_pd1_pathway = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
+#         cox_results_all_multivariate = COX_RESULTS_ALL_MULTIVARIATE,
+#         ppi_file = PPI_FILE,
+#         motif_file = MOTIF_FILE
+#     output:
+#         out_file = PDL1_CIRCULAR_PLOT
+#     message:
+#         "Making a PDL1 circular plot with threshold: {wildcards.threshold_cox}"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/circular_plot_PDL1.R \
+#             --cox_univariate_results_pd1_pathway {input.cox_univariate_results_pd1_pathway} \
+#             --cox_results_multivariate {input.cox_results_all_multivariate} \
+#             --ppi_file {input.ppi_file} \
+#             --motif_file {input.motif_file} \
+#             --threshold {wildcards.threshold_cox} \
+#             --output {output.out_file}
+#         """
+
+# ## plot the comparison of the indegree and expression clusters for PRAD and UVM ##
+# rule plot_tsne_expression_indegree_and_uvm_prad_comparisons:
+#     input:
+#         datasets_to_plot_cola_clusters = DATASETS_TO_PLOT_COLA_CLUSTERS,
+#         tsne_file_expression = TSNE_DATA_EXPRESSION,
+#         tsne_file_indegree = TSNE_DATA_INDEGREE,
+#         cancer_color_file = CANCER_COLOR_FILE
+#     output:
+#         ouput_figure = FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_TSNE_all_cancers.R \
+#             --datasets_to_plot_cola_clusters {input.datasets_to_plot_cola_clusters} \
+#             --tsne_data_expression {input.tsne_file_expression} \
+#             --tsne_data_indegree {input.tsne_file_indegree} \
+#             --cancer_color_file {input.cancer_color_file} \
+#             --ouput_figure_file {output.ouput_figure}
+#         """
+# ## plot PD1 summary table ##
+# rule plot_PD1_summary_table:
+#     input:
+#         summary_table_PD1 = SUMMARY_TABLE_PD1,
+#     output:
+#         output_html_file = OUTPUT_HTML_TABLE_PD1
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/plot_PD1_summary_table.R \
+#             --summary_table_PD1 {input.summary_table_PD1} \
+#             --output_html_file {output.output_html_file} 
+#         """
