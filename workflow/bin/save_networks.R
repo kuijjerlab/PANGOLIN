@@ -53,12 +53,14 @@ cat(sprintf("Output directory: %s\n", OUTPUT_DIR))
 ## Load data      ##
 ####################
 
-# Source helper functions
 source("workflow/bin/split_save_networks_fn.R")
 
 # Load LIONESS network manifest
 cat("Loading LIONESS sample mapping...\n")
-info_net <- fread(LIONESS_MAPPING_FILE)
+if (!file.exists(LIONESS_SAMPLE_MAPPING)) {
+    stop(sprintf("Cannot find LIONESS sample mapping file: %s", LIONESS_SAMPLE_MAPPING))
+}
+info_net <- fread(LIONESS_SAMPLE_MAPPING)
 
 # Get unique cancer types
 cancers <- unique(info_net$cancer)
@@ -66,9 +68,6 @@ cancers <- unique(info_net$cancer)
 ####################
 ## Process networks ##
 ####################
-
-# Change to network directory for relative path processing
-setwd(NETWORK_DIR)
 
 # Process each cancer type
 cat("Processing networks by cancer type...\n")
@@ -80,11 +79,12 @@ for (i in 1:length(cancers)) {
     cat(sprintf("  Found %d networks for %s\n", nrow(cancer_networks), cancer_type))
     # Combine and save networks
     tryCatch({
-        save_combined_networks(cancer_type, info_net, OUTPUT_DIR)
+        save_combined_networks(tumor = cancer_type, info_net = info_net, output_dir = OUTPUT_DIR)
         cat(sprintf("  Successfully processed %s\n", cancer_type))
     }, error = function(e) {
         cat(sprintf("  Error processing %s: %s\n", cancer_type, e$message))
     })
 }
+
 
 
