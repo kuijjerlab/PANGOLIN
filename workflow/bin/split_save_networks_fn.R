@@ -1,6 +1,3 @@
-library(gtools)
-require(purrr)
-require(tidyverse)
 #' Read and combine LIONESS network files
 #'
 #' Reads individual .txt network files within a specified range and combines

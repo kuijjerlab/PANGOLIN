@@ -68,6 +68,17 @@ PATHWAYS_HIERARCHY_FILE = config["pathways_hierarchy_file"]
 PATHWAYS_HSA_ID_FILE = config["pathways_hsa_id_file"]
 LIST_PATHWAYS_FILE = config["list_of_pathways_file"]
 
+## Parameters ##
+ALPHA = config["alpha"]
+NUMBER_FOLDS = config["number_folds"]
+NUMBER_CORES = config["number_cores"]
+NUMBER_TIMES = config["number_times"]
+THESHOLD_COX = config["threshold_cox"]
+GENE_ID = config["gene_id"]
+NUMBER_CORES_COLA = config["number_cores_cola"]
+PARTITION_METHOD = config["partition_method"]
+TOP_VALUE_METHOD = config["top_value_method"]
+MAX_K = config["max_k"]
 
 ###############################################################################
 ### DATA DOWNLOAD AND NORMALIZATION PIPELINE PATHS                        ###
@@ -282,17 +293,7 @@ SUMMARY_TABLE_PD1 = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_
 #output
 OUTPUT_HTML_TABLE_PD1 = os.path.join(FIG_DIR, "summary_table_PD1.html")
 
-## Parameters ##
-ALPHA = config["alpha"]
-NUMBER_FOLDS = config["number_folds"]
-NUMBER_CORES = config["number_cores"]
-NUMBER_TIMES = config["number_times"]
-THESHOLD_COX = config["threshold_cox"]
-GENE_ID = config["gene_id"]
-NUMBER_CORES_COLA = config["number_cores_cola"]
-PARTITION_METHOD = config["partition_method"]
-TOP_VALUE_METHOD = config["top_value_method"]
-MAX_K = config["max_k"]
+
 
 # Rules ##
 rule all:
