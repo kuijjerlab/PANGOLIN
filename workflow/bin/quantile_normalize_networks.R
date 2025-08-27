@@ -21,17 +21,17 @@ option_list <- list(
         metavar = "character"
     ),
     optparse::make_option(
-        c("-o", "--output_dir"),
-        type = "character",
-        default = NULL,
-        help = "Path to the output directory for saving normalized network RData files.",
-        metavar = "character"
-    ),
-    optparse::make_option(
         c("-s", "--sample_file"),
         type = "character",
         default = NULL,
         help = "Path to the sample file containing cancer type information.",
+        metavar = "character"
+    ),
+    optparse::make_option(
+        c("-o", "--output_dir"),
+        type = "character",
+        default = NULL,
+        help = "Path to the output directory for saving normalized network RData files.",
         metavar = "character"
     )
 )
@@ -50,9 +50,9 @@ source("workflow/bin/utils_pcp_fn.R")
 
 cat("Starting network quantile normalization...\n")
 cat(sprintf("Network directory: %s\n", NETWORK_DIR))
-cat(sprintf("Output directory: %s\n", OUTPUT_DIR))
 cat(sprintf("Sample file: %s\n", SAMPLE_FILE))
-cat(sprintf("Utils script: %s\n", UTILS_SCRIPT))
+cat(sprintf("Output directory: %s\n", OUTPUT_DIR))
+
 
 ####################
 ## Load data      ##
