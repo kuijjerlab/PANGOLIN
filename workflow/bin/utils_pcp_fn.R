@@ -1,4 +1,3 @@
-set.seed(1234)
 #' Read .RData network files and Combine them
 #'
 #' This function reads individual .RData network files from a specified directory
