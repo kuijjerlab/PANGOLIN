@@ -222,6 +222,11 @@ OUTPUT_DIR_NORMALIZED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_net
 PANDA_NETWORK_FILE = os.path.join(NETWORKS_DIR, "panda_net.txt") 
 NETWORK_EDGE_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "edges", "network_edges.txt")
 
+#------------------------------------------------------------------------------
+# Gene Indegree Calculation from Normalized Networks
+#------------------------------------------------------------------------------
+CANCER_INDEGREE_FILE  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "indegrees_norm", "indegree_norm_{cancer}.RData")
+
 #####
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 PORCUPINE_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "pcp_results_with_variance_{cancer}.txt")
@@ -340,7 +345,8 @@ rule all:
         # LIONESS_SAMPLE_MAPPING,
         # OUTPUT_DIR_FINAL_MERGED_NETWORKS,
         # OUTPUT_DIR_NORMALIZED_NETWORKS,
-        NETWORK_EDGE_FILE
+        # NETWORK_EDGE_FILE,
+
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -705,6 +711,9 @@ rule all:
 
 ## Create a network edge file
 rule create_network_edge_file:
+    """
+    Create a network edge file from the PANDA network file.
+    """
     input:
         panda_input = PANDA_NETWORK_FILE
     output:
@@ -720,7 +729,29 @@ rule create_network_edge_file:
             --output_edge_file {output.edge_file}
         """
 
-## Calculate indegrees
+## Calculate cancer-specific gene indegrees
+rule calculate_indegree:
+    """
+    Calculate gene indegree (number of incoming regulatory edges) from 
+    quantile-normalized LIONESS networks for each cancer type.
+    """
+    input:
+        network_dir = OUTPUT_DIR_NORMALIZED_NETWORKS,
+        edge_file = NETWORK_EDGE_FILE
+    output:
+        indegree_file = CANCER_INDEGREE_FILE
+    message:
+        "Calculating gene indegrees for cancer type: {wildcards.cancer}"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/calculate_indegree.R \
+            --tumor_type {wildcards.cancer} \
+            --network_dir {input.network_dir} \
+            --edge_file {input.edge_file} \
+            --output_file {output.indegree_file}
+        """
 
 
 
