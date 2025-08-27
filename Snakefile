@@ -218,9 +218,9 @@ OUTPUT_DIR_FINAL_MERGED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_n
 ## Files: net_norm_TCGA-BRCA.RData, net_norm_TCGA-LUAD.RData, etc.
 OUTPUT_DIR_NORMALIZED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_networks_normalized")
 
-
-
-
+###############################################################################
+PANDA_NETWORK_FILE = os.path.join(NETWORKS_DIR, "panda_net.txt") 
+NETWORK_EDGE_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "edges", "network_edges.txt")
 
 #####
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -339,7 +339,8 @@ rule all:
         # NETWORKS_DIR,
         # LIONESS_SAMPLE_MAPPING,
         # OUTPUT_DIR_FINAL_MERGED_NETWORKS,
-        OUTPUT_DIR_NORMALIZED_NETWORKS
+        # OUTPUT_DIR_NORMALIZED_NETWORKS,
+        NETWORK_EDGE_FILE
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -680,27 +681,47 @@ rule all:
 #         """
 
 
-## Apply quantile normalization on the networks
-rule normalize_networks:
-    """
-    Apply quantile normalization to cancer-specific LIONESS networks.
-    """
+# ## Apply quantile normalization on the networks
+# rule normalize_networks:
+#     """
+#     Apply quantile normalization to cancer-specific LIONESS networks.
+#     """
+#     input:
+#         network_dir = OUTPUT_DIR_FINAL_MERGED_NETWORKS,
+#         sample_file = SAMPLES_WITH_CANCER_FILE
+#     output:
+#         output_dir = directory(OUTPUT_DIR_NORMALIZED_NETWORKS)
+#     message:
+#         "Applying quantile normalization to networks"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/quantile_normalize_networks.R \
+#             --network_dir {input.network_dir} \
+#             --output_dir {output.output_dir} \
+#             --sample_file {input.sample_file}
+#         """
+
+## Create a network edge file
+rule create_network_edge_file:
     input:
-        network_dir = OUTPUT_DIR_FINAL_MERGED_NETWORKS,
-        sample_file = SAMPLES_WITH_CANCER_FILE
+        panda_input = PANDA_NETWORK_FILE
     output:
-        output_dir = directory(OUTPUT_DIR_NORMALIZED_NETWORKS)
+        edge_file = NETWORK_EDGE_FILE
     message:
-        "Applying quantile normalization to networks"
+        "Creating network edge file"
     params:
         bin = config["bin"]
     shell:
         """
-        Rscript {params.bin}/quantile_normalize_networks.R \
-            --network_dir {input.network_dir} \
-            --output_dir {output.output_dir} \
-            --sample_file {input.sample_file}
+        Rscript {params.bin}/create_edge_file.R \
+            --panda_network_file {input.panda_input} \
+            --output_edge_file {output.edge_file}
         """
+
+## Calculate indegrees
+
 
 
 # ## Extract clinical data for each cancer type ##
