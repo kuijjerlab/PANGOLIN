@@ -79,6 +79,7 @@ NUMBER_CORES_COLA = config["number_cores_cola"]
 PARTITION_METHOD = config["partition_method"]
 TOP_VALUE_METHOD = config["top_value_method"]
 MAX_K = config["max_k"]
+NCORES_PORCUPINE = config["ncores_porcupine"]
 
 ###############################################################################
 ### DATA DOWNLOAD AND NORMALIZATION PIPELINE PATHS                        ###
@@ -227,6 +228,11 @@ NETWORK_EDGE_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "edges", "network_edges
 #------------------------------------------------------------------------------
 CANCER_INDEGREE_FILE  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "indegrees_norm", "indegree_norm_{cancer}.RData")
 
+
+CANCER_PORCUPINE_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine")
+
+
+
 #####
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
 PORCUPINE_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "pcp_results_with_variance_{cancer}.txt")
@@ -346,7 +352,8 @@ rule all:
         # OUTPUT_DIR_FINAL_MERGED_NETWORKS,
         # OUTPUT_DIR_NORMALIZED_NETWORKS,
         # NETWORK_EDGE_FILE,
-
+        # expand(CANCER_INDEGREE_FILE, cancer = CANCER_TYPES),
+        expand(CANCER_PORCUPINE_DIR, cancer = CANCER_TYPES),
         # expand(OUTPUT_CANCER, cancer = CANCER_TYPES),
         # TSNE_DATA_EXPRESSION,
         # TSNE_DATA_INDEGREE,
@@ -709,25 +716,25 @@ rule all:
 #             --sample_file {input.sample_file}
 #         """
 
-## Create a network edge file
-rule create_network_edge_file:
-    """
-    Create a network edge file from the PANDA network file.
-    """
-    input:
-        panda_input = PANDA_NETWORK_FILE
-    output:
-        edge_file = NETWORK_EDGE_FILE
-    message:
-        "Creating network edge file"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/create_edge_file.R \
-            --panda_network_file {input.panda_input} \
-            --output_edge_file {output.edge_file}
-        """
+# ## Create a network edge file
+# rule create_network_edge_file:
+#     """
+#     Create a network edge file from the PANDA network file.
+#     """
+#     input:
+#         panda_input = PANDA_NETWORK_FILE
+#     output:
+#         edge_file = NETWORK_EDGE_FILE
+#     message:
+#         "Creating network edge file"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/create_edge_file.R \
+#             --panda_network_file {input.panda_input} \
+#             --output_edge_file {output.edge_file}
+#         """
 
 ## Calculate cancer-specific gene indegrees
 rule calculate_indegree:
@@ -753,7 +760,33 @@ rule calculate_indegree:
             --output_file {output.indegree_file}
         """
 
+## Run PORCUPINE analysis
 
+rule run_PORCUPINE:
+    """
+    Run PORCUPINE pathway analysis for each cancer type.
+    """
+    input:
+        network_dir = OUTPUT_DIR_NORMALIZED_NETWORKS,
+        edge_file = NETWORK_EDGE_FILE,
+        pathway_file = GMT_FILE
+    output:
+        porcupine_output_directory = directory(CANCER_PORCUPINE_DIR)
+    message:
+        "Running PORCUPINE analysis for cancer type: {wildcards.cancer}"
+    params:
+        bin = config["bin"],
+        ncores = NCORES_PORCUPINE
+    shell:
+        """
+        Rscript {params.bin}/runPORCUPINE_norm.R \
+            --tumor_type {wildcards.cancer} \
+            --network_dir {input.network_dir} \
+            --edge_file {input.edge_file} \
+            --pathway_file {input.pathway_file} \
+            --ncores {params.ncores} \
+            --output_directory {output.porcupine_output_directory}
+        """
 
 # ## Extract clinical data for each cancer type ##
 # rule extract_clinical_data:
