@@ -41,6 +41,7 @@ output_dir_individual_cancers: "results/data_individual_cancers"
 output_dir_all_cancers: "results/data_all"
 
 fig_dir: "results/figs"
+ncores_porcupine: 20
 alpha: 0.3
 number_cores: 20
 number_folds: 5
