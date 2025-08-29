@@ -18,3 +18,5 @@ workflow/envs/netZooPy/
 results/data_all/pysnail_normalized_individual_cancer_expression
 results/data_all/batch_analysis
 /results/data_all/batch_corrected_expression
+/results/data_all/final_networks_normalized
+/results/data_all/edges
