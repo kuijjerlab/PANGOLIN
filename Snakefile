@@ -397,166 +397,201 @@ rule all:
         # FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS,
         # OUTPUT_HTML_TABLE_PD1   
 
-## Download GDC data for each cancer type ##    
-## if the download_files is set to "YES" in the config file, then it will download the GDC data
-## otherwise it will skip the download and create a marker file 
-## and an empty output file indicating that the download was skipped
-## The predownloaded GDC data is in the data_all/gdc_data_predownloaded directory
+# Download TCGA GDC expression data for individual cancer types
+rule download_gdc_data:
+    """
+    Download TCGA gene expression data from GDC for each cancer type.
+    
+    This rule conditionally downloads expression data based on the config setting:
+    - If download_files="YES": Downloads fresh data from GDC 
+    - If download_files="NO": Skips download and creates marker files
+    
+    Alternative data source: Pre-downloaded data is available in 
+    data_all/gdc_data_predownloaded/ directory when downloads are skipped.
+    """
+    output:
+        out_file = OUTPUT_GDC_FILE,
+        marker = MARKER_FILE
+    message:
+        "Downloading GDC expression data for cancer type: {wildcards.cancer}"
+    params:
+        bin = config["bin"]
+    run:
+        if config["download_files"] == "YES":
+            shell(
+                """
+                Rscript {params.bin}/download_TCGA_expression.R \
+                    --tumor {wildcards.cancer} \
+                    --output_file {output.out_file}
+                """
+            )
+            with open(output.marker, "w") as f:
+                f.write("Downloaded\n")
+        else:
+            print(f"Skipping download for {wildcards.cancer}")
+            os.makedirs(os.path.dirname(output.marker), exist_ok=True)
+            with open(output.marker, "w") as f:
+                f.write("Download skipped.\n")
 
-# rule download_gdc_data:
-#     output:
-#         out_file = OUTPUT_GDC_FILE,
-#         marker = MARKER_FILE
-#     message:
-#         "Downloading GDC data for: {wildcards.cancer}"
-#     params:
-#         bin = config["bin"]
-#     run:
-#         if config["download_files"] == "YES":
-#             shell(
-#                 """
-#                 Rscript {params.bin}/download_TCGA_expression.R \
-#                     --tumor {wildcards.cancer} \
-#                     --output_file {output.out_file}
-#                 """
-#             )
-#             with open(output.marker, "w") as f:
-#                 f.write("Downloaded\n")
-#         else:
-#             print(f"Skipping download for {wildcards.cancer}")
-#             os.makedirs(os.path.dirname(output.marker), exist_ok=True)
-#             with open(output.marker, "w") as f:
-#                 f.write("Download skipped.\n")
+# Combine TCGA expression data from all cancer types
+rule combine_all_expression_data:
+    """
+    Combine individual cancer type expression files into one file.
+    
+    This rule processes downloaded TCGA expression data from multiple cancer types
+    and creates the following output files:
+    - Combined expression matrix (genes x samples across all cancers)
+    - Sample-to-cancer group mapping file
+    - Gene feature annotation file with genomic coordinates
 
-# # Combine the data for all cancer types, including expression, groups and features ##
-# rule combine_all_expression_data:
-#     input:
-#         exp_dir = EXPRESSION_DIR_GDC
-#     output:
-#         combined_expression_file = OUTPUT_EXP_COMBINED_FILE,
-#         group_file = GROUP_FILE,
-#         feature_file = FEATURE_FILE
-#     message:
-#         "Combining all expression data for all cancers"
-#     params:
-#         bin = config["bin"]
-#     shell:
-#         """
-#         Rscript {params.bin}/combine_allTCGA_expression.R \
-#             --expression_dir {input.exp_dir} \
-#             --combined_expression_file {output.combined_expression_file} \
-#             --group_file {output.group_file} \
-#             --feature_file {output.feature_file}
-#         """
-# # SNAIL qsmooth normalization of the combined expression data #
-# # to run this rule,you need to download the pysnail package in envs 
-# # to download it git clone git@github.com:kuijjerlab/PySNAIL.git
-# rule qsmooth_normalization:
-#     input:
-#         xprs = OUTPUT_EXP_COMBINED_FILE,
-#         groups = GROUP_FILE
-#     output:
-#         norm = PYSNAIL_NORMALIZED_FILE
-#     params:
-#         threshold = 0.2,
-#         bin = config["bin"]
-#     conda:
-#         "workflow/envs/pysnail.yaml"
-#     shell:
-#         """
-#             python {params.bin}/normalize_with_pysnail.py {input.xprs} {input.groups} {output.norm} --threshold {params.threshold}
-#         """
+    """
+    input:
+        exp_dir = EXPRESSION_DIR_GDC
+    output:
+        combined_expression_file = OUTPUT_EXP_COMBINED_FILE,
+        group_file = GROUP_FILE,
+        feature_file = FEATURE_FILE
+    message:
+        "Combining all expression data for all cancers"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/combine_allTCGA_expression.R \
+            --expression_dir {input.exp_dir} \
+            --combined_expression_file {output.combined_expression_file} \
+            --group_file {output.group_file} \
+            --feature_file {output.feature_file}
+        """
 
+# PySNAIL qsmooth normalization of combined expression data
+rule qsmooth_normalization:
+    """
+    Apply qsmooth normalization to combined TCGA expression data using PySNAIL.
+    
+    Prerequisites: PySNAIL package must be installed in envs/ directory.
+    Installation: git clone git@github.com:kuijjerlab/PySNAIL.git
 
-# rule split_expression_by_cancer:
-#     """
-#     Split the large normalized expression file into cancer-specific files.
-#     """
-#     input:
-#         expression_file = PYSNAIL_NORMALIZED_FILE,
-#         group_file = GROUP_FILE
-#     output:
-#         output_directory = directory(OUTPUT_DIR_PYSNAIL_CANCER)
-#     message:
-#         "Splitting expression data into cancer-specific files and saving them"
-#     params:
-#         bin = config["bin"]
-#     shell:
-#         """
-#         Rscript {params.bin}/save_normalized_exp_per_cancer.R \
-#             --expression_file {input.expression_file} \
-#             --group_file {input.group_file} \
-#             --output_dir {output.output_directory}
-#         """   
-## Check the batch effect in the expression data ##
-## This takes a while to run ##
-# rule analyze_batch_effect:
-#     input:
-#         expression_file = PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC,
-#         group_file = GROUP_FILE,
-#         batch_file = BATCH_FILE,
-#         clinical_file = CLINICAL_FILE_RDATA 
-#     output:
-#         output_dir = directory(BATCH_DIR_CANCER)
-#     message:
-#         "Analyzing batch effect for: {wildcards.cancer}"   
+    """
+    input:
+        xprs = OUTPUT_EXP_COMBINED_FILE,
+        groups = GROUP_FILE
+    output:
+        norm = PYSNAIL_NORMALIZED_FILE
+    params:
+        threshold = 0.2,
+        bin = config["bin"]
+    conda:
+        "workflow/envs/pysnail.yaml"
+    shell:
+        """
+        python {params.bin}/normalize_with_pysnail.py {input.xprs} {input.groups} {output.norm} --threshold {params.threshold}
+        """
 
-#     params:
-#         bin = config["bin"],
-#         nthreads = config["number_cores_mbatch"]
-#     conda:
-#         "mbatch_minimal"
-#     shell:
-#         """
-#         Rscript {params.bin}/batch_effect_analysis.R \
-#             --tumor_type {wildcards.cancer} \
-#             --expression_file {input.expression_file} \
-#             --group_file {input.group_file} \
-#             --batch_file {input.batch_file} \
-#             --clin_file {input.clinical_file} \
-#             --nthreads {params.nthreads} \
-#             --output_directory {output.output_dir}
-#         """
+rule split_expression_by_cancer:
+    """
+    Split the large normalized expression file into cancer-specific files.
+    """
+    input:
+        expression_file = PYSNAIL_NORMALIZED_FILE,
+        group_file = GROUP_FILE
+    output:
+        output_directory = directory(OUTPUT_DIR_PYSNAIL_CANCER)
+    message:
+        "Splitting expression data into cancer-specific files and saving them"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/save_normalized_exp_per_cancer.R \
+            --expression_file {input.expression_file} \
+            --group_file {input.group_file} \
+            --output_dir {output.output_directory}
+        """   
 
-# ## Create a PDF figure for the batch effect analysis ##
-# rule plot_mbatch_results:
-#     input:
-#         batch_dir = BATCH_DIR_ALL_CANCERS
-#     output:
-#         pdf_file = BATCH_EFFECT_PDF
-#     message:
-#         "Creating batch effect figure"
-#     params:
-#         bin = config["bin"]
-#     shell:
-#         """
-#         Rscript {params.bin}/plot_mbatch_results.R \
-#             --batch_results_dir {input.batch_dir} \
-#             --output_file {output.pdf_file}
-#         """
+# MBatch batch effect analysis for cancer-specific expression data
+rule analyze_batch_effect:
+    """
+    Analyze batch effects in cancer-specific normalized expression data using MBatch.
+    Outputs include:
+    - PCA plots showing sample clustering by batch variables
+    - DSC statistics quantifying batch effect magnitude
+    - Diagnostic plots for batch effect assessment
+    
+    Note: This analysis is computationally intensive and may require extended runtime.
+    Prerequisites: MBatch conda environment (create from envs/mbatch.yaml)
+    """
+    input:
+        expression_file = PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC,
+        group_file = GROUP_FILE,
+        batch_file = BATCH_FILE,
+        clinical_file = CLINICAL_FILE_RDATA 
+    output:
+        output_dir = directory(BATCH_DIR_CANCER)
+    message:
+        "Analyzing batch effect for: {wildcards.cancer}"   
+    params:
+        bin = config["bin"],
+        nthreads = config["number_cores_mbatch"]
+    conda:
+        "mbatch_minimal"
+    shell:
+        """
+        Rscript {params.bin}/batch_effect_analysis.R \
+            --tumor_type {wildcards.cancer} \
+            --expression_file {input.expression_file} \
+            --group_file {input.group_file} \
+            --batch_file {input.batch_file} \
+            --clin_file {input.clinical_file} \
+            --nthreads {params.nthreads} \
+            --output_directory {output.output_dir}
+        """
 
-# ## BATCH correction
-# rule correct_batch_effect:
-#     input:
-#         expression_file = PYSNAIL_NORMALIZED_FILE,
-#         group_file = GROUP_FILE,
-#         batch_file = BATCH_FILE,
-#         clinical_file = CLINICAL_FILE_RDATA 
-#     output:
-#         batch_corrected_expression_file = BATCH_CORRECTED_EXPRESSION_FILE
-#     message:
-#         "Correcting batch effect in expression data"
-#     params:
-#         bin = config["bin"]
-#     shell:
-#         """
-#         Rscript {params.bin}/combat_correct.R \
-#             --expression_file {input.expression_file} \
-#             --group_file {input.group_file} \
-#             --batch_file {input.batch_file} \
-#             --clin_file {input.clinical_file} \
-#             --output_file {output.batch_corrected_expression_file}
-#         """
+# Generate comprehensive MBatch batch effect visualization
+rule plot_mbatch_results:
+    """
+    Create batch effect visualization from MBatch analysis results.
+    """
+    input:
+        batch_dir = BATCH_DIR_ALL_CANCERS
+    output:
+        pdf_file = BATCH_EFFECT_PDF
+    message:
+        "Creating batch effect figure"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/plot_mbatch_results.R \
+            --batch_results_dir {input.batch_dir} \
+            --output_file {output.pdf_file}
+        """
+
+# ComBat batch effect correction for multi-cancer expression data
+rule correct_batch_effect:
+    """
+    Apply ComBat batch effect correction to normalized expression data.
+    """
+    input:
+        expression_file = PYSNAIL_NORMALIZED_FILE,
+        group_file = GROUP_FILE,
+        batch_file = BATCH_FILE,
+        clinical_file = CLINICAL_FILE_RDATA 
+    output:
+        batch_corrected_expression_file = BATCH_CORRECTED_EXPRESSION_FILE
+    message:
+        "Correcting batch effect in expression data"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/combat_correct.R \
+            --expression_file {input.expression_file} \
+            --group_file {input.group_file} \
+            --batch_file {input.batch_file} \
+            --clin_file {input.clinical_file} \
+            --output_file {output.batch_corrected_expression_file}
+        """
 
 # ## PREPARE FOR PANDA
 # rule prepare_files_for_PANDA:
@@ -736,29 +771,29 @@ rule all:
 #             --output_edge_file {output.edge_file}
 #         """
 
-## Calculate cancer-specific gene indegrees
-rule calculate_indegree:
-    """
-    Calculate gene indegree (number of incoming regulatory edges) from 
-    quantile-normalized LIONESS networks for each cancer type.
-    """
-    input:
-        network_dir = OUTPUT_DIR_NORMALIZED_NETWORKS,
-        edge_file = NETWORK_EDGE_FILE
-    output:
-        indegree_file = CANCER_INDEGREE_FILE
-    message:
-        "Calculating gene indegrees for cancer type: {wildcards.cancer}"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/calculate_indegree.R \
-            --tumor_type {wildcards.cancer} \
-            --network_dir {input.network_dir} \
-            --edge_file {input.edge_file} \
-            --output_file {output.indegree_file}
-        """
+# ## Calculate cancer-specific gene indegrees
+# rule calculate_indegree:
+#     """
+#     Calculate gene indegree (number of incoming regulatory edges) from 
+#     quantile-normalized LIONESS networks for each cancer type.
+#     """
+#     input:
+#         network_dir = OUTPUT_DIR_NORMALIZED_NETWORKS,
+#         edge_file = NETWORK_EDGE_FILE
+#     output:
+#         indegree_file = CANCER_INDEGREE_FILE
+#     message:
+#         "Calculating gene indegrees for cancer type: {wildcards.cancer}"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/calculate_indegree.R \
+#             --tumor_type {wildcards.cancer} \
+#             --network_dir {input.network_dir} \
+#             --edge_file {input.edge_file} \
+#             --output_file {output.indegree_file}
+#         """
 
 ## Run PORCUPINE analysis
 
