@@ -60,10 +60,10 @@ OUTPUT_FIGURE <- opt$output_figure_file
 ## Load Helper Scripts ##
 ########################
 # source required functions
-source("bin/clinical_association_pd1_fn.R")
-source("bin/cox_regression_tumor_fn.R")
-source("bin/extract_clinical_data_fn.R")
-source("bin/plot_clinical_associations_fn.R")
+source("workflow/bin/clinical_association_pd1_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
+source("workflow/bin/extract_clinical_data_fn.R")
+source("workflow/bin/plot_clinical_associations_fn.R")
 set.seed(1234)
 
 

@@ -43,8 +43,8 @@ COX_SUMMARY_ALL <- opt$cox_summary_all_cancers
 TUMOR_DIR_MAIN <- opt$tumor_dir
 OUTPUT_PDF_FILE <- opt$output_file
 
-source("bin/merge_patient_data_fn.R")
-source("bin/plotting_fn.R")
+source("workflow/bin/merge_patient_data_fn.R")
+source("workflow/bin/plotting_fn.R")
 
 dir.create(dirname(OUTPUT_PDF_FILE), recursive = TRUE, showWarnings = FALSE)
 

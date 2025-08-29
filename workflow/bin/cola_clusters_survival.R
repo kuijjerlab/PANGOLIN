@@ -57,8 +57,8 @@ OUTPUT_FILE <- opt$output_file
 ## Load Helper Scripts ##
 ########################
 # source required functions
-source("bin/cox_regression_tumor_fn.R")
-source("bin/extract_clinical_data_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
+source("workflow/bin/extract_clinical_data_fn.R")
 
 ########################
 ## Define Covariates ##

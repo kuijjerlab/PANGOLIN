@@ -46,7 +46,7 @@ TUMOR_TYPE <- opt$tumor
 EXPRESSION_CLUSTERS_PER_CANCER <- opt$cluster_expression_per_tumor
 INDEGREE_CLUSTERS_PER_CANCER <- opt$cluster_indegree_per_tumor
 
-source("bin/cola_clustering_fn.R")
+source("workflow/bin/cola_clustering_fn.R")
 
 ##############################
 ## Filter for tumor type ##

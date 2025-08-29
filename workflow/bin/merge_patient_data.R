@@ -48,8 +48,8 @@ IMMUNE_FILE <- opt$immune_file
 OUTPUT_FILE <- opt$output_file
 
 ## Load functions ##
-source("bin/cox_regression_tumor_fn.R")
-source("bin/merge_patient_data_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
+source("workflow/bin/merge_patient_data_fn.R")
 
 dir.create(dirname(OUTPUT_FILE), recursive = TRUE, showWarnings = FALSE)
 res <- merge_patient_data(tumor_pd1_dir = TUMOR_PD1_DIR,

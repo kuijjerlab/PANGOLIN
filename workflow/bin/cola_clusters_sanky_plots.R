@@ -84,10 +84,10 @@ DATASETS_TO_PLOT_COLA_CLUSTERS_FILE <- opt$datasets_to_plot_cola_clusters
 ########################
 # source required functions
 
-source("bin/cola_clustering_fn.R")
-source("bin/cox_regression_tumor_fn.R")
-source("bin/merge_patient_data_fn.R")
-source("bin/sanky_plots_fn.R")
+source("workflow/bin/cola_clustering_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
+source("workflow/bin/merge_patient_data_fn.R")
+source("workflow/bin/sanky_plots_fn.R")
 set.seed(1234)
 
 res_files_indegree <- 

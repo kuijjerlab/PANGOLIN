@@ -59,7 +59,7 @@ PC_CLIN_ASSOCIATIONS_FIGURE <- opt$pc_clinical_association_figure
 ########################
 # source required functions
 
-source("bin/plot_clinical_associations_fn.R")
+source("workflow/bin/plot_clinical_associations_fn.R")
 
 
 res_cat <- process_categorical_results(

@@ -72,7 +72,7 @@ NUMBER_CORES <- opt$number_cores
 ALPHA <- opt$alpha
 OUTPUT_FILE <- opt$output_file
 
-source("bin/cox_regression_tumor_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
 dir.create(dirname(OUTPUT_FILE), recursive = TRUE, showWarnings = FALSE)
 res <- run_glmnet_ntimes_pd1(tumor_clin_file_path = TUMOR_CLIN_FILE,
                     tumor_pd1_dir = TUMOR_PD1_DIR,

@@ -45,7 +45,7 @@ PCP_FILT_FILE <- opt$filtered_porcupine_file_path
 ## Load Helper Scripts ##
 ########################
 # source required functions
-source("bin/analyze_pcp_results_fn.R")
+source("workflow/bin/analyze_pcp_results_fn.R")
 res_filt <- filter_pcp_results(PCP_FILE)
 write.table(res_filt,
             PCP_FILT_FILE,

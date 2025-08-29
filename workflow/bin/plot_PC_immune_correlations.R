@@ -44,8 +44,8 @@ COX_SUMMARY_ALL <- opt$cox_summary_all_cancers
 TUMOR_DIR_MAIN <- opt$tumor_dir
 OUTPUT_PNG_FILE <- opt$output_file
 
-source("bin/merge_patient_data_fn.R")
-source("bin/plotting_fn.R")
+source("workflow/bin/merge_patient_data_fn.R")
+source("workflow/bin/plotting_fn.R")
 
 res <- generate_PC_immune_correlation_table(cox_results_file = COX_SUMMARY_ALL,
                                 cancer_dir = TUMOR_DIR_MAIN, 

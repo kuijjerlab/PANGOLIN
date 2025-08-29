@@ -53,9 +53,9 @@ RESULTS_PD1_NUMERIC <- opt$results_pd1_numeric
 ########################
 # source required functions
 
-source("bin/clinical_association_pd1_fn.R")
-source("bin/cox_regression_tumor_fn.R")
-source("bin/extract_clinical_data_fn.R")
+source("workflow/bin/clinical_association_pd1_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
+source("workflow/bin/extract_clinical_data_fn.R")
 set.seed(1234)
 
 df <- fread(COX_RESULTS_FILE)

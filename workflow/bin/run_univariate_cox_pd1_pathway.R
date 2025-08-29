@@ -67,7 +67,7 @@ TYPE_STAT <- opt$type_stat
 OUTPUT_FILE_COX_SUMMARY <- opt$cox_model_summary
 OUTPUT_FILE_COX_SCORES <- opt$cox_predicted_risk
 
-source("bin/cox_regression_tumor_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
 dir.create(dirname(OUTPUT_FILE_COX_SUMMARY), recursive = TRUE, showWarnings = FALSE)
 dir.create(dirname(OUTPUT_FILE_COX_SCORES), recursive = TRUE, showWarnings = FALSE)
 

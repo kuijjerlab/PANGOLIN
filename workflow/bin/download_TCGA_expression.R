@@ -34,7 +34,7 @@ opt <- optparse::parse_args(opt_parser)
 TUMOR_TYPE <- opt$tumor
 OUTPUT_FILE <- opt$output_file
 
-source("bin/download_gdc_fn.R")
+source("workflow/bin/download_gdc_fn.R")
 
 # Download expression data for the specified tumor type #
 project <- paste0("TCGA-", TUMOR_TYPE)

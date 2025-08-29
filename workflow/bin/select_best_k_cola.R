@@ -42,7 +42,7 @@ TUMOR_DIR_MAIN <- opt$tumor_dir
 BEST_K_IND <- opt$best_cola_k_indegree
 BEST_K_EXP <- opt$best_cola_k_expression
 
-source("bin/cola_clustering_fn.R")
+source("workflow/bin/cola_clustering_fn.R")
 ##### Load in INDEGREE cluster results
 result_files_indegree <-
         list.files(TUMOR_DIR_MAIN, 

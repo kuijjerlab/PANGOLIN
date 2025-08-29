@@ -38,7 +38,7 @@ TUMOR_PATH_MAPPING_FILE <- opt$tumor_pathways_mapping_path
 OUTPUT_FILE <- opt$output_file
 
 
-source("bin/cox_regression_tumor_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
 dir.create(dirname(OUTPUT_FILE), recursive = TRUE, showWarnings = FALSE)
 # TUMOR_PATH_MAPPING_FILE <-"data_individual_cancers/ESCA/porcupine/individual_scores_ESCA.RData"
 # OUTPUT_FILE <- "data_individual_cancers/ESCA/pd1_data/pd1_individual_scores_norm_ESCA.RData"

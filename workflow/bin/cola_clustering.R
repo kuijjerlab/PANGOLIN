@@ -67,7 +67,7 @@ PARTITION_METHOD <- opt$partition_method
 MAX_K <- opt$max_k
 OUTPUT_DIR <- opt$output
 
-source("bin/cola_clustering_fn.R")
+source("workflow/bin/cola_clustering_fn.R")
 # perform conssensus clustering on indegree and save the results
 perform_cola_clustering(cancer = TUMOR,
                                 samples_file = SAMPLES_FILE, 

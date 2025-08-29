@@ -86,7 +86,7 @@ OUTPUT_DIR <- opt$output_directory
 NTHREADS <- opt$nthreads
 
 ### source functions ###
-source("bin/analyze_batch_fn.R")
+source("workflow/bin/analyze_batch_fn.R")
 
 cat("Loading expression file...\n")
 load(EXPRESSION_FILE, exp <- new.env())

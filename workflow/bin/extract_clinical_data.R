@@ -37,7 +37,7 @@ message("Processing clinical data for tumor type: ", TUMOR_TYPE)
 ######################
 ## Load functions ##
 ######################
-source("bin/extract_clinical_data_fn.R")
+source("workflow/bin/extract_clinical_data_fn.R")
 
 ######################
 ## Load clinical data ##

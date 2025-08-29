@@ -63,7 +63,7 @@ FIG_TSNE_INDEGREE <- opt$figure_TSNE_indegree
 FIG_TSNE_EXPRESSION <- opt$figure_TSNE_expression
 
 
-source("bin/cola_clustering_fn.R")
+source("workflow/bin/cola_clustering_fn.R")
 
 res_files_indegree <- 
             list.files(TUMOR_DIR_MAIN,

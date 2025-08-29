@@ -30,7 +30,7 @@ FIGURE_DIR <- opt$figure_dir
 ######################
 ## Load functions ##
 ######################
-source("bin/create_cancer_legend_fn.R")
+source("workflow/bin/create_cancer_legend_fn.R")
 
 
 ######################

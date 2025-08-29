@@ -97,9 +97,9 @@ OUTPUT_FGSEA_PLOT <- opt$output_fgsea_plot
 ## Load Helper Scripts ##
 ########################
 # source required functions
-source("bin/cox_regression_tumor_fn.R")
-source("bin/PRAD_clusters_analysis_fn.R")
-source("bin/cola_clustering_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
+source("workflow/bin/PRAD_clusters_analysis_fn.R")
+source("workflow/bin/cola_clustering_fn.R")
 
 datatype <- "clusters"
 covariates <- c("gender", "age_at_initial_pathologic_diagnosis")

@@ -41,7 +41,7 @@ EXPRESSION_FILE <- opt$expression_file
 GROUP_FILE <- opt$group_file
 OUTPUT_DIR <- opt$output_dir
 
-source("bin/analyze_batch_fn.R")
+source("workflow/bin/analyze_batch_fn.R")
 
 cat("Loading expression file (this may take a while)...\n")
 log2exp <- log2_transform_snail(EXPRESSION_FILE)

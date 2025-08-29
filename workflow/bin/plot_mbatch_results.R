@@ -35,7 +35,7 @@ BATCH_DIR <- opt$batch_results_dir
 OUTPUT_FILE <- opt$output_file
 
 # source the function to combine results
-source("bin/analyze_batch_fn.R")
+source("workflow/bin/analyze_batch_fn.R")
 
 # combine and plot the MBatch results
 cancers <- list.files(BATCH_DIR)

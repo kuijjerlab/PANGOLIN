@@ -64,8 +64,8 @@ OUTPUT_FIGURE_FILE <- opt$ouput_figure_file
 ## Load Helper Scripts ##
 ########################
 # source required functions
-source("bin/create_cancer_legend_fn.R")
-source("bin/sanky_plots_fn.R")
+source("workflow/bin/create_cancer_legend_fn.R")
+source("workflow/bin/sanky_plots_fn.R")
 
 # loading the datasets to plot for cola cluster comparison
 load(DATASETS_TO_PLOT_COLA_CLUSTERS_FILE, data <- new.env())

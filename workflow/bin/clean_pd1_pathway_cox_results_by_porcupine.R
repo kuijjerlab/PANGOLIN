@@ -47,7 +47,7 @@ COX_SUMMARY_FILTERED <- opt$cox_summary_all_cancers_filtered
 ##########################
 ## Load functions ##
 ##########################
-source("bin/merge_patient_data_fn.R")
+source("workflow/bin/merge_patient_data_fn.R")
 
 res <- clean_cox_results(cox_results_file = COX_SUMMARY_ALL,
                         porcupine_results_file = PORCUPINE_RESULTS, 

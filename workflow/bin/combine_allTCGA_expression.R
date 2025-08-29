@@ -56,7 +56,7 @@ FEATURE_FILE <- opt$feature_file
 
 
 ### load functions ###
-source("bin/download_gdc_fn.R")
+source("workflow/bin/download_gdc_fn.R")
 exp_files <- list.files(EXPRESSION_DIR, pattern = ".RData")
 exp_files
 

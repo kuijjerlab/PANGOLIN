@@ -48,7 +48,7 @@ CANCER_COLOR_FILE <- opt$cancer_color_file
 ## Load Helper Scripts ##
 ########################
 # source required functions
-source("bin/cox_regression_tumor_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
 
 ######################
 ## Load Data #########

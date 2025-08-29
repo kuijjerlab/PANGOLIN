@@ -42,8 +42,8 @@ OUTPUT_FILE <- opt$output
 ######################
 ## Load functions ##
 ######################
-source("bin/cox_regression_tumor_fn.R")
-source("bin/extract_PDL1_expression_fn.R")
+source("workflow/bin/cox_regression_tumor_fn.R")
+source("workflow/bin/extract_PDL1_expression_fn.R")
 
 ##############################
 ## Filter for tumor type ##

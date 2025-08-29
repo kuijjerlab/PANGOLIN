@@ -72,8 +72,8 @@ FIG_SHARED_CATEGORIES = opt$figure_shared_categories
 ########################
 # source required functions
 set.seed(1234)
-source("bin/analyze_pcp_results_fn.R")
-source("bin/plot_PORCUPINE_results_fn.R")
+source("workflow/bin/analyze_pcp_results_fn.R")
+source("workflow/bin/plot_PORCUPINE_results_fn.R")
 
 # Assign biological groups to the filtered PORCUPINE pathways
 res_all <- fread(PCP_RESULTS_FILE)
