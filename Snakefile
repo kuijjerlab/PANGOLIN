@@ -228,10 +228,11 @@ NETWORK_EDGE_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "edges", "network_edges
 #------------------------------------------------------------------------------
 CANCER_INDEGREE_FILE  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "indegrees_norm", "indegree_norm_{cancer}.RData")
 
+###############################################################################
+### PORCUPINE analysis of gene regulatory heterogeneity                    ###
+###############################################################################
 
 CANCER_PORCUPINE_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine")
-
-
 
 #####
 TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clinical", "curated_clinical_{cancer}.txt")
@@ -251,35 +252,72 @@ PORCUPINE_RESULTS_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "porcupine", "porcu
 FIG_PATHWAY_INTERSECTION = os.path.join(FIG_DIR, "pathways_intersection_pcp.pdf")
 FIG_SHARED_CATEGORIES = os.path.join(FIG_DIR, "combined_figure_pcp_results_shared_categories.pdf")
 
-## output directory for COLA-consesus clustering results for each cancer type ##
+###############################################################################
+### COLA CONSENSUS CLUSTERING ANALYSIS PIPELINE PATHS                     ###
+###############################################################################
+
+#------------------------------------------------------------------------------
+# Cancer-Specific Consensus Clustering Results
+#------------------------------------------------------------------------------
+## Individual cancer type consensus clustering output directories
+## Pattern: {cancer}/consensus_clustering/{datatype} (e.g., BRCA/consensus_clustering/expression)
+## Contains COLA analysis results for each cancer type and data type combination
 OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "consensus_clustering", "{datatype}")
 
-## output directory for COLA-consesus clustering results for ALL cancer types ##
+#------------------------------------------------------------------------------
+# Pan-Cancer Consensus Clustering Analysis
+#------------------------------------------------------------------------------
+## Primary output directory for combined COLA consensus clustering results
+## Contains optimized cluster assignments and comparative analysis across all cancer types
 OUTPUT_ALL_CANCERS_CONSENSUS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cola_consensus_clustering")
-## output files  for COLA-consesus clustering results for ALL cancer types ##
+
+## Optimal cluster number determination files
+## Contains best K values selected by COLA algorithm for each data type
 BEST_K_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_expression.txt")
 BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_indegree.txt")
 
-## output files  for COLA-consesus clustering (individual to cluster assignment table) results for ALL cancer types ##
+## Sample-to-cluster assignment tables for selected optimal K values
+## Maps individual samples to their assigned cluster groups for downstream analysis
 SELECTED_CLUSTERS_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_expression.txt")
 SELECTED_CLUSTERS_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_indegree.txt")
+
+## Combined dataset for cluster visualization and comparative analysis
+## RData object containing processed data for t-SNE and other visualization methods
 DATASETS_TO_PLOT_COLA_CLUSTERS = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "datasets_to_plot_cola_clusters.RData")
 
-## output figures files  for COLA-consesus clustering results for ALL cancer types on TSNE ##
+#------------------------------------------------------------------------------
+# Consensus Clustering Visualization Outputs
+#------------------------------------------------------------------------------
+## t-SNE visualization of consensus clusters overlaid on dimensional reduction plots
+## Shows sample clustering patterns and cluster separation quality
 FIG_TSNE_COLA_INDEGREE = os.path.join(FIG_DIR, "TSNE_cola_clusters_indegree_all_cancers.pdf")
 FIG_TSNE_COLA_EXPRESSION = os.path.join(FIG_DIR, "TSNE_cola_clusters_expression_all_cancers.pdf")
-## output figures file for SANKEY plot comparing COLA clusters for indegree and expression ##
+
+## Sankey diagram comparing cluster assignments between expression and indegree data
+## Visualizes concordance and differences between clustering approaches
 FIG_SANKEY = os.path.join(FIG_DIR, "sankey_plot_indegree_expression.pdf")
 
-## output dir and files for saving cola clusters for each cancer type ##
+#------------------------------------------------------------------------------
+# Final Cancer-Specific Cluster Assignments
+#------------------------------------------------------------------------------
+## Final cluster assignment files for individual cancer types
+## Contains optimized cluster memberships for downstream survival and clinical analysis
 OUTPUT_CLUSTERS_PER_TUMOR_IND = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "final_clusters", "final_clusters_indegree_{cancer}.txt")
 OUTPUT_CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "final_clusters", "final_clusters_expression_{cancer}.txt")
 
-## output file for cox univariate results comparing cola clustering results for each cancer type ##
+#------------------------------------------------------------------------------
+# Survival Analysis of Consensus Clusters
+#------------------------------------------------------------------------------
+## Cox regression results comparing survival outcomes between consensus clusters
+## Individual cancer type analysis results
 OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "final_clusters", "cox_results_final_clusters_indegree_expression_{cancer}.txt")
+
+## Combined Cox regression results across all cancer types
+## Comprehensive survival analysis summary for consensus cluster validation
 OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "cox_results_final_clusters_indegree_expression_all.txt")
 
-## output figure for cox univariate results comparing cola clustering results for all cancer types ##
+## Visualization of Cox regression results across cancer types
+## Summary figure showing prognostic significance of consensus clusters
 FIG_COX_COLA_CLUSTERS = os.path.join(FIG_DIR, "cox_results_final_clusters_indegree_expression_all_cancers.pdf") 
 
 ## analysis of PRAD COLA CLUSTERS k = 4 ##
