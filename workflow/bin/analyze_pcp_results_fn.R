@@ -110,73 +110,77 @@ jaccard <- function(a, b) {
 }
 
 
-#' Add variance (PC1) information to PCP results
-#'
-#' This function reads PCP and PCA results from specified directories, matches 
-#' pathways between the results, and adds PC1 variance information from the 
-#' PCA results to the PCP results.
-#'
-#' @param cancer A character string specifying the cancer type (used to filter 
-#'               files).
-#' @param pcp_dir A character string specifying the directory containing 
-#'                "pcp_results" and "pathways_results" files.
-#'
-#' @return A data.table of PCP results with an added "pc1" column containing 
-#'         variance information from the PCA results.
-#' @import data.table
-#' @export
+# #' Add variance (PC1) information to PCP results
+# #'
+# #' This function reads PCP and PCA results from specified file paths, matches 
+# #' pathways between the results, and adds PC1 variance information from the 
+# #' PCA results to the PCP results.
+# #'
+# #' @param pcp_file A character string specifying the file path to the PCP 
+# #'                 results file.
+# #' @param pca_file A character string specifying the file path to the PCA 
+# #'                 results file (pathways_results).
+# #'
+# #' @return A data.table of PCP results with an added "pc1" column containing 
+# #'         variance information from the PCA results.
+# #' @import data.table
+# #' @export
 
 
-add_variance_to_pcp_results <- function(cancer, pcp_dir) {
-        # Validate inputs
-        if (!is.character(cancer) || length(cancer) != 1) {
-                stop("'cancer' must be a single character string.")
-        }
+# add_variance_to_pcp_results <- function(pcp_file, pca_file) {
+#         # Validate inputs
+#         if (!is.character(pcp_file) || length(pcp_file) != 1) {
+#                 stop("'pcp_file' must be a single character string.")
+#         }
+        
+#         if (!is.character(pca_file) || length(pca_file) != 1) {
+#                 stop("'pca_file' must be a single character string.")
+#         }
 
-        if (!dir.exists(pcp_dir)) {
-                stop(paste("Directory does not exist:", pcp_dir))
-        }
+#         if (!file.exists(pcp_file)) {
+#                 stop(paste("PCP file does not exist:", pcp_file))
+#         }
+        
+#         if (!file.exists(pca_file)) {
+#                 stop(paste("PCA file does not exist:", pca_file))
+#         }
 
-        # Locate files matching patterns
-        pcp_files <- list.files(pcp_dir, pattern = "pcp_results")
-        pca_files <- list.files(pcp_dir, pattern = "pathways_results")
-        pca_files <- pca_files[!grepl("random", pca_files)]
+#         # Read in PCP and PCA results
+#         pcp_res <- tryCatch({
+#                 fread(pcp_file)
+#         }, error = function(e) {
+#                 stop(paste("Error reading PCP file:", e$message))
+#         })
 
-        # Filter files by cancer type
-        pcp_file <- pcp_files[grep(cancer, pcp_files)]
-        pca_file <- pca_files[grep(cancer, pca_files)]
+#         pca_res <- tryCatch({
+#                 fread(pca_file)
+#         }, error = function(e) {
+#                 stop(paste("Error reading PCA file:", e$message))
+#         })
 
-        # Ensure matching files exist
-        if (length(pcp_file) != 1) {
-                stop("PCP results file for the specified cancer not found.")
-        }
-        if (length(pca_file) != 1) {
-                stop("PCA results file for the specified cancer not found.")
-        }
+#         # Validate required columns exist
+#         if (!"pathway" %in% names(pcp_res)) {
+#                 stop("PCP results file must contain a 'pathway' column.")
+#         }
+        
+#         if (!"pathway" %in% names(pca_res)) {
+#                 stop("PCA results file must contain a 'pathway' column.")
+#         }
+        
+#         if (!"pc1" %in% names(pca_res)) {
+#                 stop("PCA results file must contain a 'pc1' column.")
+#         }
 
-        # Read in PCP and PCA results
-        pcp_res <- tryCatch({
-                fread(file.path(pcp_dir, pcp_file))
-        }, error = function(e) {
-                stop(paste("Error reading PCP file:", e$message))
-        })
+#         # Add PC1 variance information to PCP results
+#         pcp_res$pc1 <- pca_res$pc1[match(pcp_res$pathway, pca_res$pathway)]
 
-        pca_res <- tryCatch({
-                fread(file.path(pcp_dir, pca_file))
-        }, error = function(e) {
-                stop(paste("Error reading PCA file:", e$message))
-        })
+#         # Check for unmatched pathways
+#         if (any(is.na(pcp_res$pc1))) {
+#                 warning("Some pathways in PCP results were not matched to PCA.")
+#         }
 
-        # Add PC1 variance information to PCP results
-        pcp_res$pc1 <- pca_res$pc1[match(pcp_res$pathway, pca_res$pathway)]
-
-        # Check for unmatched pathways
-        if (any(is.na(pcp_res$pc1))) {
-                warning("Some pathways in PCP results were not matched to PCA.")
-        }
-
-        return(pcp_res)
-}
+#         return(pcp_res)
+# }
 
 
 #' Assign Functional Categories to Pathways
