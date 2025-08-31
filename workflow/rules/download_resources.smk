@@ -1,4 +1,16 @@
 
+## Zenodo configuration ##
+ZENODO_RECORD_ID = config["zenodo_record_id"]
+ZENODO_RESOURCE_FILENAME = config["zenodo_resource_filename"]
+
+##############################################################################
+### ZENODO RESOURCE DOWNLOAD PATHS                                        ###
+###############################################################################
+
+## Marker file to indicate successful download of Zenodo resources
+ZENODO_DOWNLOAD_COMPLETE = ".zenodo_download_complete"
+
+
 rule download_zenodo_resources:
     """
     Download specific files from Zenodo record.
