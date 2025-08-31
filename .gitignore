@@ -1,7 +1,6 @@
 /resources/priors/
 results/data_individual_cancers/
 .snakemake/
-Snakefile_old
 workflow/bin/move_files.sh
 workflow/bin/remove_files.sh
 workflow/bin/rename_pd1_net_files.R
@@ -20,3 +19,4 @@ results/data_all/batch_analysis
 /results/data_all/batch_corrected_expression
 /results/data_all/final_networks_normalized
 /results/data_all/edges
+rules_to_be_skipped.txt
