@@ -1,33 +1,4 @@
 
-###############################################################################
-### BATCH EFFECT ANALYSIS PIPELINE PATHS                                  ###
-###############################################################################
-
-#------------------------------------------------------------------------------
-# Batch Effect Detection and Analysis
-#------------------------------------------------------------------------------
-## Primary output directory for batch effect analysis results across all cancers
-## Contains MBatch DSC analysis results and diagnostic files
-BATCH_DIR_ALL_CANCERS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_analysis")
-
-## Cancer-specific batch analysis directories  
-## Each directory contains PCA plots, DSC statistics, and batch effect diagnostics
-BATCH_DIR_CANCER = os.path.join(BATCH_DIR_ALL_CANCERS, "TCGA-{cancer}")
-
-## Summary figure showing Dispersive Separation Criterion (DSC) values
-BATCH_EFFECT_PDF = os.path.join(FIG_DIR, "MBatch_DSC.pdf")
-
-#------------------------------------------------------------------------------
-# Batch-Corrected Expression Data
-#------------------------------------------------------------------------------
-## ComBat-corrected expression matrix (all cancers combined)
-## Contains batch-effect corrected log2-transformed gene expression values
-BATCH_CORRECTED_EXPRESSION_FILE = os.path.join(
-    OUTPUT_DIR_ALL_CANCERS, 
-    "batch_corrected_expression", 
-    "batch_corrected_expression_all_cancers.RData"
-)
-
 # MBatch batch effect analysis for cancer-specific expression data
 rule analyze_batch_effect:
     """
