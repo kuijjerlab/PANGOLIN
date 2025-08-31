@@ -11,12 +11,12 @@ workflow_dir: "workflow"
 ## - "precomputed": Downloads intermediate files from Zenodo 
 ##   Allows rapid reproduction of main manuscript figures without
 ##   lengthy network calculations
-analysis_type: ["full_workflow", "precomputed"]
+analysis_type: "full_workflow"  # Change to "precomputed" for rapid analysis
 
 ## Zenodo
 zenodo_record_id: "YOUR_ZENODO_RECORD_ID"  # Replace with actual Zenodo record ID
 zenodo_resource_filename: "resources.tar.gz"  # Name of the compressed resources file on Zenodo
-
+zenodo_batch_analysis_filename: "batch_analysis.tar.gz"  # Name of the compressed batch results file on Zenodo
 ## Files that should be available in resources_dir
 ## clinical data
 clinical_file: "resources/clinical_curated/NIHMS978596-supplement-1.xlsx"
@@ -42,7 +42,6 @@ cancer_types: ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "COAD", "DLBC", "ESCA", "G
 
 
 number_cores_mbatch: 4
-download_files: "NO" # Set to "YES" to download the expression files (takes a while to download it)
 datatypes: ["expression", "indegree"]
 threshold_cox: [20, 50]
 output_dir: "results"
