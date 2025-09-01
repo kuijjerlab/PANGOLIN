@@ -36,6 +36,11 @@ FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
 ## qsmooth normalized expression matrix (PySNAIL output)
 ## Contains batch-effect corrected log2-transformed expression values
 PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "pysnail_normalized_STAR_counts.tsv")
+PYSNAIL_YAML = os.path.join(ENV_DIR, "pysnail.yaml")
+PYSNAIL_YAML_RELATIVE = os.path.relpath(
+    os.path.join("workflow", "envs", "pysnail.yaml"), 
+    "workflow/rules"
+)
 
 #------------------------------------------------------------------------------
 # Cancer-Specific Normalized Expression Files
@@ -98,9 +103,13 @@ rule qsmooth_normalization:
         threshold = 0.2,
         bin = config["bin"]
     conda:
-        "workflow/envs/pysnail.yaml"
+        PYSNAIL_YAML_RELATIVE 
     shell:
         """
+        set +u
+        unset PYTHONPATH
+        unset PYTHONHOME
+        export PYTHONNOUSERSITE=1
         python {params.bin}/normalize_with_pysnail.py {input.xprs} {input.groups} {output.norm} --threshold {params.threshold}
         """
 
