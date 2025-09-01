@@ -36,7 +36,6 @@ FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
 ## qsmooth normalized expression matrix (PySNAIL output)
 ## Contains batch-effect corrected log2-transformed expression values
 PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "pysnail_normalized_STAR_counts.tsv")
-PYSNAIL_YAML = os.path.join(ENV_DIR, "pysnail.yaml")
 PYSNAIL_YAML_RELATIVE = os.path.relpath(
     os.path.join("workflow", "envs", "pysnail.yaml"), 
     "workflow/rules"
