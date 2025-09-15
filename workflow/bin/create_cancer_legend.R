@@ -16,8 +16,8 @@ option_list = list(
             type = "character", default = NULL,
             help = "Path to the cancer color file",
             metavar = "character"),
-    make_option(c("-f", "--figure_dir"), type = "character", default = NULL,
-            help = "File path to the output directory",
+    make_option(c("-o", "--output_file"), type = "character", default = NULL,
+            help = "File path to the output file",
             metavar = "character")
 )
 
@@ -25,7 +25,7 @@ opt_parser = OptionParser(option_list = option_list)
 opt = parse_args(opt_parser)
 
 CANCER_COLOR_FILE <- opt$cancer_color_file
-FIGURE_DIR <- opt$figure_dir
+OUTPUT_FILE <- opt$output_file
 
 ######################
 ## Load functions ##
@@ -46,7 +46,7 @@ dir.create(dirname(FIGURE_DIR), recursive = TRUE, showWarnings = FALSE)
 ######################
 
 
-pdf(file.path(FIGURE_DIR, "cancer_legend.pdf"), width = 10, height = 8)
+pdf(OUTPUT_FILE, width = 10, height = 8)
 # Display the legend
 gridExtra::grid.arrange(legend_plot)
 dev.off()
