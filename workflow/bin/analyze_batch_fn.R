@@ -243,7 +243,7 @@ plot_mbatch_dsc <- function(
                 plot_height = 8,
                 facet_ncol = 6,
                 facet_nrow = 6,
-                page_num = 1,
+                # page_num = 1,
                 text_size = 10,
                 line_size = 0.5,
                 show_legend = FALSE,
@@ -256,6 +256,7 @@ plot_mbatch_dsc <- function(
         )
     }
     data$DSC <- as.numeric(data$DSC)
+    data$cancer <- as.character(data$cancer)
     p <- ggplot(
         data,
         aes(x = batch, y = DSC, fill = batch)
@@ -281,11 +282,10 @@ plot_mbatch_dsc <- function(
             size = line_size
         )
     }
-    p <- p + facet_wrap_paginate(
+    p <- p + facet_wrap(
         ~ cancer,
         ncol = facet_ncol,
-        nrow = facet_nrow,
-        page = page_num
+        nrow = facet_nrow
     )
     if (!is.null(output_file)) {
         pdf(output_file, width = plot_width, height = plot_height)
