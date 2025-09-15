@@ -7,7 +7,7 @@ rule download_gdc_data:
     output:
         out_file = OUTPUT_GDC_FILE
     log:
-        "logs/download_gdc_expression_{wildcards.cancer}.log"
+        "logs/download_gdc_expression_{cancer}.log"
     message:
         "Downloading GDC expression data for cancer type: {wildcards.cancer}"
     params:
