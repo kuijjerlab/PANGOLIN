@@ -62,12 +62,13 @@ rule run_panda_lioness:
     params:
         bin = config["bin"],
         start_sample = 1,
-        end_sample = 10,  # adjust based on your sample count
+        end_sample = 5,  # adjust based on your sample count
         computing = "cpu",  # change to "gpu" if you have GPU support
         random_seed = 10,
-        ncores = 10
+        ncores = 5
     conda:
-        "workflow/envs/netzoopy-local.yaml"
+        #"workflow/envs/netzoopy-local.yaml"
+        NETZOOPY_YAML
     shell:
         """
         set +u
