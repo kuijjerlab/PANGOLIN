@@ -19,7 +19,7 @@ rule analyze_batch_effect:
     output:
         output_dir = directory(BATCH_DIR_CANCER)
     log:
-        "logs/analyze_batch_effect.log"
+        "logs/analyze_batch_effect_{cancer}.log"
     message:
         "Analyzing batch effect for: {wildcards.cancer}"   
     params:
