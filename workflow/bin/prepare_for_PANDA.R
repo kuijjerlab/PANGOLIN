@@ -326,7 +326,7 @@ cat(sprintf("Samples with cancer types written to: %s\n",
 cat("\n=== PANDA DATA PREPARATION SUMMARY ===\n")
 cat(sprintf("Final genes: %d\n", nrow(log2exp_clean)))
 cat(sprintf("Final samples: %d\n", ncol(log2exp_clean)))
-cat(sprintf("Cancer types: %d\n", length(unique(cancers$cancer_type))))
+cat(sprintf("Cancer types: %d\n", length(unique(cancers$cancer))))
 cat(sprintf("Motif interactions: %d\n", nrow(motif_clean)))
 cat(sprintf("PPI interactions: %d\n", nrow(ppi_clean)))
 cat("Preparation completed successfully!\n")
