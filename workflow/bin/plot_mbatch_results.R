@@ -30,7 +30,6 @@ opt_parser <- optparse::OptionParser(option_list = option_list)
 opt <- optparse::parse_args(opt_parser)
 
 ### Initialize variable ###
-
 BATCH_DIR <- opt$batch_results_dir
 OUTPUT_FILE <- opt$output_file
 
