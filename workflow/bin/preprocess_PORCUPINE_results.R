@@ -19,7 +19,7 @@ set.seed(1234)
 # Define command-line options
 option_list <- list(
     optparse::make_option(
-        c("-p", "--porcpupine_file_path"),
+        c("-p", "--porcupine_file_path"),
         type = "character",
         default = NULL,
         help = "Path to the porcupine results file.",
@@ -39,7 +39,7 @@ opt <- parse_args(opt_parser)
 
 # Assign parsed arguments to variables
 ## Initialize variable
-PCP_FILE <- opt$porcpupine_file_path
+PCP_FILE <- opt$porcupine_file_path
 PCP_FILT_FILE <- opt$filtered_porcupine_file_path
 ########################
 ## Load Helper Scripts ##
