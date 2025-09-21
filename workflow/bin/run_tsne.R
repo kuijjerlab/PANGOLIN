@@ -50,9 +50,8 @@ OUTPUT_FILE_EXPRESSION <- opt$output_file_expression
 OUTPUT_FILE_INDEGREE <- opt$output_file_indegree
 
 
-source("bin/tsne_fn.R")
+source("workflow/bin/tsne_fn.R")
 
-SAMPLES_FILE <- "/storage/kuijjerarea/tatiana/PANGOLIN/panda_input_primary/samples_cancers_primary.tsv"
 # load expression data
 samples <- fread(SAMPLES_FILE)
 exp_all <- fread(EXPRESSION_FILE)
