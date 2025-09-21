@@ -39,7 +39,7 @@ source("workflow/bin/create_cancer_legend_fn.R")
 legend_data <- fread(CANCER_COLOR_FILE)
 legend_data$cancer_type <- toupper(legend_data$cancer_type)
 legend_plot <- create_legend(legend_data)
-dir.create(dirname(FIGURE_DIR), recursive = TRUE, showWarnings = FALSE)
+
 
 ######################
 ## Make the plot ##
