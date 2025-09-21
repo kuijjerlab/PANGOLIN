@@ -23,7 +23,7 @@ rule extract_clinical_data:
 rule run_tsne:
     input:
         expression_file = EXPRESSION_PANDA_FILE,
-        samples_file = SAMPLES_PANDA_FILE,
+        samples_file = SAMPLES_WITH_CANCER_FILE,
         tumor_main_dir = OUTPUT_DIR
     output:
         out_file_expression = TSNE_DATA_EXPRESSION,
@@ -62,7 +62,7 @@ rule create_cancer_legend:
         """
         Rscript {params.bin}/create_cancer_legend.R \
             --cancer_color_file {input.cancer_color_file} \
-            --output_file {params.cancer_legend_pdf} \
+            --output_file {output.cancer_legend_pdf} \
             > {log} 2>&1
         """
 # filter PORCUPINE results
