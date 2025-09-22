@@ -84,11 +84,11 @@ rule split_expression_by_cancer:
         expression_file = PYSNAIL_NORMALIZED_FILE,
         group_file = GROUP_FILE
     output:
-        output_directory = directory(OUTPUT_DIR_PYSNAIL_CANCER)
+        pysnail_normalized_file_cancer_specific = PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC
     log:
-        "logs/split_expression_by_cancer.log"
+        "logs/split_expression_by_{cancer}.log"
     message:
-        "Splitting expression data into cancer-specific files and saving them"
+        "Splitting expression data into cancer-specific files and saving them: {wildcards.cancer}"
     params:
         bin = config["bin"]
     shell:
@@ -96,7 +96,8 @@ rule split_expression_by_cancer:
         Rscript {params.bin}/save_normalized_exp_per_cancer.R \
             --expression_file {input.expression_file} \
             --group_file {input.group_file} \
-            --output_dir {output.output_directory} \
+            --cancer {wildcards.cancer} \
+            --output_file {output.pysnail_normalized_file_cancer_specific} \
         > {log} 2>&1
         """
 
