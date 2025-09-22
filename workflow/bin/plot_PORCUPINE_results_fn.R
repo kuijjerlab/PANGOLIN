@@ -73,7 +73,7 @@ plot_intersection_heatmap <- function(
 #' @export
 preprocess_pathway_results <- function(res_all, 
                                     ptws_dat,
-                                    min_shared = 5, 
+                                    min_shared = 1, 
                                     cols = c(
                                         "#db4b83", "#5eb847", "#a95ccf", 
                                         "#b5b32e", "#5e6ed9", "#d9943c",
@@ -230,6 +230,15 @@ make_category_heatmap_list <- function(
         rownames(ptws_toplot) <- pathways
         col_to_use <- col_categories[category_pathway]
         my_palette <- colorRampPalette(c("white", col_to_use))(n = 2)
+
+        # Check for single-value matrices
+        unique_values <- unique(as.vector(ptws_toplot))
+        if (length(unique_values) == 1) {
+            warning(paste("Skipping heatmap for category:", category_pathway,
+                          "because it has only one unique value:", unique_values))
+            next
+        }
+
         heatmap_height_mm <- ifelse(
             nrow(ptws_toplot) == 1, height_mm_single, height_mm_multiple
         )
