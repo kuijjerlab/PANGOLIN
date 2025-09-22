@@ -54,6 +54,20 @@ ZENODO_INDIVIDUAL_CANCERS_DIRECTORY = config["zenodo_individual_cancers_director
 ZENODO_RECORD_ID = config["zenodo_record_id"]
 ZENODO_RESOURCE_FILENAME = config["zenodo_resource_filename"]
 
+## Parameters ##
+ALPHA = config["alpha"]
+NUMBER_FOLDS = config["number_folds"]
+NUMBER_CORES = config["number_cores"]
+NUMBER_TIMES = config["number_times"]
+THESHOLD_COX = config["threshold_cox"]
+GENE_ID = config["gene_id"]
+NUMBER_CORES_COLA = config["number_cores_cola"]
+PARTITION_METHOD = config["partition_method"]
+TOP_VALUE_METHOD = config["top_value_method"]
+MAX_K = config["max_k"]
+NCORES_PORCUPINE = config["ncores_porcupine"]
+
+
 ##############################################################################
 ### ZENODO RESOURCE DOWNLOAD PATHS                                        ###
 ###############################################################################
@@ -248,11 +262,92 @@ TUMOR_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "clini
 # PDF figure showing the legend for cancer types
 CANCER_LEGEND_PDF = os.path.join(FIG_DIR, "cancer_legend.pdf")
 
+# PDL1 expression data for each cancer type
+INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "indegrees_norm")
+TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data")
+OUTPUT_PDL1_EXP_CANCER = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pdl1_expression_{cancer}.txt")
+OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
+TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
 
-# TUMOR_PD1_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data")
-# TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
-# INPUT_CANCER_INDEGREE_DIR  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "indegrees_norm")
-# TSNE_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "tsne_results")
+
+###############################################################################
+### COLA CONSENSUS CLUSTERING ANALYSIS PIPELINE PATHS                     ###
+###############################################################################
+#------------------------------------------------------------------------------
+# Cancer-Specific Consensus Clustering Results
+#------------------------------------------------------------------------------
+## Individual cancer type consensus clustering output directories
+## Pattern: {cancer}/consensus_clustering/{datatype} (e.g., BRCA/consensus_clustering/expression)
+## Contains COLA analysis results for each cancer type and data type combination
+OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "consensus_clustering", "{datatype}")
+
+#------------------------------------------------------------------------------
+# Pan-Cancer Consensus Clustering Analysis
+#------------------------------------------------------------------------------
+## Primary output directory for combined COLA consensus clustering results
+## Contains optimized cluster assignments and comparative analysis across all cancer types
+OUTPUT_ALL_CANCERS_CONSENSUS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cola_consensus_clustering")
+
+## Optimal cluster number determination files
+## Contains best K values selected by COLA algorithm for each data type
+BEST_K_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_expression.txt")
+BEST_K_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "best_k_cola_indegree.txt")
+
+## Sample-to-cluster assignment tables for selected optimal K values
+## Maps individual samples to their assigned cluster groups for downstream analysis
+SELECTED_CLUSTERS_COLA_EXP = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_expression.txt")
+SELECTED_CLUSTERS_COLA_IND = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "selected_clusters_indegree.txt")
+
+## Combined dataset for cluster visualization and comparative analysis
+## RData object containing processed data for t-SNE and other visualization methods
+DATASETS_TO_PLOT_COLA_CLUSTERS = os.path.join(OUTPUT_ALL_CANCERS_CONSENSUS_DIR, "datasets_to_plot_cola_clusters.RData")
+
+#------------------------------------------------------------------------------
+# Consensus Clustering Visualization Outputs
+#------------------------------------------------------------------------------
+## t-SNE visualization of consensus clusters overlaid on dimensional reduction plots
+## Shows sample clustering patterns and cluster separation quality
+FIG_TSNE_COLA_INDEGREE = os.path.join(FIG_DIR, "TSNE_cola_clusters_indegree_all_cancers.pdf")
+FIG_TSNE_COLA_EXPRESSION = os.path.join(FIG_DIR, "TSNE_cola_clusters_expression_all_cancers.pdf")
+
+## Sankey diagram comparing cluster assignments between expression and indegree data
+## Visualizes concordance and differences between clustering approaches
+FIG_SANKEY = os.path.join(FIG_DIR, "sankey_plot_indegree_expression.pdf")
+
+#------------------------------------------------------------------------------
+# Final Cancer-Specific Cluster Assignments
+#------------------------------------------------------------------------------
+## Final cluster assignment files for individual cancer types
+## Contains optimized cluster memberships for downstream survival and clinical analysis
+OUTPUT_CLUSTERS_PER_TUMOR_IND = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "final_clusters", "final_clusters_indegree_{cancer}.txt")
+OUTPUT_CLUSTERS_PER_TUMOR_EXP = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "final_clusters", "final_clusters_expression_{cancer}.txt")
+
+#------------------------------------------------------------------------------
+# Survival Analysis of Consensus Clusters
+#------------------------------------------------------------------------------
+## Cox regression results comparing survival outcomes between consensus clusters
+## Individual cancer type analysis results
+OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "final_clusters", "cox_results_final_clusters_indegree_expression_{cancer}.txt")
+
+## Combined Cox regression results across all cancer types
+## Comprehensive survival analysis summary for consensus cluster validation
+OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "cox_results_final_clusters_indegree_expression_all.txt")
+
+## Visualization of Cox regression results across cancer types
+## Summary figure showing prognostic significance of consensus clusters
+FIG_COX_COLA_CLUSTERS = os.path.join(FIG_DIR, "cox_results_final_clusters_indegree_expression_all_cancers.pdf") 
+
+#------------------------------------------------------------------------------
+# Aanalysis of PRAD Clusters at K = 4
+#------------------------------------------------------------------------------
+
+CLUSTER_INDEGREE_PRAD = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "PRAD", "final_clusters", "final_clusters_indegree_PRAD.txt")
+PRAD_CLIN_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "PRAD", "clinical", "curated_clinical_PRAD.txt")
+PRAD_PD1_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "PRAD", "pd1_data")
+PRAD_IND_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "PRAD", "indegrees_norm", "indegree_norm_PRAD.RData")
+FIG_PRAD_SURVIVAL = os.path.join(FIG_DIR, "PRAD_clusters_survival.pdf")
+FIG_FGSEA_PRAD = os.path.join(FIG_DIR, "PRAD_clusters_fgsea.pdf")
+
 
 
 
@@ -264,6 +359,9 @@ include: "workflow/rules/zenodo_download_batch_results.smk"
 include: "workflow/rules/prepare_data_run_networks.smk"
 include: "workflow/rules/zenodo_download_indegrees_porcupine_data.smk"
 include: "workflow/rules/tsne_and_porcupine_analysis.smk"
+include: "workflow/rules/extract_pd1_data.smk"
+include: "workflow/rules/cola_consensus_clustering.smk"
+include: "workflow/rules/prad_cluster_analysis.smk"
 
 # Rules ##
 rule all:
@@ -273,22 +371,22 @@ rule all:
         # Conditional inputs based on analysis type
         # ([ZENODO_BATCH_DOWNLOAD_COMPLETE] if ANALYSIS_TYPE == "precomputed" else []),
         # Full workflow specific outputs
-        # ([expand(OUTPUT_GDC_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
-        # ([OUTPUT_EXP_COMBINED_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
-        # ([GROUP_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
-        # ([FEATURE_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
-        # ([PYSNAIL_NORMALIZED_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
-        # ([OUTPUT_DIR_PYSNAIL_CANCER] if ANALYSIS_TYPE == "full_workflow" else []),
-        # ([expand(BATCH_DIR_CANCER, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
-        # ([BATCH_CORRECTED_EXPRESSION_FILE] if ANALYSIS_TYPE == "full_workflow" else []),       
+        ([expand(OUTPUT_GDC_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([OUTPUT_EXP_COMBINED_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([GROUP_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([FEATURE_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([PYSNAIL_NORMALIZED_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([OUTPUT_DIR_PYSNAIL_CANCER] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(BATCH_DIR_CANCER, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([BATCH_CORRECTED_EXPRESSION_FILE] if ANALYSIS_TYPE == "full_workflow" else []),       
         # # # Shared outputs (both workflows can generate this)
-        # ([BATCH_EFFECT_PDF] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([BATCH_EFFECT_PDF] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # # PANDA/LIONESS files (only for full workflow),
-        # ([MOTIF_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([PPI_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([EXPRESSION_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([SAMPLES_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([SAMPLES_WITH_CANCER_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([MOTIF_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([PPI_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([EXPRESSION_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([SAMPLES_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([SAMPLES_WITH_CANCER_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
         ## Download indegree files and porcupine data from Zenodo 
         # ([expand(ZENODO_INDIVIDUAL_CANCERS_DIRECTORY)] if ANALYSIS_TYPE in ["precomputed"] else []) 
         # HERE IS PART TO RUN ONLY FOR FULL WORKFLOW
@@ -310,7 +408,24 @@ rule all:
         ([PORCUPINE_RESULTS_ALL] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([FIG_PATHWAY_INTERSECTION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([FIG_SHARED_CATEGORIES] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(TUMOR_CLIN_FILE, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else [])
-       
-       
-        
+        ([expand(TUMOR_CLIN_FILE, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        # cola consensus clustering outputs
+        ([expand(OUTPUT_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(BEST_K_COLA_EXP)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(BEST_K_COLA_IND)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(FIG_TSNE_COLA_INDEGREE)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(FIG_TSNE_COLA_EXPRESSION)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(FIG_SANKEY)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(SELECTED_CLUSTERS_COLA_EXP)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(SELECTED_CLUSTERS_COLA_IND)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(OUTPUT_CLUSTERS_PER_TUMOR_IND, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(OUTPUT_CLUSTERS_PER_TUMOR_EXP, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        # cox analysis of cola clusters
+        ([expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(FIG_COX_COLA_CLUSTERS)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        # # prad cluster analysis
+        ([FIG_PRAD_SURVIVAL] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIG_FGSEA_PRAD] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
