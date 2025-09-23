@@ -13,14 +13,14 @@ for (lib in required_libraries) {
 ####################
 option_list = list(
     make_option(
-        c("-i", "--indegree_best_k_files"),
+        c("--indegree_best_k_files"),
         type = "character",
         default = NULL,
         help = "Space-separated list of files 
           containing results of indegree cola clustering.",
         metavar = "character"),
     make_option(
-        c("-e", "--expression_best_k_files"),
+        c("--expression_best_k_files"),
         type = "character",
         default = NULL,
         help = "Space-separated list of files 
@@ -54,10 +54,6 @@ BEST_K_EXP <- opt$best_cola_k_expression
 
 source("workflow/bin/cola_clustering_fn.R")
 
-print(INDEGREE_K_FILES)
-print(EXPRESSION_K_FILES)
-length(INDEGREE_K_FILES)
-length(EXPRESSION_K_FILES)
 ##############################
 ## Process INDEGREE Results ##
 ##############################
