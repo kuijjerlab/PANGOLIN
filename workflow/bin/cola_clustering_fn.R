@@ -28,8 +28,7 @@ perform_cola_clustering <- function(cancer,
                             max_k = 6,
                             p_sampling = 0.8,
                             partition_repeat = 1000,
-                            scale_rows = TRUE,
-                            output_dir) {
+                            scale_rows = TRUE) {
     datatype <- match.arg(datatype)
     if (datatype == "indegree") {
         if (is.null(indegree_dir)) {
@@ -72,12 +71,13 @@ perform_cola_clustering <- function(cancer,
                                             p_sampling = p_sampling,
                                             partition_repeat = partition_repeat,
                                             scale_rows = TRUE)
-    cat("saving results and plots", "\n")
-    if (!dir.exists(output_dir)) {
-        dir.create(output_dir, recursive = TRUE)
-    }
-        # Save results and generate plots
-    save_results(res, cancer, datatype, output_dir)
+#     cat("saving results and plots", "\n")
+#     if (!dir.exists(output_dir)) {
+#         dir.create(output_dir, recursive = TRUE)
+#     }
+#         # Save results and generate plots
+#     save_results(res, cancer, datatype, output_dir)
+        return(res)
 }
 
 
@@ -125,107 +125,100 @@ perform_consensus_clustering <- function(data,
     return(res)
 }
 
-#' Save Results and Generate Plots for Consensus Clustering
-#'
-#' This function saves results and generates relevant plots for a consensus 
-#' clustering analysis. It creates multiple output files, including a summary 
-#' of selected clusters, membership, statistics, and various plots, all named 
-#' consistently based on the specified cancer type and data type.
-#'
-#' @param res A clustering result object from consensus clustering.
-#' @param cancer A character string specifying the cancer type, used in file names.
-#' @param datatype A character string, either "indegree" or "expression", 
-#'        indicating the type of data used. Default is "indegree".
-#' 
-#' @return None. Saves various output files to disk.
-#'
-#' @export
+# #' Save Results and Generate Plots for Consensus Clustering
+# #'
+# #' This function saves results and generates relevant plots for a consensus 
+# #' clustering analysis. It creates multiple output files, including a summary 
+# #' of selected clusters, membership, statistics, and various plots, all named 
+# #' consistently based on the specified cancer type and data type.
+# #'
+# #' @param res A clustering result object from consensus clustering.
+# #' @param cancer A character string specifying the cancer type, used in file names.
+# #' @param datatype A character string, either "indegree" or "expression", 
+# #'        indicating the type of data used. Default is "indegree".
+# #' 
+# #' @return None. Saves various output files to disk.
+# #'
+# #' @export
 save_results <- function(res, 
-                cancer,
-                datatype = c("indegree", "expression"),
-                output_dir) {
-        # Ensure datatype is valid
-        datatype <- match.arg(datatype)
-        # Determine the best and optional cluster values for k
+                         cancer,
+                         datatype,
+                         output_best_k,
+                         output_results,
+                         output_membership,
+                         output_statistics,
+                         output_classes,
+                         output_collected_plots,
+                         output_tsne_pdf,
+                         output_partition_pdf) {
+    # Save best k information
+    tryCatch({
         best_k <- suggest_best_k(res)
         selected_k <- best_k[1]
-        optional_k <- if (!is.null(attr(best_k, "optional"))) 
-                        attr(best_k, "optional") else NA
+        optional_k <- if (!is.null(attr(best_k, "optional"))) attr(best_k, "optional") else NA
+        res_k <- data.table(cancer = cancer, selected_k = selected_k, optional_k = optional_k)
+        save(res_k, file = output_best_k)
+    }, error = function(e) {
+        warning("Failed to save best k information: ", e$message)
+    })
 
-        # Helper function to create consistent file name prefix
-        get_filename <- function(suffix) {
-            file.path(output_dir, 
-                paste0(cancer, "_", suffix, "_", datatype, ".RData"))
-        }
-        # 1. Save best k information
-        res_k <- data.table(
-            cancer = cancer,
-            selected_k = selected_k,
-            optional_k = optional_k
-        )
-        tryCatch({
-            save(res_k, file = get_filename("best_k"))
-        }, error = function(e) {
-            warning("Failed to save best_k information: ", e$message)
-        })
-        # 2. Save the main results object
-        tryCatch({
-            save(res, file = get_filename("results"))
-        }, error = function(e) {
-            warning("Failed to save main results object: ", e$message)
-        })
-        # 3. Generate and save collected plots PDF
-        tryCatch({
-            pdf(file = file.path(output_dir, paste0(cancer, "_collected_plots_", datatype, ".pdf")),
-                width = 10, height = 10)
-            collect_plots(res)
-            dev.off()
-        }, error = function(e) {
-            warning("Failed to generate collected plots PDF: ", e$message)
-        })
+    # Save main results object
+    tryCatch({
+        save(res, file = output_results)
+    }, error = function(e) {
+        warning("Failed to save main results object: ", e$message)
+    })
 
-        # 4. Generate and save t-SNE plot PDF
-        tryCatch({
-            pdf(file = file.path(output_dir, 
-                paste0(cancer, "_tSNE_", datatype, ".pdf")),
-                width = 8, height = 8)
-            dimension_reduction(res, selected_k)
-            dev.off()
-        }, error = function(e) {
-            warning("Failed to generate t-SNE plot PDF: ", e$message)
-        })
-        # 5. Save membership information
-        tryCatch({
-            membership <- get_membership(res, selected_k)
-            save(membership, file = get_filename("membership"))
-        }, error = function(e) {
-            warning("Failed to save membership information: ", e$message)
-        })
-        # 6. Save statistics
-        tryCatch({
-            statistics <- get_stats(res)
-            save(statistics, file = get_filename("statistics"))
-        }, error = function(e) {
-            warning("Failed to save statistics: ", e$message)
-        })
-        # 7. Generate and save partition selection plot PDF
-        tryCatch({
-            pdf(file = file.path(output_dir, 
-                paste0(cancer, "_select_partition_", datatype, ".pdf")),
-                width = 8, height = 8)
-            select_partition_number(res)
-            dev.off()
-        }, error = function(e) {
-            warning("Failed to generate partition selection: ", e$message)
-        })
-        # 8. Save classes information
-        tryCatch({
-            classes <- get_classes(res, k = selected_k)
-            save(classes, file = get_filename("classes"))
-        }, error = function(e) {
-            warning("Failed to save classes information: ", e$message)
-        })
-    }
+    # Save membership information
+    tryCatch({
+        membership <- get_membership(res, selected_k)
+        save(membership, file = output_membership)
+    }, error = function(e) {
+        warning("Failed to save membership information: ", e$message)
+    })
+
+    # Save statistics
+    tryCatch({
+        statistics <- get_stats(res)
+        save(statistics, file = output_statistics)
+    }, error = function(e) {
+        warning("Failed to save statistics: ", e$message)
+    })
+
+    # Save classes information
+    tryCatch({
+        classes <- get_classes(res, k = selected_k)
+        save(classes, file = output_classes)
+    }, error = function(e) {
+        warning("Failed to save classes information: ", e$message)
+    })
+    # Collect plots
+    tryCatch({
+        pdf(file = output_collected_plots, width = 10, height = 10)
+        collect_plots(res)
+        dev.off()
+    }, error = function(e) {
+        warning("Failed to generate collected plots PDF: ", e$message)
+    })
+    # Generate and save t-SNE plot PDF
+    tryCatch({
+        pdf(file = output_tsne_pdf, width = 8, height = 8)
+        dimension_reduction(res, selected_k)
+        dev.off()
+    }, error = function(e) {
+        warning("Failed to generate t-SNE plot PDF: ", e$message)
+    })
+
+    # Generate and save partition selection plot PDF
+    tryCatch({
+        pdf(file = output_partition_pdf, width = 8, height = 8)
+        select_partition_number(res)
+        dev.off()
+    }, error = function(e) {
+        warning("Failed to generate partition selection plot PDF: ", e$message)
+    })
+}
+
 
 #' Load a specified object from an .RData file
 #'
