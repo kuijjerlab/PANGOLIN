@@ -122,39 +122,6 @@ rule plot_SANKEY_cola_clusters:
             --figure_sanky {output.fig_sankey_plot} \
             > {log} 2>&1
         """
-# ## Sanky plot comparing the indegree and expression clusters for each cancer type ##
-# rule plot_SANKEY_cola_clusters:
-#     input:
-#         cola_results_indegree_files = COLA_RESULTS_INDEGREE_FILES,
-#         cola_results_expression_files = COLA_RESULTS_EXPRESSION_FILES,
-#         best_k_cola_ind_file = BEST_K_COLA_IND,
-#         best_k_cola_exp_file = BEST_K_COLA_EXP
-#     output:
-#         fig_sankey_plot = FIG_SANKEY,
-#         selected_cola_ind_clusters_file = SELECTED_CLUSTERS_COLA_IND,
-#         selected_cola_exp_clusters_file = SELECTED_CLUSTERS_COLA_EXP,
-#         datasets_to_plot_cola_clusters = DATASETS_TO_PLOT_COLA_CLUSTERS
-#     log:
-#         "logs/plot_sankey_cola_clusters.log"
-#     message:
-#         "Plotting sankey plot comparing indegree and expression clusters"
-#     params:
-#         bin = config["bin"],
-#     shell:
-#         """
-#         Rscript {params.bin}/cola_clusters_sanky_plots.R \
-#             --indegree_result_files {input.cola_results_indegree_files} \
-#             --expression_result_files {input.cola_results_expression_files} \
-#             --best_cola_k_indegree {input.best_k_cola_ind_file} \
-#             --best_cola_k_expression {input.best_k_cola_exp_file} \
-#             --clusters_indegree {output.selected_cola_ind_clusters_file} \
-#             --clusters_expression {output.selected_cola_exp_clusters_file} \
-#             --datasets_to_plot_cola_clusters {output.datasets_to_plot_cola_clusters} \
-#             --figure_sanky {output.fig_sankey_plot} \
-#             > {log} 2>&1
-#         """
-
-
 ## Extract cola clusters for each cancer type and write to a separate files ##
 rule save_final_cola_clusters_per_tumor:
     input:
