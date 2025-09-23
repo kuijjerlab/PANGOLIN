@@ -5,9 +5,15 @@ rule run_cola_clustering:
         samples_file = SAMPLES_WITH_CANCER_FILE,
         indegree_dir = INPUT_CANCER_INDEGREE_DIR
     output:
-        output_cancer_consensus_dir = directory(OUTPUT_CANCER_CONSENSUS_DIR)
-    message:
-        "Running cola clustering on: {wildcards.cancer} with datatype: {wildcards.datatype}"
+        best_k = BEST_K_COLA_OUTPUT_CANCER_DATATYPE,
+        results = COLA_RESULTS_OUTPUT_CANCER_DATATYPE,
+        collected_plots = COLA_COLLECTED_PLOTS_CANCER_DATATYPE,
+        tsne_pdf = COLA_TSNE_OUTPUT_CANCER_DATATYPE,
+        membership = COLA_MEMBERSHIP_OUTPUT_CANCER_DATATYPE,
+        statistics = COLA_STATISTICS_OUTPUT_CANCER_DATATYPE,
+        classes = COLA_CLASSES_OUTPUT_CANCER_DATATYPE,
+        partition_pdf = COLA_PARTITION_OUTPUT_CANCER_DATATYPE,
+       
     params:
         bin = config["bin"],
         number_cores_cola = NUMBER_CORES_COLA,
@@ -18,7 +24,7 @@ rule run_cola_clustering:
         "logs/cola_clustering_{cancer}_{datatype}.log"
     shell:
         """
-        Rscript {params.bin}/cola_clustering.R \
+        Rscript workflow/bin/cola_clustering.R \
             --tumor {wildcards.cancer} \
             --exp_file {input.expression_file} \
             --samples_file {input.samples_file} \
@@ -28,62 +34,68 @@ rule run_cola_clustering:
             --top_value_method {params.top_value_method} \
             --partition_method {params.partition_method} \
             --max_k {params.max_k} \
-            --output {output.output_cancer_consensus_dir} \
+            --output_best_k {output.best_k} \
+            --output_results {output.results} \
+            --output_membership {output.membership} \
+            --output_statistics {output.statistics} \
+            --output_classes {output.classes} \
+            --output_collected_plots {output.collected_plots} \
+            --output_tsne_pdf {output.tsne_pdf} \
+            --output_partition_pdf {output.partition_pdf} \
             > {log} 2>&1
         """
 
-# select best K suggested by cola for each cancer type (indegree and expression) ##
+# select the best k across all cancer types for indegree and expression data ##
 rule select_best_k_cola:
     input:
-        tumor_main_dir = OUTPUT_DIR
+        indegree_best_k_files = BEST_K_COLA_INDGEGREE_FILES,
+        expression_best_k_files = BEST_K_COLA_EXPRESSION_FILES
+
     output:
         best_k_cola_ind_file = BEST_K_COLA_IND,
         best_k_cola_exp_file = BEST_K_COLA_EXP
     log:
         "logs/select_best_k_cola.log"
-    message:
-        "Selecting best number of clusters for each cancer"
-    params:
-        bin = config["bin"],
     shell:
         """
-        Rscript {params.bin}/select_best_k_cola.R \
-            --tumor_dir {input.tumor_main_dir} \
+        Rscript workflow/bin/select_best_k_cola.R \
+            --indegree_best_k_files "{input.indegree_best_k_files}" \
+            --expression_best_k_files "{input.expression_best_k_files}" \
             --best_cola_k_indegree {output.best_k_cola_ind_file} \
             --best_cola_k_expression {output.best_k_cola_exp_file} \
             > {log} 2>&1
         """
-# plot TSNE with the selected cola clusters for each cancer type (indegree and expression) ##
+
 rule plot_TSNE_cola_clusters:
     input:
-        tumor_main_dir = OUTPUT_DIR,
+        indegree_files = COLA_RESULTS_INDEGREE_FILES,
+        expression_files = COLA_RESULTS_EXPRESSION_FILES,
         best_k_cola_ind_file = BEST_K_COLA_IND,
-        best_k_cola_exp_file = BEST_K_COLA_EXP,
+        best_k_cola_exp_file = BEST_K_COLA_EXP
     output:
         fig_tsne_indegree = FIG_TSNE_COLA_INDEGREE,
         fig_tsne_expression = FIG_TSNE_COLA_EXPRESSION
     log:
         "logs/plot_tsne_cola_clusters.log"
-    message:
-        "Plotting T-SNE with cola clusters for all cancer types"
     params:
         bin = config["bin"],
     shell:
         """
         Rscript {params.bin}/TSNE_plot_cola_clusters.R \
-            --tumor_dir {input.tumor_main_dir} \
+            --indegree_files "{input.indegree_files}" \
+            --expression_files "{input.expression_files}" \
             --best_cola_k_indegree {input.best_k_cola_ind_file} \
             --best_cola_k_expression {input.best_k_cola_exp_file} \
             --figure_TSNE_indegree {output.fig_tsne_indegree} \
             --figure_TSNE_expression {output.fig_tsne_expression} \
             > {log} 2>&1
         """
-
-
 ## Sanky plot comparing the indegree and expression clusters for each cancer type ##
+
 rule plot_SANKEY_cola_clusters:
     input:
-        tumor_main_dir = OUTPUT_DIR,
+        indegree_files = COLA_RESULTS_INDEGREE_FILES,
+        expression_files = COLA_RESULTS_EXPRESSION_FILES,
         best_k_cola_ind_file = BEST_K_COLA_IND,
         best_k_cola_exp_file = BEST_K_COLA_EXP
     output:
@@ -100,7 +112,8 @@ rule plot_SANKEY_cola_clusters:
     shell:
         """
         Rscript {params.bin}/cola_clusters_sanky_plots.R \
-            --tumor_dir {input.tumor_main_dir} \
+            --indegree_files "{input.indegree_files}" \
+            --expression_files "{input.expression_files}" \
             --best_cola_k_indegree {input.best_k_cola_ind_file} \
             --best_cola_k_expression {input.best_k_cola_exp_file} \
             --clusters_indegree {output.selected_cola_ind_clusters_file} \
@@ -109,6 +122,38 @@ rule plot_SANKEY_cola_clusters:
             --figure_sanky {output.fig_sankey_plot} \
             > {log} 2>&1
         """
+# ## Sanky plot comparing the indegree and expression clusters for each cancer type ##
+# rule plot_SANKEY_cola_clusters:
+#     input:
+#         cola_results_indegree_files = COLA_RESULTS_INDEGREE_FILES,
+#         cola_results_expression_files = COLA_RESULTS_EXPRESSION_FILES,
+#         best_k_cola_ind_file = BEST_K_COLA_IND,
+#         best_k_cola_exp_file = BEST_K_COLA_EXP
+#     output:
+#         fig_sankey_plot = FIG_SANKEY,
+#         selected_cola_ind_clusters_file = SELECTED_CLUSTERS_COLA_IND,
+#         selected_cola_exp_clusters_file = SELECTED_CLUSTERS_COLA_EXP,
+#         datasets_to_plot_cola_clusters = DATASETS_TO_PLOT_COLA_CLUSTERS
+#     log:
+#         "logs/plot_sankey_cola_clusters.log"
+#     message:
+#         "Plotting sankey plot comparing indegree and expression clusters"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/cola_clusters_sanky_plots.R \
+#             --indegree_result_files {input.cola_results_indegree_files} \
+#             --expression_result_files {input.cola_results_expression_files} \
+#             --best_cola_k_indegree {input.best_k_cola_ind_file} \
+#             --best_cola_k_expression {input.best_k_cola_exp_file} \
+#             --clusters_indegree {output.selected_cola_ind_clusters_file} \
+#             --clusters_expression {output.selected_cola_exp_clusters_file} \
+#             --datasets_to_plot_cola_clusters {output.datasets_to_plot_cola_clusters} \
+#             --figure_sanky {output.fig_sankey_plot} \
+#             > {log} 2>&1
+#         """
+
 
 ## Extract cola clusters for each cancer type and write to a separate files ##
 rule save_final_cola_clusters_per_tumor:
