@@ -280,6 +280,37 @@ TUMOR_PATHWAYS_MAPPING_PATH = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{canc
 ## Pattern: {cancer}/consensus_clustering/{datatype} (e.g., BRCA/consensus_clustering/expression)
 ## Contains COLA analysis results for each cancer type and data type combination
 OUTPUT_CANCER_CONSENSUS_DIR = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "consensus_clustering", "{datatype}")
+BEST_K_COLA_OUTPUT_CANCER_DATATYPE = os.path.join(OUTPUT_CANCER_CONSENSUS_DIR, "{cancer}_best_k_{datatype}.RData")
+COLA_RESULTS_OUTPUT_CANCER_DATATYPE = os.path.join(OUTPUT_CANCER_CONSENSUS_DIR, "{cancer}_results_{datatype}.RData")
+COLA_COLLECTED_PLOTS_CANCER_DATATYPE = os.path.join(OUTPUT_CANCER_CONSENSUS_DIR, "{cancer}_collected_plots_{datatype}.pdf")
+COLA_TSNE_OUTPUT_CANCER_DATATYPE = os.path.join(OUTPUT_CANCER_CONSENSUS_DIR, "{cancer}_tSNE_{datatype}.pdf")     
+COLA_MEMBERSHIP_OUTPUT_CANCER_DATATYPE = os.path.join(OUTPUT_CANCER_CONSENSUS_DIR, "{cancer}_membership_{datatype}.RData")
+COLA_STATISTICS_OUTPUT_CANCER_DATATYPE = os.path.join(OUTPUT_CANCER_CONSENSUS_DIR, "{cancer}_statistics_{datatype}.RData")
+COLA_PARTITION_OUTPUT_CANCER_DATATYPE = os.path.join(OUTPUT_CANCER_CONSENSUS_DIR, "{cancer}_select_partition_{datatype}.pdf")
+COLA_CLASSES_OUTPUT_CANCER_DATATYPE = os.path.join(OUTPUT_CANCER_CONSENSUS_DIR, "{cancer}_classes_{datatype}.RData")
+
+OUTPUT_CANCER_CONSENSUS_DIR_INDEGREE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "consensus_clustering", "indegree")
+OUTPUT_CANCER_CONSENSUS_DIR_EXPRESSION = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "consensus_clustering", "expression")
+
+BEST_K_COLA_INDGEGREE_FILES = expand(
+    os.path.join(OUTPUT_CANCER_CONSENSUS_DIR_INDEGREE, "{cancer}_best_k_indegree.RData"),
+    cancer=CANCER_TYPES
+)
+
+BEST_K_COLA_EXPRESSION_FILES = expand(
+    os.path.join(OUTPUT_CANCER_CONSENSUS_DIR_EXPRESSION, "{cancer}_best_k_expression.RData"),
+    cancer=CANCER_TYPES
+)
+
+COLA_RESULTS_INDEGREE_FILES = expand(
+    os.path.join(OUTPUT_CANCER_CONSENSUS_DIR_INDEGREE, "{cancer}_results_indegree.RData"),
+    cancer=CANCER_TYPES
+)
+
+COLA_RESULTS_EXPRESSION_FILES = expand(
+    os.path.join(OUTPUT_CANCER_CONSENSUS_DIR_EXPRESSION, "{cancer}_results_expression.RData"),
+    cancer=CANCER_TYPES
+)
 
 #------------------------------------------------------------------------------
 # Pan-Cancer Consensus Clustering Analysis
@@ -349,6 +380,38 @@ FIG_PRAD_SURVIVAL = os.path.join(FIG_DIR, "PRAD_clusters_survival.pdf")
 FIG_FGSEA_PRAD = os.path.join(FIG_DIR, "PRAD_clusters_fgsea.pdf")
 
 
+## Output Files for Univariate Cox on PD1-pathway based heterogeneity scores ##
+OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
+OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_predited_risk_scores.txt")
+UNIVARIATE_COX_SUMMARY_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "PD1_pathway_cox_univariate_model_summary_all.txt")
+UNIVARIATE_COX_SUMMARY_ALL_FILTERED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "PD1_pathway_cox_univariate_model_summary_filtered.txt")
+UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
+FIG_PC_PDL1_EXPRESSION = os.path.join(FIG_DIR, "PDL1_exp_PC_component_HR.pdf")
+FIG_PC_IMMUNE_CORRELATION = os.path.join(FIG_DIR, "PC_immune_correlations_cibersort.png")
+TUMOR_RESULTS_PD1_GROUPS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_categorical_results.txt")
+TUMOR_RESULTS_PD1_NUMERIC = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_numeric_results.txt")
+FIGURE_PC_CLIN_ASSOCIATIONS = os.path.join(FIG_DIR, "PC_all_features_clin_associations.pdf")
+FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS = os.path.join(FIG_DIR, "PC_individual_features_clin_associations.pdf")
+
+## Output Files for multivariate regularized Cox on PDL1-edges ##
+OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
+OUTPUT_CANCER_COX = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "cox", "{cancer}_PDL1_cox_multivariate_res.txt")
+COX_RESULTS_ALL_MULTIVARIATE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "PDL1_cox_multivarite_res_all.txt")
+PDL1_CIRCULAR_PLOT = os.path.join(FIG_DIR, "circular_pdl1_plot_{threshold_cox}.pdf")
+OUTPUT_PDL1_EXP_CANCER = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pdl1_expression_{cancer}.txt")
+OUTPUT_COMBINED_PATIENT_DATA_CANCER = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "combined_patient_data_{cancer}.txt")
+
+
+# figure for TNSE plot for all cancers and also comparisons of cola clusters for indegree and expression for PRAD and UVM
+FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS = os.path.join(FIG_DIR, "TSNE_all_cancers_indegree_expression_UVM_PRAD_clusters.pdf")
+
+# producing summary table figure for PD1 pathway 
+#input (manually created)
+SUMMARY_TABLE_PD1 = os.path.join("resources", "summary_table", "summary_table_PD1.txt")
+#output
+OUTPUT_HTML_TABLE_PD1 = os.path.join(FIG_DIR, "summary_table_PD1.html")
+
+
 
 
 # Always include all rule files (Snakemake will only execute needed rules)
@@ -362,6 +425,7 @@ include: "workflow/rules/tsne_and_porcupine_analysis.smk"
 include: "workflow/rules/extract_pd1_data.smk"
 include: "workflow/rules/cola_consensus_clustering.smk"
 include: "workflow/rules/prad_cluster_analysis.smk"
+include: "workflow/rules/pd1_analysis.smk"
 
 # Rules ##
 rule all:
@@ -376,11 +440,11 @@ rule all:
         ([GROUP_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
         ([FEATURE_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
         ([PYSNAIL_NORMALIZED_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
-        ([OUTPUT_DIR_PYSNAIL_CANCER] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC, cancer = CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
         ([expand(BATCH_DIR_CANCER, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
-        ([BATCH_CORRECTED_EXPRESSION_FILE] if ANALYSIS_TYPE == "full_workflow" else []),       
+        # ([BATCH_CORRECTED_EXPRESSION_FILE] if ANALYSIS_TYPE == "full_workflow" else []),       
         # # # Shared outputs (both workflows can generate this)
-        ([BATCH_EFFECT_PDF] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        # ([BATCH_EFFECT_PDF] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # # PANDA/LIONESS files (only for full workflow),
         ([MOTIF_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
         ([PPI_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
@@ -410,22 +474,48 @@ rule all:
         ([FIG_SHARED_CATEGORIES] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([expand(TUMOR_CLIN_FILE, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # cola consensus clustering outputs
-        ([expand(OUTPUT_CANCER_CONSENSUS_DIR, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(BEST_K_COLA_EXP)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(BEST_K_COLA_IND)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(FIG_TSNE_COLA_INDEGREE)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(FIG_TSNE_COLA_EXPRESSION)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(FIG_SANKEY)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(SELECTED_CLUSTERS_COLA_EXP)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(SELECTED_CLUSTERS_COLA_IND)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(BEST_K_COLA_OUTPUT_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(COLA_RESULTS_OUTPUT_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(COLA_COLLECTED_PLOTS_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(COLA_TSNE_OUTPUT_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(COLA_MEMBERSHIP_OUTPUT_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(COLA_STATISTICS_OUTPUT_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(COLA_PARTITION_OUTPUT_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(COLA_CLASSES_OUTPUT_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([BEST_K_COLA_EXP] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([BEST_K_COLA_IND] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIG_TSNE_COLA_INDEGREE] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIG_TSNE_COLA_EXPRESSION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIG_SANKEY] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([SELECTED_CLUSTERS_COLA_EXP] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([SELECTED_CLUSTERS_COLA_IND] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([expand(OUTPUT_CLUSTERS_PER_TUMOR_IND, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([expand(OUTPUT_CLUSTERS_PER_TUMOR_EXP, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # cox analysis of cola clusters
         ([expand(OUTPUT_PDL1_EXP_CANCER, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(FIG_COX_COLA_CLUSTERS)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([OUTPUT_CANCER_UNIVARIATE_COX_COLA_CLUSTERS_ALL] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIG_COX_COLA_CLUSTERS] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # # prad cluster analysis
         ([FIG_PRAD_SURVIVAL] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([FIG_FGSEA_PRAD] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        # pd1 analysis             
+        ([expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([UNIVARIATE_COX_SUMMARY_ALL] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),    
+        ([UNIVARIATE_COX_PREDICTED_SCORES_ALL] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([UNIVARIATE_COX_SUMMARY_ALL_FILTERED] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIG_PC_PDL1_EXPRESSION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIG_PC_IMMUNE_CORRELATION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([TUMOR_RESULTS_PD1_GROUPS] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([TUMOR_RESULTS_PD1_NUMERIC] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIGURE_PC_CLIN_ASSOCIATIONS] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([COX_RESULTS_ALL_MULTIVARIATE] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []), 
+        ([expand(PDL1_CIRCULAR_PLOT, threshold_cox = THESHOLD_COX)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([OUTPUT_HTML_TABLE_PD1] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else [])
+        
