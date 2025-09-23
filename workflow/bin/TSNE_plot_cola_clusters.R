@@ -68,10 +68,6 @@ FIG_TSNE_EXPRESSION <- opt$figure_TSNE_expression
 
 source("workflow/bin/cola_clustering_fn.R")
 
-print(INDEGREE_FILES)
-print(EXPRESSION_FILES)
-length(INDEGREE_FILES)
-length(EXPRESSION_FILES)
 # ##############################
 # ## Process INDEGREE Results ##
 # ##############################
