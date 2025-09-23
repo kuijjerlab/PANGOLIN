@@ -11,70 +11,77 @@ for (lib in required_libraries) {
   suppressPackageStartupMessages(library(lib, character.only = TRUE,
                                 quietly = TRUE))
 }
-
-
 ####################
 ## Read arguments ##
 ####################
 option_list = list(
     make_option(
-        c("-d", "--tumor_dir"),
+        c("--indegree_files"),
         type = "character",
         default = NULL,
-        help = "Path to the the main tumor directory.",
+        help = "Space-separated list of files 
+          containing results of indegree cola clustering.",
         metavar = "character"),
     make_option(
-        c("-i", "--best_cola_k_indegree"),
+        c("--expression_files"),
         type = "character",
         default = NULL,
-        help = "Path to a file containing the information 
-                about the selected (best) number of clusters for indegree.",
+        help = "Space-separated list of files 
+          containing results of expression cola clustering.",
         metavar = "character"),
     make_option(
-        c("-e", "--best_cola_k_expression"),
+        c("--best_cola_k_indegree"),
         type = "character",
         default = NULL,
-        help = "Path to a file containing the information 
-                about the selected (best) number of clusters for expression.",
+        help = "Path to a file to save the 
+          combined best k information for indegree.",
         metavar = "character"),
     make_option(
-        c("-b", "--clusters_indegree"),
+        c("--best_cola_k_expression"),
+        type = "character",
+        default = NULL,
+        help = "Path to a file to save the 
+          combined best k information for expression.",
+        metavar = "character"),
+    make_option(
+        c("--clusters_indegree"),
         type = "character",
         default = NULL,
         help = "Path to a file containing the information 
                 about patients and clusters for indegree",
         metavar = "character"),
     make_option(
-        c("-s", "--clusters_expression"),
+        c("--clusters_expression"),
         type = "character",
         default = NULL,
         help = "Path to a file containing the information 
                 about patients and clusters for expression",
         metavar = "character"),
     make_option(
-        c("-z", "--datasets_to_plot_cola_clusters"),
+        c("--datasets_to_plot_cola_clusters"),
         type = "character",
         default = NULL,
         help = "Path to a file containing the information about the 
             datasets to plot for cola cluster comparison",
         metavar = "character"),
     make_option(
-        c("-f", "--figure_sanky_plot"),
+        c("--figure_sanky_plot"),
         type = "character",
         default = NULL,
         help = "Path to the output figure of the sanky plots.",
-        metavar = "character"))
-
+        metavar = "character")
+)
 
 
 opt_parser = OptionParser(option_list = option_list)
 opt = parse_args(opt_parser)
 
-## Initialize variable
-TUMOR_DIR_MAIN <- opt$tumor_dir
+## Initialize variables
+INDEGREE_FILES <- unlist(strsplit(opt$indegree_files, " "))
+EXPRESSION_FILES <- unlist(strsplit(opt$expression_files, " "))
 BEST_K_IND <- opt$best_cola_k_indegree
 BEST_K_EXP <- opt$best_cola_k_expression
-FUGURE_SANKY <- opt$figure_sanky_plot
+FIGURE_SANKY <- opt$figure_sanky_plot
 CLUSTERS_INDEGREE_FILE <- opt$clusters_indegree
 CLUSTERS_EXPRESSION_FILE <- opt$clusters_expression
 DATASETS_TO_PLOT_COLA_CLUSTERS_FILE <- opt$datasets_to_plot_cola_clusters
@@ -90,21 +97,9 @@ source("workflow/bin/merge_patient_data_fn.R")
 source("workflow/bin/sanky_plots_fn.R")
 set.seed(1234)
 
-res_files_indegree <- 
-            list.files(TUMOR_DIR_MAIN,
-            full = TRUE,
-            recursive = TRUE, 
-            pattern = "results_indegree")
-res_files_expression <- 
-            list.files(TUMOR_DIR_MAIN,
-            full = TRUE,
-            recursive = TRUE, 
-            pattern = "results_expression")
-
-
 # extract relavant classes
-cl_ids_ind <- extract_relevant_classes(res_files_indegree, BEST_K_IND)
-cl_ids_exp <- extract_relevant_classes(res_files_expression, BEST_K_EXP)
+cl_ids_ind <- extract_relevant_classes(INDEGREE_FILES, BEST_K_IND)
+cl_ids_exp <- extract_relevant_classes(EXPRESSION_FILES, BEST_K_EXP)
 write.table(cl_ids_ind, CLUSTERS_INDEGREE_FILE, 
           col.names = T, row.names = F, sep = "\t", quote = F)
 
@@ -161,7 +156,7 @@ get_plots_for_page <- function(page_number) {
 
 # Suppress default Rplots.pdf
 pdf(NULL)
-pdf(FUGURE_SANKY, width = 10, height = 10)
+pdf(FIGURE_SANKY, width = 10, height = 10)
 for (page in 1:num_pages) {
   plots_for_page <- get_plots_for_page(page)
   grid.arrange(grobs = plots_for_page, ncol = 6 , nrow = 6)
