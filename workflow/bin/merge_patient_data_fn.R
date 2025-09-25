@@ -1,28 +1,61 @@
-#' Load and Combine PD-1 Scores with PD-L1 Expression
-#'
-#' Reads PD-1 scores and PD-L1 expression from a directory and merges them.
-#'
-#' @param tumor_pd1_dir Character. Directory containing PD-1/PD-L1 data.
-#' 
-#' @return A data frame with PD-1 scores and PD-L1 (CD274) expression.
-#' @export
-#'
-#' @examples
-#' pd1_data <- combine_pd1_scores_pdl1_expression("path/to/data")
+# #' Load and Combine PD-1 Scores with PD-L1 Expression
+# #'
+# #' Reads PD-1 scores and PD-L1 expression from a directory and merges them.
+# #'
+# #' @param tumor_pd1_dir Character. Directory containing PD-1/PD-L1 data.
+# #' 
+# #' @return A data frame with PD-1 scores and PD-L1 (CD274) expression.
+# #' @export
+# #'
+# #' @examples
+# #' pd1_data <- combine_pd1_scores_pdl1_expression("path/to/data")
 
-combine_pd1_scores_pdl1_expression <- function(tumor_pd1_dir) {
-        if (!dir.exists(tumor_pd1_dir)) stop("Error: PD-1 directory not found.")
+# combine_pd1_scores_pdl1_expression <- function(tumor_pd1_dir) {
+#         if (!dir.exists(tumor_pd1_dir)) stop("Error: PD-1 directory not found.")
+
+#         # Load PD-1 scores
+#         pd1_scores <- tryCatch({
+#             load_pd1_generic(tumor_pd1_dir, type = "pd1_scores")
+#         }, error = function(e) stop("Error loading PD-1 scores: ", e$message))
+
+#         pd1_scores <- as.data.frame(t(pd1_scores))
+#         if (nrow(pd1_scores) == 0) stop("Error: PD-1 scores data is empty.")
+#         # Load PD-L1 expression
+#         pdl1_expression <- tryCatch({
+#             load_pd1_generic(tumor_pd1_dir, type = "pdl1_expression")
+#         }, error = function(e) 
+#             stop("Error loading PD-L1 expression: ", e$message))
+
+#         if (!"CD274" %in% colnames(pdl1_expression)) {
+#             stop("Error: Missing 'CD274' column in PD-L1 data.")
+#         }
+
+#         # Merge data by barcode
+#         pd1_scores$CD274_exp <- pdl1_expression$CD274[
+#             match(rownames(pd1_scores), pdl1_expression$bcr_patient_barcode)]
+#         return(pd1_scores)
+#         }
+
+
+
+combine_pd1_scores_pdl1_expression <- function(pd1_scores_file,
+                        pdl1_expression_file) {
+        if (!file.exists(pd1_scores_file)) 
+            stop("Error: PD-1 scores file not found.")
+        if (!file.exists(pdl1_expression_file)) 
+            stop("Error: PD-L1 expression file not found.")
 
         # Load PD-1 scores
         pd1_scores <- tryCatch({
-            load_pd1_generic(tumor_pd1_dir, type = "pd1_scores")
+            load_process_pd1_data(pd1_scores_file, type = "pd1_scores")
         }, error = function(e) stop("Error loading PD-1 scores: ", e$message))
 
         pd1_scores <- as.data.frame(t(pd1_scores))
         if (nrow(pd1_scores) == 0) stop("Error: PD-1 scores data is empty.")
         # Load PD-L1 expression
         pdl1_expression <- tryCatch({
-            load_pd1_generic(tumor_pd1_dir, type = "pdl1_expression")
+            load_process_pd1_data(pdl1_expression_file,
+                 type = "pdl1_expression")
         }, error = function(e) 
             stop("Error loading PD-L1 expression: ", e$message))
 
@@ -107,19 +140,22 @@ preprocess_immune <- function(immune_file) {
 #' @return A merged data frame with PD-1 expression, risk scores, and immune data.
 #' @export
 #' 
-merge_patient_data <- function(tumor_pd1_dir, 
+merge_patient_data <- function(pd1_scores_file,
+                    pdl1_expression_file,
                     risk_score_file,
                     immune_file) {
         # Error handling: Check if files exist
-        if (!dir.exists(tumor_pd1_dir)) 
-            stop("Error: Tumor PD-1 directory does not exist.")
+        if (!file.exists(pd1_scores_file)) 
+            stop("Error: PD-1 scores file does not exist.")
+        if (!file.exists(pdl1_expression_file)) 
+            stop("Error: PD-L1 expression file does not exist.")
         if (!file.exists(risk_score_file)) 
             stop("Error: Risk score file does not exist.")
         if (!file.exists(immune_file)) 
             stop("Error: Immune file does not exist.")
         # Load and process PD-1 data
         data <- tryCatch({
-            combine_pd1_scores_pdl1_expression(tumor_pd1_dir)
+            combine_pd1_scores_pdl1_expression(pd1_scores_file, pdl1_expression_file)
         }, error = function(e) 
             stop("Error loading PD-1 expression data: ", e$message))
 
