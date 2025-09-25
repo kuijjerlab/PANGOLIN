@@ -24,19 +24,25 @@ option_list <- list(
         help = "Path to the clinical file.",
         metavar = "character"),
     optparse::make_option(
-        c("-p", "--tumor_pd1_dir"),
+        c("-s", "--pd1_scores_file"),
         type = "character",
         default = NULL,
-        help = "Path to the pd1 tumor directory.",
+        help = "Path to the PD1 scores file.",
         metavar = "character"),
-    optparse::make_option(
+     optparse::make_option(
         c("-c", "--covariates"),
         type = "character",
         default = NULL,
         help = "covariates to include in the model.",
         metavar = "character"),
     optparse::make_option(
-        c("-s", "--type_stat"),
+        c("-d", "--datatype"),
+        type = "character",
+        default = "pd1_scores",
+        help = "Data type to analyze (pd1_scores, clusters).",
+        metavar = "character"),
+    optparse::make_option(
+        c("-y", "--type_stat"),
         type = "character",
         default = "full_stats",
         help = "Type of statistics to report (full_stats, overall_pval).",
@@ -60,8 +66,12 @@ opt <- optparse::parse_args(opt_parser)
 
 ## Initialize variable
 TUMOR_CLIN_FILE <- opt$tumor_clin_file_path
-TUMOR_PD1_DIR <- opt$tumor_pd1_dir
+PD1_SCORES_FILE <- opt$pd1_scores_file
 COVARIATES_TO_USE <- opt$covariates
+# Handle the case where covariates is passed as string "NULL"
+if (COVARIATES_TO_USE == "NULL") {
+    COVARIATES_TO_USE <- NULL
+}
 DATATYPE <- opt$datatype
 TYPE_STAT <- opt$type_stat
 OUTPUT_FILE_COX_SUMMARY <- opt$cox_model_summary
@@ -71,15 +81,16 @@ source("workflow/bin/cox_regression_tumor_fn.R")
 dir.create(dirname(OUTPUT_FILE_COX_SUMMARY), recursive = TRUE, showWarnings = FALSE)
 dir.create(dirname(OUTPUT_FILE_COX_SCORES), recursive = TRUE, showWarnings = FALSE)
 
-COVARIATES_TO_USE = NULL
-DATATYPE = "pd1_scores"
-TYPE_STAT = "full_stats"
 
 pd1_res <- run_univariate_coxph_model(tumor_clin_file_path = TUMOR_CLIN_FILE,
-                                tumor_pd1_dir = TUMOR_PD1_DIR,
-                                covariates = COVARIATES_TO_USE,
-                                datatype = DATATYPE,
-                                type_stat = TYPE_STAT)
+                    pd1_links_file = NULL,
+                    pd1_net_file = NULL,
+                    pd1_scores_file = PD1_SCORES_FILE,
+                    pdl1_expression_file = NULL,
+                    cluster_file = NULL,
+                    covariates = COVARIATES_TO_USE,
+                    datatype = DATATYPE,
+                    type_stat = TYPE_STAT)
 pc_names <- c("PC1", "PC2")
 pd1_res <- process_pd1_univarite_cox_res(pd1_res, pc_names)
 write.table(pd1_res$coxph_model_data, OUTPUT_FILE_COX_SUMMARY,
