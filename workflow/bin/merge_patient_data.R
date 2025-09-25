@@ -12,13 +12,19 @@ for (lib in required_libraries) {
 ####################
 option_list <- list(
     optparse::make_option(
-        c("-p", "--tumor_pd1_dir"),
+        c("-t", "--pd1_scores_file"),
         type = "character",
         default = NULL,
-        help = "Path to the pd1 tumor directory.",
+        help = "Path to the PD-1 scores file.",
         metavar = "character"),
     optparse::make_option(
-        c("-r", "--risk_score_file"),
+        c("-l", "--pdl1_expression_file"),
+        type = "character",
+        default = NULL,
+        help = "Path to the PD-L1 expression file.",
+        metavar = "character"),
+    optparse::make_option(
+        c("-r", "--risk_score"),
         type = "character",
         default = NULL,
         help = "Path to the risk score file.",
@@ -42,17 +48,19 @@ opt <- optparse::parse_args(opt_parser)
 
 ## Initialize variable ##
 
-TUMOR_PD1_DIR <- opt$tumor_pd1_dir
-RISK_SCORE_FILE <- opt$risk_score_file
+RISK_SCORE_FILE <- opt$risk_score
 IMMUNE_FILE <- opt$immune_file
 OUTPUT_FILE <- opt$output_file
+PD1_SCORES_FILE <- opt$pd1_scores_file
+PDL1_EXPRESSIONS_FILE <- opt$pdl1_expression_file
 
 ## Load functions ##
 source("workflow/bin/cox_regression_tumor_fn.R")
 source("workflow/bin/merge_patient_data_fn.R")
 
 dir.create(dirname(OUTPUT_FILE), recursive = TRUE, showWarnings = FALSE)
-res <- merge_patient_data(tumor_pd1_dir = TUMOR_PD1_DIR,
+res <- merge_patient_data(pd1_scores_file = PD1_SCORES_FILE,
+                    pdl1_expression_file = PDL1_EXPRESSIONS_FILE,
                     risk_score_file = RISK_SCORE_FILE,
                     immune_file = IMMUNE_FILE)
 
