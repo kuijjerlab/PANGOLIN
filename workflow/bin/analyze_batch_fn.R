@@ -3,12 +3,14 @@
 #' Loads an RData file with SNAIL-normalized gene expression data,
 #' rounds values to the nearest integer, and applies log2(x + 1).
 #'
-#' @param exp_file Path to the RData file with "exp" object. The first column is
-#'   assumed non-numeric (e.g., gene IDs), others are numeric expression values.
+#' @param exp_file Path to the RData file with "exp" object. The first column 
+#'   is assumed non-numeric (e.g., gene IDs), others are numeric expression 
+#'   values.
 #'
 #' @return Matrix of log2-transformed expression values
 #'
 #' @importFrom data.table fread
+#' @export
 log2_transform_snail <- function(exp_file) {
     exp <- fread(exp_file, header = FALSE)
     colnms <- exp[2, ]
@@ -23,27 +25,28 @@ log2_transform_snail <- function(exp_file) {
 
 #' Load and clean batch information from a file
 #'
-#' Reads a batch info file and replaces NA in 'Year', 'Plates', 'TSS', and
-#' 'Center' columns with "uknown".
+#' Reads a batch info file and replaces NA in 'Year', 'Plates', 'TSS', and 
+#' 'Center' columns with "unknown".
 #'
 #' @param batch_file Path to the batch information file.
 #'
-#' @return Data frame with batch info and NAs replaced by "uknown".
+#' @return Data frame with batch info and NAs replaced by "unknown".
 #'
 #' @import data.table
 #' @export
 load_batch <- function(batch_file) {
     batch_info <- fread(batch_file)
-    batch_info$Year[is.na(batch_info$Year)] <- "uknown"
-    batch_info$Plates[is.na(batch_info$Plates)] <- "uknown"
-    batch_info$TSS[is.na(batch_info$TSS)] <- "uknown"
-    batch_info$Center[is.na(batch_info$Center)] <- "uknown"
+    batch_info$Year[is.na(batch_info$Year)] <- "unknown"
+    batch_info$Plates[is.na(batch_info$Plates)] <- "unknown"
+    batch_info$TSS[is.na(batch_info$TSS)] <- "unknown"
+    batch_info$Center[is.na(batch_info$Center)] <- "unknown"
     return(batch_info)
 }
 
 #' Load Clinical Data from RData File
 #'
-#' Loads a clinical data object named \code{clin} from a specified RData file.
+#' Loads a clinical data object named \code{clin} from a specified RData 
+#' file.
 #'
 #' @param clin_file Path to the RData file containing the \code{clin} object.
 #'
@@ -62,31 +65,37 @@ load_clin_rdata <- function(clin_file) {
 #' effect analysis.
 #'
 #' @param tumor_type Character. Cancer type to process (e.g., "BRCA").
-#' @param log2exp Matrix/data.frame. Log2-transformed expression (genes x
+#' @param log2exp Matrix/data.frame. Log2-transformed expression (genes x 
 #'   samples).
-#' @param groups Data.frame. Sample group info, columns V1 (IDs), V2 (project).
+#' @param groups Data.frame. Sample group info, columns V1 (IDs), V2 
+#'   (project).
 #' @param batch_info Data.frame. Batch info, must have 'Samples' column.
-#' @param clin Data.frame. Clinical data (unused).
 #' @param nthreads Integer. Threads for permutation tests (default: 1).
-#' @param dsc_permutations Integer. DSC permutations for batch effect
+#' @param dsc_permutations Integer. DSC permutations for batch effect 
 #'   (default: 1000).
 #' @param min_batch_size Integer. Minimum batch size (default: 2).
 #' @param max_gene_count Integer. Max genes to include (default: 70000).
 #' @param data_version Character. Data version (default: "1.0").
 #' @param test_version Character. Test version (default: "1.0").
-batch_process_cancer <- function(
-                    tumor_type,
-                    log2exp,
-                    groups,
-                    batch_info,
-                    nthreads = 1,
-                    dsc_permutations = 1000,
-                    min_batch_size = 2,
-                    max_gene_count = 70000,
-                    data_version = "1.0",
-                    test_version = "1.0",
-                    random_seed = 314
-                ) {
+#' @param random_seed Integer. Random seed for reproducibility (default: 314).
+#'
+#' @return A list containing processing results with elements: cancer (type), 
+#'   status (success/error/no_samples/sample_mismatch/too_few_samples), and 
+#'   error (message if applicable).
+#'
+#' @import MBatch
+#' @export
+batch_process_cancer <- function(tumor_type,
+                                  log2exp,
+                                  groups,
+                                  batch_info,
+                                  nthreads = 1,
+                                  dsc_permutations = 1000,
+                                  min_batch_size = 2,
+                                  max_gene_count = 70000,
+                                  data_version = "1.0",
+                                  test_version = "1.0",
+                                  random_seed = 314) {
     cat(sprintf("Processing cancer type: %s\n", tumor_type))
     cat(sprintf("Current working directory: %s\n", getwd()))
     result <- tryCatch({
@@ -132,22 +141,25 @@ batch_process_cancer <- function(
             ))
         }
 
-        myData <- new("BEA_DATA", as.matrix(exp_proj), batches, data.frame())
-        PCA_Regular_Structures(theData = myData,
-                             theTitle = paste('PCA', tumor_type, sep = '_'),
-                             theOutputDir = ".",
-                             theBatchTypeAndValuePairsToRemove = NULL,
-                             theBatchTypeAndValuePairsToKeep = NULL,
-                             theListOfComponentsToPlot = c(1, 2),
-                             theDoDSCFlag = TRUE,
-                             theDoDscPermsFileFlag = TRUE,
-                             theDSCPermutations = dsc_permutations,
-                             theDSCThreads = nthreads,
-                             theMinBatchSize = min_batch_size,
-                             theDataVersion = data_version,
-                             theTestVersion = test_version,
-                             theSeed = random_seed,
-                             theMaxGeneCount = max_gene_count)
+        myData <- new("BEA_DATA", as.matrix(exp_proj), batches, 
+                      data.frame())
+        PCA_Regular_Structures(
+            theData = myData,
+            theTitle = paste('PCA', tumor_type, sep = '_'),
+            theOutputDir = ".",
+            theBatchTypeAndValuePairsToRemove = NULL,
+            theBatchTypeAndValuePairsToKeep = NULL,
+            theListOfComponentsToPlot = c(1, 2),
+            theDoDSCFlag = TRUE,
+            theDoDscPermsFileFlag = TRUE,
+            theDSCPermutations = dsc_permutations,
+            theDSCThreads = nthreads,
+            theMinBatchSize = min_batch_size,
+            theDataVersion = data_version,
+            theTestVersion = test_version,
+            theSeed = random_seed,
+            theMaxGeneCount = max_gene_count
+        )
         # Log success  
         cat(sprintf("Successfully processed %s\n", tumor_type))
         return(list(
@@ -166,32 +178,33 @@ batch_process_cancer <- function(
     return(result)
 }
 
-
-#' Combine DSC results from multiple batches for a cancer type.
+#' Combine Multiple Batch Analysis Results
 #'
-#' Reads PCA annotation files from batch directories in output_dir/cancer.
-#' Extracts DSC values and p-values for each batch, combines into a data.table.
+#' Reads DSC (Discriminant Separation Criterion) values from multiple 
+#' annotation files and combines them into a single data table for comparison 
+#' across different batches and cancer types.
 #'
-#' @param output_dir Path to output directory with batch results.
-#' @param cancer Name of cancer type subdirectory to process.
+#' @param annotation_files Character vector. Paths to annotation files 
+#'   containing batch analysis results with DSC values and p-values.
 #'
-#' @return data.table with DSC values and p-values for each batch.
+#' @return A data.table containing combined DSC results with columns: 
+#'   Annotation, DSC, p_value, batch, and cancer.
 #'
 #' @import data.table
-#' @importFrom data.table fread
-combine_mbatch_results <- function(output_dir, cancer) {
-    files <- list.files(file.path(output_dir, cancer))
-    files <- files[!grepl("ALL__CompListDSC.RData|Purity_singscore", files)]
+#' @export
+combine_mbatch_results <- function(annotation_files) {
     dsc_data_all <- NULL
-    for (batch in files) {
-        annotation_file <- file.path(
-            output_dir, cancer, batch, 
-            "ManyToMany", "1.0", "1.0", "PCAAnnotations.tsv"
-        )
+    for (annotation_file in annotation_files) {
         if (!file.exists(annotation_file)) {
             warning(paste("File not found:", annotation_file))
             next
         }
+        # Extract batch name from the file path
+        batch <- basename(dirname(dirname(dirname(dirname(annotation_file)))))
+        cancer_full <- basename(dirname(dirname(dirname(dirname(
+            dirname(annotation_file))))))
+        cancer <- gsub("TCGA-", "", cancer_full)
+
         full_data <- fread(annotation_file)
         dsc_data <- data.table(
             "Annotation" = c("DSC all", "DSC (1,2)"),
@@ -210,7 +223,6 @@ combine_mbatch_results <- function(output_dir, cancer) {
     }
     return(dsc_data_all)
 }
-
 
 #' Plot DSC values for batches/cancers with faceting and pagination.
 #'
@@ -309,18 +321,21 @@ plot_mbatch_dsc <- function(
 #' @param verbose Logical, whether to print progress messages (default TRUE)
 #'
 #' @return Expression matrix (batch corrected or filtered)
+#'
+#' @import sva
+#' @export
 correct_cancer_batch <- function(cancer_type, 
-        log2exp, groups, batch_info,
-        plates_to_remove = NULL, apply_combat = TRUE, 
-        verbose = TRUE) {
+                                  log2exp, 
+                                  groups, 
+                                  batch_info,
+                                  plates_to_remove = NULL, 
+                                  apply_combat = TRUE, 
+                                  verbose = TRUE) {
     cat(sprintf("Processing batch correction for %s...\n", cancer_type))
     samples <- groups$V1[groups$V2 == cancer_type]
     if (length(samples) == 0) {
-            cat(sprintf(
-                "No samples found for %s, returning NULL\n", 
-                cancer_type
-            ))
-            cat(sprintf("No samples found for %s, returning NULL\n", cancer_type))
+        cat(sprintf("No samples found for %s, returning NULL\n", 
+                    cancer_type))
         return(NULL)
     }
     exp_proj <- log2exp[, colnames(log2exp) %in% samples, drop = FALSE]
