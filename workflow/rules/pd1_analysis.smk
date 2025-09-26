@@ -185,7 +185,6 @@ rule calculate_association_clinical_features_pd1_heterogeneity_scores_per_cancer
     params:
         bin = config["bin"],
         p_threshold = 0.05,
-        pfi_cancers = PFI_CANCERS
     shell:
         """
         Rscript {params.bin}/clinical_associations_pd1.R \
@@ -194,7 +193,6 @@ rule calculate_association_clinical_features_pd1_heterogeneity_scores_per_cancer
             --tumor_clinical_file {input.tumor_clin_file} \
             --cancer {wildcards.cancer} \
             --p_threshold {params.p_threshold} \
-            --pfi_cancers "{params.pfi_cancers}" \
             --results_pd1_groups {output.results_pd1_groups} \
             --results_pd1_numeric {output.results_pd1_numeric} \
             > {log} 2>&1
@@ -267,7 +265,8 @@ rule plot_individual_clinical_features_pd1_heterogeneity_scores:
         cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
         results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS_COMBINED,
         results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC_COMBINED,
-        tumor_main_dir = OUTPUT_DIR
+        pd1_scores_files = expand(OUTPUT_CANCER_PD1_MAPPINGS, cancer=CANCER_TYPES),
+        clinical_files = expand(OUTPUT_CANCER, cancer=CANCER_TYPES)
     output:
         figure_pc_individual_clin_associations = FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS 
     log:
@@ -276,16 +275,25 @@ rule plot_individual_clinical_features_pd1_heterogeneity_scores:
         "Plot PD1 heterogeneity clinical associations for individual features in the selected cancers"
     params:
         bin = config["bin"],
+        cancer_types = ",".join(CANCER_TYPES),
+        padjust_threshold = 0.01,
+        effect_size_threshold = 0.4
     shell:
         """
+        pd1_files=$(echo "{input.pd1_scores_files}" | tr ' ' ',')
+        clinical_files=$(echo "{input.clinical_files}" | tr ' ' ',')
+        
         Rscript {params.bin}/plot_individual_clinical_features_pd1_pathway.R \
             --cox_results_file {input.cox_res_file} \
-            --results_pd1_groups {input.results_pd1_groups} \
-            --results_pd1_numeric {input.results_pd1_numeric} \
-            --tumor_main_dir {input.tumor_main_dir} \
+            --combined_results_groups {input.results_pd1_groups} \
+            --combined_results_numeric {input.results_pd1_numeric} \
+            --pd1_scores_files "$pd1_files" \
+            --clinical_files "$clinical_files" \
+            --cancer_types {params.cancer_types} \
+            --padjust_threshold {params.padjust_threshold} \
+            --effect_size_threshold {params.effect_size_threshold} \
             --output_figure_file {output.figure_pc_individual_clin_associations} \
             > {log} 2>&1
-
         """
 
 
