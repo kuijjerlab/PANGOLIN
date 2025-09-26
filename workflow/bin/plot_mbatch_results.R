@@ -1,7 +1,7 @@
 #####################
 ## Load R packages ##
 #####################
-required_libraries <- c("data.table", "ggplot2", "ggforce")
+required_libraries <- c("data.table", "ggplot2", "ggforce", "optparse")
 for (lib in required_libraries) {
     suppressPackageStartupMessages(
         library(lib, character.only = TRUE, quietly = TRUE)
@@ -12,10 +12,10 @@ for (lib in required_libraries) {
 ####################
 option_list <- list(
     optparse::make_option(
-        c("-b", "--batch_results_dir"),
+        c("-b", "--batch_files"),
         type = "character",
         default = NULL,
-        help = "Path to the batch results directory.",
+        help = "Path to the batch files.",
         metavar = "character"
     ),
     optparse::make_option(
@@ -30,23 +30,16 @@ opt_parser <- optparse::OptionParser(option_list = option_list)
 opt <- optparse::parse_args(opt_parser)
 
 ### Initialize variable ###
-BATCH_DIR <- opt$batch_results_dir
+
+BATCH_FILES <-  unlist(strsplit(opt$batch_files, " "))
 OUTPUT_FILE <- opt$output_file
 
 # source the function to combine results
 source("workflow/bin/analyze_batch_fn.R")
 
 # combine and plot the MBatch results
-cancers <- list.files(BATCH_DIR)
-cancers <- rev(cancers)
 
-res_all <- NULL
-res <- NULL
-for (m in 1:length(cancers)){
-  cancer <- cancers[m]
-  res <- combine_mbatch_results(BATCH_DIR, cancer)
-  res <- res[grep("1", res$Annotation), ]
-  res_all <- rbind(res_all, res)
-}
-
+res <- combine_mbatch_results(BATCH_FILES)
+# Filter for DSC (1,2) annotations specifically
+res_all <- res[grep("1", res$Annotation), ]
 plot_mbatch_dsc(res_all, output_file = OUTPUT_FILE)
