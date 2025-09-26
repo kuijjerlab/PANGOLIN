@@ -19,11 +19,11 @@
 #' 
 prepare_data_for_clin_association <- function(tumor,
                                 clin_cancer_file, 
-                                tumor_pd1_dir, 
+                                pd1_scores_file,
                                 na_threshold = 0.4) {
         clin_cancer <- combine_clins(clin_cancer_file)
         pd1_scores <- 
-            t(load_pd1_generic(tumor_pd1_dir, type = "pd1_scores"))
+            t(load_process_pd1_data(pd1_scores_file, type = "pd1_scores"))
         pd1_scores <- pd1_scores[, 1:2, drop = FALSE]
         pd1_scores <- as.data.frame(pd1_scores)
         pd1_scores$bcr_patient_barcode <- rownames(pd1_scores)
@@ -68,12 +68,14 @@ prepare_data_for_clin_association <- function(tumor,
 #' clin_association_groups_pd1("prad", clin, "data/pd1/", c("PC1", "PC2"))
 clin_association_groups_pd1 <- function(tumor,
                             clin_cancer_file,
-                            pd1_dir,
+                            pd1_scores_file,
                             component = c("PC1", "PC2"),
                             na_threshold = 0.4) {
     #stopifnot(is.character(tumor), is.data.frame(clin), is.character(pd1_dir))
-    data_filt <- prepare_data_for_clin_association(tumor,
-        clin_cancer_file, pd1_dir, na_threshold = na_threshold)
+    data_filt <- prepare_data_for_clin_association(tumor = tumor,
+        clin_cancer_file = clin_cancer_file, 
+        pd1_scores_file = pd1_scores_file, 
+        na_threshold = na_threshold)
     res_clin <- calculate_correlations_groups(data_filt, component)
     res_clin$cancer <- tumor
     return(res_clin)
@@ -101,12 +103,15 @@ clin_association_groups_pd1 <- function(tumor,
 
 clin_association_numeric_pd1 <- function(tumor,
                                 clin_cancer_file,
-                                pd1_dir,
+                                pd1_scores_file,
                                 component = c("PC1", "PC2"),
                                 correlation_type = c("pearson", "spearman"),
                                 na_threshold = 0.4) {
     data_filt <- prepare_data_for_clin_association(
-        tumor, clin_cancer_file, pd1_dir, na_threshold = na_threshold
+        tumor = tumor, 
+        clin_cancer_file = clin_cancer_file, 
+        pd1_scores_file = pd1_scores_file, 
+        na_threshold = na_threshold
     )
     res_clin <- calculate_correlations_numeric(
         data_filt, component, correlation_type
@@ -225,7 +230,8 @@ plot_clin_feature <- function(
                         feature_to_plot,
                         component,
                         clin_cancer_file,
-                        pd1_dir,
+                        pd1_scores_file,
+                        na_threshold = 0.4,
                         outlier_size = 0.5,
                         jitter_width = 0.2,
                         text_size = 2,
@@ -237,8 +243,10 @@ plot_clin_feature <- function(
                         box_fill_color = "#0f993d",
                         point_color = "white") {
     # Prepare data
-    data_filt <- prepare_data_for_clin_association(tumor, 
-                clin_cancer_file, pd1_dir)
+    data_filt <- prepare_data_for_clin_association(tumor = tumor, 
+                    clin_cancer_file = clin_cancer_file, 
+                    pd1_scores_file = pd1_scores_file,
+                    na_threshold = na_threshold)
     data_filt <- data_filt[!is.na(data_filt[[feature_to_plot]]), ]
     feature_value <- data_filt[[feature_to_plot]]
     component_value <- as.numeric(data_filt[[component]])
