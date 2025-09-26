@@ -5,6 +5,7 @@ bin: "workflow/bin"
 resources_dir: "resources"
 results_dir: "results"
 workflow_dir: "workflow"
+envs: "workflow/envs"
 
 ## Analysis Type Configuration
 ## - "full_workflow": Complete pipeline execution (takes several days)
@@ -17,6 +18,7 @@ analysis_type: "full_workflow"  # Change to "precomputed" for rapid analysis
 zenodo_record_id: "YOUR_ZENODO_RECORD_ID"  # Replace with actual Zenodo record ID
 zenodo_resource_filename: "resources.tar.gz"  # Name of the compressed resources file on Zenodo
 zenodo_batch_analysis_filename: "batch_analysis.tar.gz"  # Name of the compressed batch results file on Zenodo
+zenodo_individual_cancers_directory: "data_individual_cancers.tar.gz"  # Name of the compressed individual cancers directory on Zenodo
 ## Files that should be available in resources_dir
 ## clinical data
 clinical_file: "resources/clinical_curated/NIHMS978596-supplement-1.xlsx"
@@ -34,13 +36,14 @@ ppi_file: "resources/priors/ppi_prior.tsv"
 motif_file: "resources/priors/tf_prior_names_fixed.tsv"
 samples_file: "resources/samples/samples_cancers_clean.tsv"
 
-immune_file: "data_all/cibersortx/CIBERSORTx_Results.txt"
+immune_file: "resources/cibersortx/CIBERSORTx_Results.txt"
 cancer_types: ["ACC", "BLCA", "BRCA", "CESC", "CHOL", "COAD", "DLBC", "ESCA", "GBM",
               "HNSC", "KICH", "KIRC", "KIRP", "LAML", "LGG", "LIHC", "LUAD", "LUSC", "MESO",
               "OV", "PAAD", "PCPG", "PRAD", "READ", "SARC", "SKCM", "STAD", "TGCT", "THCA",
               "THYM", "UCEC", "UCS", "UVM"]
-
-
+batches: ["platform", "CancerType", "Purity_singscore", "Center", "TSS",
+         "Plates", "Day", "Month", "Year"]
+# cancer_types: ["ACC", "CESC", "KICH", "KIRC", "PRAD", "UVM"]
 number_cores_mbatch: 4
 datatypes: ["expression", "indegree"]
 threshold_cox: [20, 50]
