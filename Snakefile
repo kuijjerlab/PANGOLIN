@@ -1,7 +1,10 @@
-## PANGOLIN:
-## A comprehensive Snakemake pipeline for TCGA analysis of gene regulatory networks ##
+###############################################################################
+##                                PANGOLIN                                   ##
+##       A comprehensive Snakemake pipeline for TCGA analysis of            ##
+##              gene regulatory networks and PD-1 pathway analysis          ##
+###############################################################################
 
-## How to run this pipeline:
+## HOW TO RUN THIS PIPELINE:
 ## 1. Dry run (check workflow): snakemake --cores 1 -np
 ## 2. Load required modules: 
 ##    - module load snakemake/7.23.1-foss-2022a
@@ -10,33 +13,47 @@
 ## 4. Clean conda cache: rm -rf .snakemake/conda
 ## 5. Execute pipeline: snakemake --use-conda --conda-frontend conda --cores 1
 
+###############################################################################
+##                            IMPORTS & CONFIGURATION                       ##
+###############################################################################
 
-## Libraries
+# Python libraries
 import os 
 import sys
 import glob
 from pathlib import Path
 import time
 
-## Config
-
+# Configuration
 global CONFIG_PATH
 CONFIG_PATH = "config.yaml"
 configfile: CONFIG_PATH
 
 
 
-## Directories ##
+###############################################################################
+##                              DIRECTORIES                                 ##
+###############################################################################
+
+# Main output directories
 OUTPUT_DIR = config["results_dir"]
 OUTPUT_DIR_INDIVIDUAL_CANCERS = config["output_dir_individual_cancers"]
 OUTPUT_DIR_ALL_CANCERS = config["output_dir_all_cancers"]
 FIG_DIR = config["fig_dir"]
 ENV_DIR = config["envs"]
-## From config ##
+
+###############################################################################
+##                           INPUT DATA & RESOURCES                         ##
+###############################################################################
+
+# Cancer types and analysis settings
 CANCER_TYPES = config["cancer_types"]
-BATCH_FILE = config["batch_file"]
 DATATYPES = config["datatypes"]
-BATCHES = config["batches"] 
+BATCHES = config["batches"]
+ANALYSIS_TYPE = config["analysis_type"]
+
+# Input data files
+BATCH_FILE = config["batch_file"]
 CLINICAL_FILE = config["clinical_file"]
 CLINICAL_FILE_RDATA = config["clinical_file_rdata"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
@@ -44,120 +61,135 @@ PPI_FILE = config["ppi_file"]
 MOTIF_FILE = config["motif_file"]
 SAMPLES_FILE = config["samples_file"]
 IMMUNE_FILE = config["immune_file"]
+
+# Pathway analysis files
 GMT_FILE = config["gmt_file"]
 PATHWAYS_HIERARCHY_FILE = config["pathways_hierarchy_file"]
 PATHWAYS_HSA_ID_FILE = config["pathways_hsa_id_file"]
 LIST_PATHWAYS_FILE = config["list_of_pathways_file"]
-ANALYSIS_TYPE = config["analysis_type"]
-ZENODO_INDIVIDUAL_CANCERS_DIRECTORY = config["zenodo_individual_cancers_directory"]
 
-## Zenodo configuration ##
+# Zenodo configuration
 ZENODO_RECORD_ID = config["zenodo_record_id"]
 ZENODO_RESOURCE_FILENAME = config["zenodo_resource_filename"]
+ZENODO_INDIVIDUAL_CANCERS_DIRECTORY = config["zenodo_individual_cancers_directory"]
 
-## Parameters ##
+###############################################################################
+##                               PARAMETERS                                 ##
+###############################################################################
+
+# Network analysis parameters
 ALPHA = config["alpha"]
 NUMBER_FOLDS = config["number_folds"]
 NUMBER_CORES = config["number_cores"]
 NUMBER_TIMES = config["number_times"]
-THESHOLD_COX = config["threshold_cox"]
 GENE_ID = config["gene_id"]
+
+# Statistical analysis parameters
+THESHOLD_COX = config["threshold_cox"]
+
+# Clustering parameters
 NUMBER_CORES_COLA = config["number_cores_cola"]
 PARTITION_METHOD = config["partition_method"]
 TOP_VALUE_METHOD = config["top_value_method"]
 MAX_K = config["max_k"]
+
+# Pathway analysis parameters
 NCORES_PORCUPINE = config["ncores_porcupine"]
 
 
 
-##############################################################################
-### ZENODO RESOURCE DOWNLOAD PATHS                                        ###
+###############################################################################
+##                         ZENODO RESOURCE DOWNLOADS                       ##
 ###############################################################################
 
-## Marker file to indicate successful download of Zenodo resources
+# Marker files to track successful downloads
 ZENODO_RESOURCES_DOWNLOAD_COMPLETE = ".zenodo_download_complete"
-
-ZENODO_BATCH_FILENAME = config["zenodo_batch_analysis_filename"]
-## Marker file to indicate successful download of Zenodo resources
 ZENODO_BATCH_DOWNLOAD_COMPLETE = ".zenodo_batch_download_complete"
 
+# Zenodo resource files
+ZENODO_BATCH_FILENAME = config["zenodo_batch_analysis_filename"]
+
+# Batch analysis files from Zenodo
 BATCH_FILES = expand(
-    os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_analysis", "TCGA-{cancer}", "{batch}", "ManyToMany/1.0/1.0/PCAAnnotations.tsv"),
+    os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_analysis", "TCGA-{cancer}", 
+                 "{batch}", "ManyToMany/1.0/1.0/PCAAnnotations.tsv"),
     cancer=CANCER_TYPES, 
     batch=BATCHES
 )
 ###############################################################################
-### DATA DOWNLOAD AND NORMALIZATION PIPELINE PATHS                        ###
+##                    DATA DOWNLOAD & NORMALIZATION PATHS                  ##
 ###############################################################################
 
-## Primary output directory for downloaded TCGA GDC data
+#------------------------------------------------------------------------------
+# Raw Expression Data Download
+#------------------------------------------------------------------------------
+# Primary directory for downloaded TCGA GDC data
 OUTPUT_GDC_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "gdc_data")
+EXPRESSION_DIR_GDC = os.path.join(OUTPUT_DIR_ALL_CANCERS, "gdc_data")
 
-## Individual cancer type expression GDC files (RData format)
-## Pattern: TCGA-{cancer}.RData (e.g., TCGA-BRCA.RData, TCGA-LUAD.RData)
+# Individual cancer type expression files (RData format)
+# Pattern: TCGA-{cancer}.RData (e.g., TCGA-BRCA.RData, TCGA-LUAD.RData)
 OUTPUT_GDC_FILE = os.path.join(OUTPUT_GDC_DIR, "TCGA-{cancer}.RData")
 
 #------------------------------------------------------------------------------
-# Pre-downloaded Data and Combined Processing
+# Combined Multi-Cancer Expression Data
 #------------------------------------------------------------------------------
-## Directory containing pre-downloaded GDC data (alternative to fresh download)
-## Use this when download_files="NO" to work with existing data
-EXPRESSION_DIR_GDC = os.path.join(OUTPUT_DIR_ALL_CANCERS, "gdc_data")
+# Directory for combined multi-cancer datasets
+OUTPUT_DIR_DOWNLOAD_COMBINED = os.path.join(OUTPUT_DIR_ALL_CANCERS, 
+                                            "combined_gdc_data")
 
-## Output directory for combined multi-cancer datasets
-OUTPUT_DIR_DOWNLOAD_COMBINED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "combined_gdc_data")
+# Combined expression matrix across all cancer types (raw STAR gene counts)
+OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, 
+                                        "hg38_STAR_counts.tsv")
 
-## Combined expression matrix across all cancer types
-## Contains raw STAR gene counts in TSV format (genes x samples)
-OUTPUT_EXP_COMBINED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_STAR_counts.tsv")
+# Sample-to-cancer type mapping file
+GROUP_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, 
+                          "hg38_sample_groups.tsv")
 
-## Sample-to-cancer type mapping file
-## Maps individual sample IDs to their respective cancer types
-GROUP_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_sample_groups.tsv")
-
-## Gene annotation and feature information (RData format)
-## Contains gene IDs, symbols, biotypes, and genomic coordinates
-FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "hg38_features.RData")
+# Gene annotation and feature information (RData format)
+FEATURE_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, 
+                            "hg38_features.RData")
 
 #------------------------------------------------------------------------------
 # Normalized Expression Data
 #------------------------------------------------------------------------------
-## PySNAIL normalized expression file (all cancers combined)
-## Contains qsmooth-normalized gene expression values
-PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, "pysnail_normalized_STAR_counts.tsv")
+# PySNAIL normalized expression file (all cancers combined)
+PYSNAIL_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_DOWNLOAD_COMBINED, 
+                                       "pysnail_normalized_STAR_counts.tsv")
 
-## Directory for cancer-specific normalized expression files
-## Contains individual RData files for each cancer type post-normalization
-## Pattern: normalized_expression_TCGA-{cancer}.RData
-OUTPUT_DIR_PYSNAIL_CANCER = os.path.join(OUTPUT_DIR_ALL_CANCERS, "pysnail_normalized_individual_cancer_expression")
-PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_PYSNAIL_CANCER, "normalized_expression_TCGA-{cancer}.RData")
+# Directory for cancer-specific normalized expression files
+OUTPUT_DIR_PYSNAIL_CANCER = os.path.join(OUTPUT_DIR_ALL_CANCERS, 
+                                         "pysnail_normalized_individual_cancer_expression")
+
+# Cancer-specific normalized files pattern
+PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC = os.path.join(
+    OUTPUT_DIR_PYSNAIL_CANCER, "normalized_expression_TCGA-{cancer}.RData")
+
+# Environment configuration
 PYSNAIL_YAML_RELATIVE = os.path.relpath(
     os.path.join("workflow", "envs", "pysnail.yaml"), 
     "workflow/rules")
 
 ###############################################################################
-### BATCH EFFECT ANALYSIS PIPELINE PATHS                                  ###
+##                         BATCH EFFECT ANALYSIS PATHS                     ##
 ###############################################################################
 
 #------------------------------------------------------------------------------
 # Batch Effect Detection and Analysis
 #------------------------------------------------------------------------------
-## Primary output directory for batch effect analysis results across all cancers
-## Contains MBatch DSC analysis results and diagnostic files
+# Primary directory for batch effect analysis results
 BATCH_DIR_ALL_CANCERS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_analysis")
 
-## Cancer-specific batch analysis directories  
-## Each directory contains PCA plots, DSC statistics, and batch effect diagnostics
+# Cancer-specific batch analysis directories  
 BATCH_DIR_CANCER = os.path.join(BATCH_DIR_ALL_CANCERS, "TCGA-{cancer}")
 
-## Summary figure showing Dispersive Separation Criterion (DSC) values
+# Summary figure showing Dispersive Separation Criterion (DSC) values
 BATCH_EFFECT_PDF = os.path.join(FIG_DIR, "MBatch_DSC.pdf")
 
 #------------------------------------------------------------------------------
 # Batch-Corrected Expression Data
 #------------------------------------------------------------------------------
-## ComBat-corrected expression matrix (all cancers combined)
-## Contains batch-effect corrected log2-transformed gene expression values
+# ComBat-corrected expression matrix (all cancers combined)
 BATCH_CORRECTED_EXPRESSION_FILE = os.path.join(
     OUTPUT_DIR_ALL_CANCERS, 
     "batch_corrected_expression", 
@@ -165,31 +197,37 @@ BATCH_CORRECTED_EXPRESSION_FILE = os.path.join(
 )
 
 
-#------------------------------------------------------------------------------
-# PANDA Prior Networks and Expression Data
-#------------------------------------------------------------------------------
-## Directory: panda_input/ contains all filtered input files for PANDA/LIONESS
+###############################################################################
+##                       NETWORK INFERENCE INPUT PATHS                     ##
+###############################################################################
 
+#------------------------------------------------------------------------------
+# PANDA/LIONESS Input Data Preparation
+#------------------------------------------------------------------------------
+# Environment configuration
 NETZOOPY_YAML = os.path.relpath(
     os.path.join("workflow", "envs", "netzoopy-local.yaml"), 
     "workflow/rules")
 
-## Transcription factor binding motif prior network (filtered)
-MOTIF_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/motif_tcga_primary.tsv")
+# Transcription factor binding motif prior network (filtered)
+MOTIF_PANDA_FILE = os.path.join(OUTPUT_DIR, 
+                                "panda_input/motif_tcga_primary.tsv")
 
-## Protein-protein interaction prior network (filtered)  
-PPI_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/ppi_tcga_primary.tsv")
+# Protein-protein interaction prior network (filtered)  
+PPI_PANDA_FILE = os.path.join(OUTPUT_DIR, 
+                              "panda_input/ppi_tcga_primary.tsv")
 
-## Gene expression matrix (batch-corrected and filtered)
-EXPRESSION_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/exp_tcga_primary.tsv")
+# Gene expression matrix (batch-corrected and filtered)
+EXPRESSION_PANDA_FILE = os.path.join(OUTPUT_DIR, 
+                                     "panda_input/exp_tcga_primary.tsv")
 
-## Sample identifier list (primary tumors only)
-## Contains TCGA sample IDs in order matching expression matrix columns
-SAMPLES_PANDA_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_primary.tsv")
+# Sample identifier list (primary tumors only)
+SAMPLES_PANDA_FILE = os.path.join(OUTPUT_DIR, 
+                                  "panda_input/samples_primary.tsv")
 
-## Sample-to-cancer mapping file (primary tumors only)
-## Maps each sample to its corresponding cancer type for downstream analysis
-SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR, "panda_input/samples_cancers_primary.tsv")
+# Sample-to-cancer mapping file (primary tumors only)
+SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR, 
+                                        "panda_input/samples_cancers_primary.tsv")
 
 ###############################################################################
 ### PANDA + LIONESS NETWORK INFERENCE AND POST-PROCESSING                    ###
@@ -402,6 +440,8 @@ TUMOR_RESULTS_PD1_GROUPS_COMBINED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinic
 TUMOR_RESULTS_PD1_NUMERIC_COMBINED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_numeric_results.txt")
 FIGURE_PC_CLIN_ASSOCIATIONS = os.path.join(FIG_DIR, "PC_all_features_clin_associations.pdf")
 FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS = os.path.join(FIG_DIR, "PC_individual_features_clin_associations.pdf")
+RESULTS_PD1_GROUPS_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}/clinical_associations/pd1_clinical_associations_groups_{cancer}.txt")
+RESULTS_PD1_NUMERIC_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}/clinical_associations/pd1_clinical_associations_numeric_{cancer}.txt")
 
 ## Output Files for multivariate regularized Cox on PDL1-edges ##
 OUTPUT_CANCER_PD1_MAPPINGS  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
@@ -421,46 +461,88 @@ SUMMARY_TABLE_PD1 = os.path.join("resources", "summary_table", "summary_table_PD
 #output
 OUTPUT_HTML_TABLE_PD1 = os.path.join(FIG_DIR, "summary_table_PD1.html")
 
-RESULTS_PD1_GROUPS_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}/clinical_associations/pd1_clinical_associations_groups_{cancer}.txt")
-RESULTS_PD1_NUMERIC_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}/clinical_associations/pd1_clinical_associations_numeric_{cancer}.txt")
 
-# Always include all rule files (Snakemake will only execute needed rules)
+###############################################################################
+##                            WORKFLOW RULES INCLUSION                     ##
+###############################################################################
+
+# Note: Snakemake will only execute rules needed based on requested outputs
+
+# Data acquisition and preprocessing
 include: "workflow/rules/zenodo_download_resources.smk"
-include: "workflow/rules/batch_effect_expression.smk"
-include: "workflow/rules/download_normalize_expression_data.smk"
 include: "workflow/rules/zenodo_download_batch_results.smk"
-include: "workflow/rules/prepare_data_run_networks.smk"
 include: "workflow/rules/zenodo_download_indegrees_porcupine_data.smk"
+include: "workflow/rules/download_normalize_expression_data.smk"
+
+# Expression data processing and batch correction
+include: "workflow/rules/batch_effect_expression.smk"
+
+# Network inference and analysis
+include: "workflow/rules/prepare_data_run_networks.smk"
+
+# Dimensionality reduction and pathway analysis
 include: "workflow/rules/tsne_and_porcupine_analysis.smk"
-include: "workflow/rules/extract_pd1_data.smk"
+
+# Clustering analysis
 include: "workflow/rules/cola_consensus_clustering.smk"
-include: "workflow/rules/prad_cluster_analysis.smk"
+
+# PD-1 pathway-specific analysis
+include: "workflow/rules/extract_pd1_data.smk"
 include: "workflow/rules/pd1_analysis.smk"
 
-# Rules ##
+# Cancer-specific analyses
+include: "workflow/rules/prad_cluster_analysis.smk"
+
+###############################################################################
+##                                MAIN RULE                                ##
+###############################################################################
+
 rule all:
     input:
-        # Always download resources (both workflows need this)
-        # ZENODO_RESOURCES_DOWNLOAD_COMPLETE,      
-        # Conditional inputs based on analysis type
-        # ([ZENODO_BATCH_DOWNLOAD_COMPLETE] if ANALYSIS_TYPE == "precomputed" else []),
-        # Full workflow specific outputs
-        ([expand(OUTPUT_GDC_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
-        ([OUTPUT_EXP_COMBINED_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
-        ([GROUP_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
-        ([FEATURE_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
-        ([PYSNAIL_NORMALIZED_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
-        ([expand(PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC, cancer = CANCER_TYPES)] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
-        ([BATCH_FILES] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
-        ([BATCH_CORRECTED_EXPRESSION_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
-        # # Shared outputs (both workflows can generate this)
-        ([BATCH_EFFECT_PDF] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        # # PANDA/LIONESS files (only for full workflow),
-        ([MOTIF_PANDA_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
-        ([PPI_PANDA_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
-        ([EXPRESSION_PANDA_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
-        ([SAMPLES_PANDA_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
-        ([SAMPLES_WITH_CANCER_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+        # =====================================================================
+        # DATA DOWNLOAD AND PREPROCESSING OUTPUTS
+        # =====================================================================
+        # Raw expression data downloads
+        ([expand(OUTPUT_GDC_FILE, cancer=CANCER_TYPES)] 
+         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        
+        # Combined multi-cancer expression data
+        ([OUTPUT_EXP_COMBINED_FILE] 
+         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([GROUP_FILE] 
+         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([FEATURE_FILE] 
+         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        
+        # Normalized expression data
+        ([PYSNAIL_NORMALIZED_FILE] 
+         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([expand(PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC, cancer=CANCER_TYPES)] 
+         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        
+        # =====================================================================
+        # BATCH EFFECT ANALYSIS OUTPUTS
+        # =====================================================================
+        ([BATCH_FILES] 
+         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([BATCH_CORRECTED_EXPRESSION_FILE] 
+         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([BATCH_EFFECT_PDF] 
+         if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        
+        # =====================================================================
+        # NETWORK INFERENCE INPUT PREPARATION
+        # =====================================================================
+        ([MOTIF_PANDA_FILE] 
+         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+        ([PPI_PANDA_FILE] 
+         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+        ([EXPRESSION_PANDA_FILE] 
+         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+        ([SAMPLES_PANDA_FILE] 
+         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+        ([SAMPLES_WITH_CANCER_FILE] 
+         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
         ## Download indegree files and porcupine data from Zenodo 
         # ([expand(ZENODO_INDIVIDUAL_CANCERS_DIRECTORY)] if ANALYSIS_TYPE in ["precomputed"] else []) 
         # HERE IS PART TO RUN ONLY FOR FULL WORKFLOW
@@ -482,7 +564,6 @@ rule all:
         ([PORCUPINE_RESULTS_ALL] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([FIG_PATHWAY_INTERSECTION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([FIG_SHARED_CATEGORIES] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([expand(TUMOR_CLIN_FILE, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # cola consensus clustering outputs
         ([expand(BEST_K_COLA_OUTPUT_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([expand(COLA_RESULTS_OUTPUT_CANCER_DATATYPE, cancer = CANCER_TYPES, datatype = DATATYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
