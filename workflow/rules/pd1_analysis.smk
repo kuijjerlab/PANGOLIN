@@ -2,25 +2,37 @@
 rule run_univariate_cox_pd1_pathway:
     input:
         clin_file = TUMOR_CLIN_FILE,
-        tumor_pd1_dir = TUMOR_PD1_DIR
+        pd1_scores_file = OUTPUT_CANCER_PD1_MAPPINGS
+    
     output:
         out_file_summary = OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY,
         out_file_predicted_scores = OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES
+
     log:
         "logs/run_univariate_cox_pd1_pathway_{cancer}.log"
+    
     params:
-        bin = config["bin"]
+        bin = config["bin"],
+        covariates = "NULL",  # Note: quoted string for NULL
+        datatype = "pd1_scores",
+        type_stat = "full_stats"
+    
     message:
         "Running univariate Cox model on pd1-pathway based scores for: {wildcards.cancer}"
+    
     shell:
         """
         Rscript {params.bin}/run_univariate_cox_pd1_pathway.R \
             --tumor_clin_file_path {input.clin_file} \
-            --tumor_pd1_dir {input.tumor_pd1_dir} \
+            --pd1_scores_file {input.pd1_scores_file} \
+            --datatype {params.datatype} \
+            --covariates {params.covariates} \
+            --type_stat {params.type_stat} \
             --cox_model_summary {output.out_file_summary} \
             --cox_predicted_risk {output.out_file_predicted_scores} \
             > {log} 2>&1
         """
+
 rule combine_pd1_pathway_univariate_summary_results:
     input:
         expand(OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY, cancer=CANCER_TYPES)
@@ -88,7 +100,8 @@ rule clean_univariate_cox_pd1_pathway:
 
 rule merge_patient_data:
     input:
-        tumor_pd1_dir = TUMOR_PD1_DIR,
+        pd1_scores_file = OUTPUT_CANCER_PD1_MAPPINGS,
+        pdl1_expression_file = OUTPUT_PDL1_EXP_CANCER,
         risk_score = OUTPUT_CANCER_UNIVARIATE_COX_PREDICTED_SCORES,
         immune_file = IMMUNE_FILE
     output:
@@ -102,7 +115,8 @@ rule merge_patient_data:
     shell:
         """
         Rscript {params.bin}/merge_patient_data.R \
-            --tumor_pd1_dir {input.tumor_pd1_dir} \
+            --pd1_scores_file {input.pd1_scores_file} \
+            --pdl1_expression_file {input.pdl1_expression_file} \
             --risk_score {input.risk_score} \
             --immune_file {input.immune_file} \
             --output_file {output.out_file} \
@@ -114,7 +128,7 @@ rule merge_patient_data:
 rule plot_PC_PDL1_expression:
     input:
         cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        tumor_main_dir = OUTPUT_DIR
+        combined_patient_data_files = expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer=CANCER_TYPES)
     output:
         out_file = FIG_PC_PDL1_EXPRESSION
     log:
@@ -127,7 +141,7 @@ rule plot_PC_PDL1_expression:
         """
         Rscript {params.bin}/plot_PC_PDL1_exp.R \
             --cox_summary_all_cancers {input.cox_summary_all} \
-            --tumor_dir {input.tumor_main_dir} \
+            --combined_patient_data_file "{input.combined_patient_data_files}" \
             --output {output.out_file} \
             > {log} 2>&1
         """
@@ -137,7 +151,7 @@ rule plot_PC_PDL1_expression:
 rule plot_PC_immune_correlations:
     input:
         cox_summary_all = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        tumor_main_dir = OUTPUT_DIR
+        combined_patient_data_files = expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer=CANCER_TYPES)
     output:
         out_file = FIG_PC_IMMUNE_CORRELATION
     log:
@@ -150,33 +164,72 @@ rule plot_PC_immune_correlations:
         """
         Rscript {params.bin}/plot_PC_immune_correlations.R \
             --cox_summary_all_cancers {input.cox_summary_all} \
-            --tumor_dir {input.tumor_main_dir} \
-            --output {output.out_file} \
+            --combined_patient_data_files "{input.combined_patient_data_files}" \
+            --output_file {output.out_file} \
             > {log} 2>&1
         """
 ## Perform the association analysis between the PD1 pathway heterogeneity scores and clinical features (categorical and numeric) ##
 
-rule calculate_association_clinical_features_pd1_heterogeneity_scores:
+rule calculate_association_clinical_features_pd1_heterogeneity_scores_per_cancer:
     input:
         cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        tumor_main_dir = OUTPUT_DIR
+        pd1_scores_file = OUTPUT_CANCER_PD1_MAPPINGS,
+        tumor_clin_file = OUTPUT_CANCER
     output:
-        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
-        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC
+        results_pd1_groups = RESULTS_PD1_GROUPS_CANCER_SPECIFIC,
+        results_pd1_numeric = RESULTS_PD1_NUMERIC_CANCER_SPECIFIC
     log:
-        "logs/calculate_association_clinical_features_pd1_heterogeneity_scores.log"
+        "logs/calculate_association_clinical_features_pd1_heterogeneity_scores_{cancer}.log"
     message:
-        "Calculating PD1 heterogeneity clinical associations"
+        "Calculating PD1 heterogeneity clinical associations for: {wildcards.cancer}"
     params:
         bin = config["bin"],
+        p_threshold = 0.05,
+        pfi_cancers = PFI_CANCERS
     shell:
         """
         Rscript {params.bin}/clinical_associations_pd1.R \
             --cox_results_file {input.cox_res_file} \
-            --tumor_main_dir {input.tumor_main_dir} \
+            --pd1_scores_file {input.pd1_scores_file} \
+            --tumor_clinical_file {input.tumor_clin_file} \
+            --cancer {wildcards.cancer} \
+            --p_threshold {params.p_threshold} \
+            --pfi_cancers "{params.pfi_cancers}" \
             --results_pd1_groups {output.results_pd1_groups} \
             --results_pd1_numeric {output.results_pd1_numeric} \
             > {log} 2>&1
+        """
+
+rule combine_clinical_associations_pd1:
+    input:
+        results_pd1_groups = expand(RESULTS_PD1_GROUPS_CANCER_SPECIFIC, cancer=CANCER_TYPES),
+        results_pd1_numeric = expand(RESULTS_PD1_NUMERIC_CANCER_SPECIFIC, cancer=CANCER_TYPES)
+    output:
+        combined_pd1_groups = TUMOR_RESULTS_PD1_GROUPS_COMBINED,
+        combined_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC_COMBINED
+    log:
+        "logs/combine_clinical_associations_pd1.log"
+    message:
+        "Combining PD1 clinical association results from all cancers"
+    shell:
+        """
+        # Combine groups results (cancer column already included in each file)
+        head -n 1 {input.results_pd1_groups[0]} > {output.combined_pd1_groups}
+        for file in {input.results_pd1_groups}; do
+            # Check if file has more than just header (more than 1 line)
+            if [[ -f "$file" ]] && [[ $(wc -l < "$file") -gt 1 ]]; then
+                tail -n +2 "$file" >> {output.combined_pd1_groups}
+            fi
+        done
+        
+        # Combine numeric results (cancer column already included in each file)
+        head -n 1 {input.results_pd1_numeric[0]} > {output.combined_pd1_numeric}
+        for file in {input.results_pd1_numeric}; do
+            # Check if file has more than just header (more than 1 line)
+            if [[ -f "$file" ]] && [[ $(wc -l < "$file") -gt 1 ]]; then
+                tail -n +2 "$file" >> {output.combined_pd1_numeric}
+            fi
+        done
         """
 
 ## Plot the Associations between the PD1 pathway-based patient heterogeneity scores and clinical features
@@ -184,8 +237,8 @@ rule calculate_association_clinical_features_pd1_heterogeneity_scores:
 rule plot_association_clinical_features_pd1_heterogeneity_scores:
     input:
         cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
-        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC,
+        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS_COMBINED,
+        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC_COMBINED,
         cancer_color_file = CANCER_COLOR_FILE
     output:
         figure_pc_clin_associations = FIGURE_PC_CLIN_ASSOCIATIONS 
@@ -212,8 +265,8 @@ rule plot_association_clinical_features_pd1_heterogeneity_scores:
 rule plot_individual_clinical_features_pd1_heterogeneity_scores:
     input:
         cox_res_file = UNIVARIATE_COX_SUMMARY_ALL_FILTERED,
-        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS,
-        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC,
+        results_pd1_groups = TUMOR_RESULTS_PD1_GROUPS_COMBINED,
+        results_pd1_numeric = TUMOR_RESULTS_PD1_NUMERIC_COMBINED,
         tumor_main_dir = OUTPUT_DIR
     output:
         figure_pc_individual_clin_associations = FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS 
@@ -239,8 +292,9 @@ rule plot_individual_clinical_features_pd1_heterogeneity_scores:
 ## Run multivariate regularized cox regression on PDL1 edges ##  
 rule run_regularized_cox:
     input:
-        clin_file = OUTPUT_CANCER,
-        tumor_pd1_dir = TUMOR_PD1_DIR
+        tumor_clin_file_path = TUMOR_CLIN_FILE,
+        tumor_pd1_links_file = TUMOR_PD1_LINKS,
+        tumor_pd1_net_file = TUMOR_PD1_NET
     output:
         out_file = OUTPUT_CANCER_COX
     message:
@@ -256,8 +310,9 @@ rule run_regularized_cox:
     shell:
         """
         Rscript {params.bin}/cox_regression_tumor.R \
-            --tumor_clin_file_path {input.clin_file} \
-            --tumor_pd1_dir {input.tumor_pd1_dir} \
+            --tumor_clin_file_path {input.tumor_clin_file_path} \
+            --pd1_links_file {input.tumor_pd1_links_file} \
+            --pd1_net_file {input.tumor_pd1_net_file} \
             --number_folds {params.number_folds} \
             --number_times {params.number_times} \
             --number_cores {params.number_cores} \
@@ -322,7 +377,7 @@ rule plot_tsne_expression_indegree_and_uvm_prad_comparisons:
         tsne_file_indegree = TSNE_DATA_INDEGREE,
         cancer_color_file = CANCER_COLOR_FILE
     output:
-        ouput_figure = FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS
+        output_figure = FIGURE_TSNE_ALL_CANCERS_UVM_PRAD_CLUSTERS
     log:
         "logs/plot_tsne_expression_indegree_and_uvm_prad_comparisons.log"
     params:
@@ -334,7 +389,7 @@ rule plot_tsne_expression_indegree_and_uvm_prad_comparisons:
             --tsne_data_expression {input.tsne_file_expression} \
             --tsne_data_indegree {input.tsne_file_indegree} \
             --cancer_color_file {input.cancer_color_file} \
-            --ouput_figure_file {output.ouput_figure} \
+            --output_figure_file {output.output_figure} \
             > {log} 2>&1
 
         """
