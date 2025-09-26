@@ -23,26 +23,46 @@ option_list <- list(
                 default = NULL,
                 help = "Path to the cox results for the PD1 pathway",
                 metavar = "character"),
-        make_option(c("-r", "--results_pd1_groups"),
+        make_option(c("-g", "--combined_results_groups"),
                 type = "character",
                 default = NULL,
-                help = "Path to the result file comparing clinical groups",
+                help = "Path to the combined categorical results file",
                 metavar = "character"),
-        make_option(c("-s", "--results_pd1_numeric"),
+        make_option(c("-n", "--combined_results_numeric"),
                 type = "character",
                 default = NULL,
-                help = "Path to the result file with numerical features",
+                help = "Path to the combined numeric results file",
                 metavar = "character"),
-        make_option(c("-f", "--tumor_main_dir"),
+        make_option(c("-p", "--pd1_scores_files"),
                 type = "character", 
                 default = NULL,
-                help = "Path to the main directory containing all tumor types",
-                metavar = "character"), 
+                help = "Comma-separated list of PD1 scores files",
+                metavar = "character"),
+        make_option(c("-l", "--clinical_files"),
+                type = "character",
+                default = NULL,
+                help = "Comma-separated list of clinical files",
+                metavar = "character"),
+        make_option(c("-t", "--cancer_types"),
+                type = "character",
+                default = NULL,
+                help = "Comma-separated list of cancer types",
+                metavar = "character"),
         make_option(c("-o", "--output_figure_file"),
                 type = "character",
                 default = NULL,
                 help = "Path to the output figure file",
-                metavar = "character")
+                metavar = "character"),
+        make_option(c("-a", "--padjust_threshold"),
+                type = "numeric",
+                default = 0.01,
+                help = "P-adjusted threshold for significance (default: 0.01)",
+                metavar = "numeric"),
+        make_option(c("-e", "--effect_size_threshold"),
+                type = "numeric",
+                default = 0.4,
+                help = "Effect size threshold (default: 0.4)",
+                metavar = "numeric")
 )
 
 # Parse the command-line arguments
@@ -51,10 +71,25 @@ opt <- parse_args(opt_parser)
 
 # Assign parsed arguments to variables
 COX_RESULTS_FILE <- opt$cox_results_file
-RESULTS_CATEGORICAL_FILE <- opt$results_pd1_groups
-RESULTS_NUMERIC_FILE <- opt$results_pd1_numeric
-TUMOR_MAIN_DIR <- opt$tumor_main_dir
+RESULTS_CATEGORICAL_FILE <- opt$combined_results_groups
+RESULTS_NUMERIC_FILE <- opt$combined_results_numeric
+PD1_SCORES_FILES <- unlist(strsplit(opt$pd1_scores_files, ","))
+CLINICAL_FILES <- unlist(strsplit(opt$clinical_files, ","))
+CANCER_TYPES <- unlist(strsplit(opt$cancer_types, ","))
 OUTPUT_FIGURE <- opt$output_figure_file
+PADJUST_THRESHOLD <- opt$padjust_threshold
+EFFECT_SIZE_THRESHOLD <- opt$effect_size_threshold
+
+# Validate inputs
+if (length(PD1_SCORES_FILES) != length(CLINICAL_FILES) ||
+    length(PD1_SCORES_FILES) != length(CANCER_TYPES)) {
+    stop("Number of PD1 scores files, clinical files, and cancer types must match")
+}
+
+cat("Using p-adjusted threshold:", PADJUST_THRESHOLD, "\n")
+cat("Using effect size threshold:", EFFECT_SIZE_THRESHOLD, "\n")
+
+
 
 ########################
 ## Load Helper Scripts ##
@@ -82,8 +117,8 @@ data_all <- combine_data(res_cat, res_num)
 results_categorical_all <- fread(RESULTS_CATEGORICAL_FILE)
 
 data_all <- data_all %>%
-      filter(padjust <= 0.01) %>%
-      filter(abs(effect_size_cor) >= 0.4)
+      filter(padjust <= PADJUST_THRESHOLD) %>%
+      filter(abs(effect_size_cor) >= EFFECT_SIZE_THRESHOLD)
 
 res_pc1 <- data_all %>%
       filter(principal_component == "PC1") %>%
@@ -98,46 +133,57 @@ res_pc2 <- data_all %>%
 
 features_pc2 <- unique(res_pc2$feature_cancer)
 
+# Create lookup tables for files by cancer type
+pd1_lookup <- setNames(PD1_SCORES_FILES, toupper(CANCER_TYPES))
+clinical_lookup <- setNames(CLINICAL_FILES, toupper(CANCER_TYPES))
+
 plots_pc1 <- list()
 
-dirs <- list.dirs(TUMOR_MAIN_DIR, recursive = TRUE, full.names = TRUE)
-pd1_dirs <- dirs[grepl("pd1_data", basename(dirs))]
-clin_dirs <- dirs[grepl("clinical", basename(dirs))]
-
-for (i in 1:length(features_pc1)) {
+for (i in seq_along(features_pc1)) {
       splits <- split_string_function(features_pc1[i])
       tumor <- toupper(splits$cancer)
       feature_to_plot <- splits$feature
-      pd1_dir_tumor <- pd1_dirs[grep(tumor, pd1_dirs)]
-      tumor_clin_dir <- clin_dirs[grep(tumor, clin_dirs)]
-      tumor_clin_file <- 
-            list.files(tumor_clin_dir, recursive = TRUE, full.names = TRUE)
+      
+      # Get files for this cancer type
+      tumor_clin_file <- clinical_lookup[[tumor]]
+      pd1_scores_file <- pd1_lookup[[tumor]]
+      
+      if (is.na(tumor_clin_file) || is.na(pd1_scores_file)) {
+            cat("Warning: Missing files for cancer type", tumor, "\n")
+            next
+      }
+      
       plot <- plot_clin_feature(tumor = tumor,
                               results_categorical = results_categorical_all,
                               feature_to_plot = feature_to_plot,
                               component = "PC1",
                               clin_cancer_file = tumor_clin_file,
-                              pd1_dir = pd1_dir_tumor)
+                              pd1_scores_file = pd1_scores_file)
       plots_pc1[[i]] <- plot
 }
 
-
 plots_pc2 <- list()
 
-for (i in 1:length(features_pc2)) {
+for (i in seq_along(features_pc2)) {
       splits <- split_string_function(features_pc2[i])
       tumor <- toupper(splits$cancer)
       feature_to_plot <- splits$feature
-      pd1_dir_tumor <- pd1_dirs[grep(tumor, pd1_dirs)]
-      tumor_clin_dir <- clin_dirs[grep(tumor, clin_dirs)]
-      tumor_clin_file <- 
-            list.files(tumor_clin_dir, recursive = TRUE, full.names = TRUE)
+      
+      # Get files for this cancer type
+      tumor_clin_file <- clinical_lookup[[tumor]]
+      pd1_scores_file <- pd1_lookup[[tumor]]
+      
+      if (is.na(tumor_clin_file) || is.na(pd1_scores_file)) {
+            cat("Warning: Missing files for cancer type", tumor, "\n")
+            next
+      }
+      
       plot <- plot_clin_feature(tumor = tumor,
                               results_categorical = results_categorical_all,
                               feature_to_plot = feature_to_plot,
                               component = "PC2",
                               clin_cancer_file = tumor_clin_file,
-                              pd1_dir = pd1_dir_tumor)
+                              pd1_scores_file = pd1_scores_file)
       plots_pc2[[i]] <- plot
 }
 
