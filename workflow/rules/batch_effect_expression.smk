@@ -17,14 +17,18 @@ rule analyze_batch_effect:
         batch_file = BATCH_FILE,
         clinical_file = CLINICAL_FILE_RDATA 
     output:
-        output_dir = directory(BATCH_DIR_CANCER)
+        batch_files = expand(
+            os.path.join(BATCH_DIR_ALL_CANCERS, "TCGA-{{cancer}}", "{batch}", "ManyToMany/1.0/1.0/PCAAnnotations.tsv"),
+            batch=BATCHES
+        )
     log:
         "logs/analyze_batch_effect_{cancer}.log"
     message:
-        "Analyzing batch effect for: {wildcards.cancer}"   
+        "Analyzing batch effect for: {wildcards.cancer}"
     params:
         bin = config["bin"],
-        nthreads = config["number_cores_mbatch"]
+        nthreads = config["number_cores_mbatch"],
+        output_dir = BATCH_DIR_CANCER
     conda:
         "mbatch_minimal"
     shell:
@@ -36,7 +40,7 @@ rule analyze_batch_effect:
             --batch_file {input.batch_file} \
             --clin_file {input.clinical_file} \
             --nthreads {params.nthreads} \
-            --output_directory {output.output_dir} \
+            --output_directory {params.output_dir} \
         > {log} 2>&1
         """
 # Generate comprehensive MBatch batch effect visualization
@@ -45,7 +49,7 @@ rule plot_mbatch_results:
     Create batch effect visualization from MBatch analysis results.
     """
     input:
-        batch_dir = BATCH_DIR_ALL_CANCERS
+        batch_files = BATCH_FILES
     output:
         pdf_file = BATCH_EFFECT_PDF
     log:
@@ -57,7 +61,7 @@ rule plot_mbatch_results:
     shell:
         """
         Rscript {params.bin}/plot_mbatch_results.R \
-            --batch_results_dir {input.batch_dir} \
+            --batch_files "{input.batch_files}" \
             --output_file {output.pdf_file} \
         > {log} 2>&1
         """
