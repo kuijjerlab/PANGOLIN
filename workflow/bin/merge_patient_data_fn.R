@@ -1,45 +1,20 @@
-# #' Load and Combine PD-1 Scores with PD-L1 Expression
-# #'
-# #' Reads PD-1 scores and PD-L1 expression from a directory and merges them.
-# #'
-# #' @param tumor_pd1_dir Character. Directory containing PD-1/PD-L1 data.
-# #' 
-# #' @return A data frame with PD-1 scores and PD-L1 (CD274) expression.
-# #' @export
-# #'
-# #' @examples
-# #' pd1_data <- combine_pd1_scores_pdl1_expression("path/to/data")
 
-# combine_pd1_scores_pdl1_expression <- function(tumor_pd1_dir) {
-#         if (!dir.exists(tumor_pd1_dir)) stop("Error: PD-1 directory not found.")
-
-#         # Load PD-1 scores
-#         pd1_scores <- tryCatch({
-#             load_pd1_generic(tumor_pd1_dir, type = "pd1_scores")
-#         }, error = function(e) stop("Error loading PD-1 scores: ", e$message))
-
-#         pd1_scores <- as.data.frame(t(pd1_scores))
-#         if (nrow(pd1_scores) == 0) stop("Error: PD-1 scores data is empty.")
-#         # Load PD-L1 expression
-#         pdl1_expression <- tryCatch({
-#             load_pd1_generic(tumor_pd1_dir, type = "pdl1_expression")
-#         }, error = function(e) 
-#             stop("Error loading PD-L1 expression: ", e$message))
-
-#         if (!"CD274" %in% colnames(pdl1_expression)) {
-#             stop("Error: Missing 'CD274' column in PD-L1 data.")
-#         }
-
-#         # Merge data by barcode
-#         pd1_scores$CD274_exp <- pdl1_expression$CD274[
-#             match(rownames(pd1_scores), pdl1_expression$bcr_patient_barcode)]
-#         return(pd1_scores)
-#         }
-
-
-
+#' Combine PD-1 Scores with PD-L1 Expression Data
+#'
+#' Reads PD-1 scores and PD-L1 expression data from separate files and 
+#' combines them by matching patient barcodes. The CD274 expression values 
+#' are added to the PD-1 scores data frame.
+#'
+#' @param pd1_scores_file Character. Path to the file containing PD-1 scores.
+#' @param pdl1_expression_file Character. Path to the file containing PD-L1 
+#'   expression data.
+#'
+#' @return A data frame with PD-1 scores and corresponding CD274 expression 
+#'   values.
+#'
+#' @export
 combine_pd1_scores_pdl1_expression <- function(pd1_scores_file,
-                        pdl1_expression_file) {
+                                               pdl1_expression_file) {
         if (!file.exists(pd1_scores_file)) 
             stop("Error: PD-1 scores file not found.")
         if (!file.exists(pdl1_expression_file)) 
@@ -55,7 +30,7 @@ combine_pd1_scores_pdl1_expression <- function(pd1_scores_file,
         # Load PD-L1 expression
         pdl1_expression <- tryCatch({
             load_process_pd1_data(pdl1_expression_file,
-                 type = "pdl1_expression")
+                                  type = "pdl1_expression")
         }, error = function(e) 
             stop("Error loading PD-L1 expression: ", e$message))
 
@@ -65,7 +40,8 @@ combine_pd1_scores_pdl1_expression <- function(pd1_scores_file,
 
         # Merge data by barcode
         pd1_scores$CD274_exp <- pdl1_expression$CD274[
-            match(rownames(pd1_scores), pdl1_expression$bcr_patient_barcode)]
+            match(rownames(pd1_scores), 
+                  pdl1_expression$bcr_patient_barcode)]
         return(pd1_scores)
         }
 
@@ -124,20 +100,23 @@ preprocess_immune <- function(immune_file) {
         # Remove unnecessary columns
         cols_to_remove <- c("P-value", "Correlation", "RMSE", "Mixture")
         cols_to_remove <- intersect(cols_to_remove, colnames(immune_data))
-        immune_data <- immune_data[, !colnames(immune_data) %in% cols_to_remove, with = FALSE]
+        immune_data <- immune_data[, !colnames(immune_data) %in% 
+                                   cols_to_remove, with = FALSE]
         return(immune_data)
     }
 
 #' Merge Patient Data with PD-1, Risk Scores, and Immune Data
 #'
-#' This function reads and merges PD-1 expression, risk scores, and immune data, 
-#' ensuring all datasets align by `bcr_patient_barcode`.
+#' This function reads and merges PD-1 expression, risk scores, and immune 
+#' data, ensuring all datasets align by `bcr_patient_barcode`.
 #'
-#' @param tumor_pd1_dir Character. Directory containing tumor PD-1 data.
+#' @param pd1_scores_file Character. Path to the PD-1 scores file.
+#' @param pdl1_expression_file Character. Path to the PD-L1 expression file.
 #' @param risk_score_file Character. Path to the predicted risk scores file.
 #' @param immune_file Character. Path to the immune data file.
 #' 
-#' @return A merged data frame with PD-1 expression, risk scores, and immune data.
+#' @return A merged data frame with PD-1 expression, risk scores, and immune 
+#'   data.
 #' @export
 #' 
 merge_patient_data <- function(pd1_scores_file,
@@ -155,7 +134,8 @@ merge_patient_data <- function(pd1_scores_file,
             stop("Error: Immune file does not exist.")
         # Load and process PD-1 data
         data <- tryCatch({
-            combine_pd1_scores_pdl1_expression(pd1_scores_file, pdl1_expression_file)
+            combine_pd1_scores_pdl1_expression(pd1_scores_file, 
+                                               pdl1_expression_file)
         }, error = function(e) 
             stop("Error loading PD-1 expression data: ", e$message))
 
@@ -253,71 +233,68 @@ read_all_coxph_results <- function(cox_results_file,
     return(coxph_results)
 }
 
-#' Merge patient data from all cancer subdirectories
+#' Merge Patient Data from All Cancer Types
 #'
-#' This function scans a directory for patient data files, reads them, and adds 
-#' a `cancer` column based on the filename. The data is then merged into a 
-#' single data frame.
+#' Reads and combines patient data files from multiple cancer types into a 
+#' single data frame. Each file is expected to contain combined patient data 
+#' for a specific cancer type.
 #'
-#' @param cancer_dir A string specifying the directory with patient data files.
+#' @param combined_patient_data_files Character vector. Paths to combined 
+#'   patient data files for different cancer types.
 #'
-#' @return A data frame with merged patient data from all available cancer types.
+#' @return A data frame with merged patient data from all cancer types, 
+#'   including a 'cancer' column indicating the cancer type.
+#'
+#' @import data.table
+#' @import purrr
+#' @import stringr
 #' @export
-#' 
-merge_patient_data_all_cancers <- function(cancer_dir) {
-    # Validate input directory
-    if (!dir.exists(cancer_dir)) {
-        stop("Error: The specified directory does not exist.")
-    }
-
-    # List all matching files
-    files <- list.files(
-        cancer_dir, 
-        pattern = "combined_patient_data",
-        recursive = TRUE, full.names = TRUE
-    )
-
-    if (length(files) == 0) {
-        stop("Error: No matching patient data files found in the directory.")
+merge_patient_data_all_cancers <- function(combined_patient_data_files) {
+    # Validate input files
+    if (length(combined_patient_data_files) == 0) {
+        stop("Error: No combined patient data files provided.")
     }
 
     # Read and merge all data files
-    patient_data <- purrr::map_dfr(files, function(file) {
-        cancer_type <- 
-            stringr::str_extract(basename(file), "(?<=combined_patient_data_)[A-Z]+")
+    patient_data <- 
+        purrr::map_dfr(combined_patient_data_files, function(file) {
+        cancer_type <- stringr::str_extract(
+            basename(file), "(?<=combined_patient_data_)[A-Z]+")
         df <- data.table::fread(file)
         df$cancer <- cancer_type  # Add cancer type column
         return(df)
     })
     return(patient_data)
 }
-
 #' Generate Immune Infiltration Table
 #'
 #' This function computes correlations between principal components
 #' and immune infiltration levels across multiple cancer types.
 #'
 #' @param cox_results_file Path to the Cox proportional hazards results file.
-#' @param cancer_dir Directory containing patient data for all cancers.
-#' @param pval_threshold significance threshold for filtering Cox results. Default is 0.05.
-#' @param correlation_method correaltion to use. Default is "spearman"
+#' @param combined_patient_data_files Character vector. Paths to combined 
+#'   patient data files for different cancer types.
+#' @param pval_threshold Numeric. Significance threshold for filtering Cox 
+#'   results (default: 0.05).
+#' @param correlation_method Character. Correlation method to use 
+#'   (default: "spearman").
 #'
-#' @return A data frame containing  correlation results
-#' between immune cell infiltration and PC scores across different cancer types.
+#' @return A data frame containing correlation results between immune cell 
+#'   infiltration and PC scores across different cancer types.
 #'
 #' @import dplyr
 #' @import reshape2
 #' @import plyr
 #' @export
 
-generate_PC_immune_correlation_table <- 
-                                function(cox_results_file,
-                                cancer_dir, 
+generate_PC_immune_correlation_table <- function(cox_results_file,
+                                combined_patient_data_files,
                                 pval_threshold = 0.05,
                                 correlation_method = "spearman") {
         cox_res <- read_all_coxph_results(cox_results_file,
                                     pval_threshold = pval_threshold)
-        combined_data <- merge_patient_data_all_cancers(cancer_dir)
+        combined_data <- 
+            merge_patient_data_all_cancers(combined_patient_data_files) 
         cols_cells <- colnames(combined_data)[9:30]
         cor_res_all <- lapply(1:nrow(cox_res), function(i) {
             tumor <- cox_res$cancer[i]
@@ -338,7 +315,8 @@ generate_PC_immune_correlation_table <-
             cor_data <- ddply(data_long, .(variable),
                 function(x) cor(x[[pc_component]], x$value, 
                         method = correlation_method, 
-                        use = "complete.obs")) ## add pvalue for this and correct for multiple testing
+                        use = "complete.obs")) 
+                # TODO: add p-value and correct for multiple testing
             colnames(cor_data)[2] <- c("corr")
             # Add metadata
             # cor_data <- cor_data %>%
@@ -355,15 +333,28 @@ generate_PC_immune_correlation_table <-
         return(cor_res_all)
 }
 
-#### clean cox results by the PORCUPINE results
+#' Clean Cox Results Using PORCUPINE Results
+#'
+#' Filters Cox proportional hazards results to include only cancer types 
+#' that have significant PD-1 signaling pathway activity according to 
+#' PORCUPINE analysis results.
+#'
+#' @param cox_results_file Character. Path to the Cox results file.
+#' @param porcupine_results_file Character. Path to the PORCUPINE results file.
+#' @param pval_threshold Numeric. P-value threshold for filtering Cox results 
+#'   (default: 0.05).
+#'
+#' @return A filtered data frame containing Cox results for cancer types with 
+#'   significant PD-1 pathway activity.
+#'
+#' @export
 clean_cox_results <- function(cox_results_file, 
-                                porcupine_results_file,
-                                pval_threshold = 0.05) {
+                              porcupine_results_file,
+                              pval_threshold = 0.05) {
     cox_res <- read_all_coxph_results(cox_results_file,
                                 pval_threshold = pval_threshold)
-    porcupine_res <- 
-                filter_porcupine_results_PD1_pathway( 
-                                porcupine_results_file)
+    porcupine_res <- filter_porcupine_results_PD1_pathway(
+        porcupine_results_file)
     # Filter cox results based on porcupine results
     cox_res_filtered <- cox_res %>%
         filter(cancer %in% porcupine_res$cancer)
@@ -381,8 +372,7 @@ clean_cox_results <- function(cox_results_file,
 #' @import data.table
 #' @export
 #' 
-filter_porcupine_results_PD1_pathway <- function(
-                        porcupine_results_file) {
+filter_porcupine_results_PD1_pathway <- function(porcupine_results_file) {
     # Load Porcupine results
     porcupine_res <- data.table::fread(porcupine_results_file) 
     # Filter rows matching the PD-1 signaling pathway
