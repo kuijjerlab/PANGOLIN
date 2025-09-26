@@ -88,7 +88,8 @@ extract_pd1_pathway_individual_scores <- function(individual_scores_file) {
 load_clin_curated_tumor <- function(tumor_clin_file_path) {
         # Validate input: Check if the file exists
         if (!file.exists(tumor_clin_file_path)) {
-            stop("The specified file path does not exist: ", tumor_file_path)
+            stop("The specified file path does not exist: ", 
+                 tumor_clin_file_path)
         }
         clinical <- tryCatch({data.table::fread(tumor_clin_file_path)
         }, error = function(e) {
@@ -97,55 +98,14 @@ load_clin_curated_tumor <- function(tumor_clin_file_path) {
         return(clinical)
 }
 
-# #' Load PD1 Generic Data
-# #'
-# #' This function loads and processes PD1 pathway data from a specified 
-# #' directory based on the provided type.
-# #'
-# #' @param tumor_pd1_dir Character string specifying the directory containing 
-# #' the PD1 data files.
-# #' @param type Character string indicating the type of PD1 data to load.
-# #'
-# #' @return A processed dataset containing PD1 data.
-# #' @export
-
-
-# load_pd1_generic <- function(tumor_pd1_dir, type) {
-#         validate_inputs(tumor_pd1_dir, type)
-#         file_pattern <- determine_pattern(type)
-#         tumor_file <- find_tumor_file(tumor_pd1_dir, file_pattern)
-#         data <- load_process_pd1_data(tumor_pd1_dir, tumor_file, type)
-#         return(data)
-# }
-
-# #' Validate Inputs for PD1 Data Loading
-# #'
-# #' Ensures that the provided directory exists and that the type argument is 
-# #' one of the allowed values.
-# #'
-# #' @param tumor_pd1_dir Character string specifying the directory to check.
-# #' @param type Character string indicating the type of PD1 data.
-# #'
-# #' @return No return value. Throws an error if validation fails.
-# #'
-# #' @export
-
-# validate_inputs <- function(tumor_pd1_dir, type) {
-#         if (!dir.exists(tumor_pd1_dir)) {
-#                 stop("`pd1_dir` doesn't exist.")
-#         }
-#         if (!type %in% c("pd1_links", "pd1_net", 
-#                          "pd1_scores", "pdl1_expression")) {
-#                 stop("Invalid `type`. Choose valid type.")
-#         }
-# }
 
 #' Determine the Corresponding Pattern Name
 #'
 #' Maps a given `type` to its corresponding pattern from a predefined list.
 #'
 #' @param type A string. One of `"pd1_links"`, `"pd1_net"`, `"pd1_scores"`.
-#' @return A string with the corresponding pattern or `NULL` if `type` is invalid.
+#' @return A string with the corresponding pattern or `NULL` if `type` is 
+#'   invalid.
 #'
 #' @examples
 #' determine_pattern("pd1_links")  # Returns "pd1_edges"
@@ -163,40 +123,15 @@ determine_pattern <- function(type) {
         return(patterns[[type]])
 }
 
-# #' Find a File Matching a Given Pattern
-# #'
-# #' Searches for a file in `tumor_pd1_dir` that matches the given `pattern`.
-# #' If no files or multiple files are found, an error is raised.
-# #'
-# #' @param tumor_pd1_dir A string. Directory path to search for the file.
-# #' @param pattern A string. Regular expression pattern to match filenames.
-# #' @return A string. The name of the matched file.
-# #' @throws Error if no file or multiple files match the pattern.
-# #' @export
 
-# find_tumor_file <- function(tumor_pd1_dir, pattern) {
-#         pattern_files <- list.files(tumor_pd1_dir, pattern = pattern, 
-#                                 full.names = FALSE)
-#         if (length(pattern_files) == 0) {
-#                 stop("No files found in: ", tumor_pd1_dir)
-#         }
-
-#         if (length(pattern_files) == 0) {
-#                 stop("No file found in: ", tumor_pd1_dir)
-#         }
-#         if (length(pattern_files) > 1) {
-#                 stop("Several files found: ", tumor_pd1_dir)
-#         }
-#         return(pattern_files[1])
-# }
 
 #' Load and Process PD1 Data
 #'
 #' Loads a specified PD1 data file and processes it based on the given `type`.
 #'
-#' @param tumor_pd1_dir A string. Directory containing the PD1 data file.
-#' @param tumor_file A string. Filename of the PD1 data file.
-#' @param type A string. One of `"pd1_links"`, `"pd1_net"`, or `"pd1_scores"`.
+#' @param file_path A string. Full path to the PD1 data file.
+#' @param type A string. One of `"pd1_links"`, `"pd1_net"`, `"pd1_scores"`, 
+#'   or `"pdl1_expression"`.
 #' @return A processed data object based on the selected `type`.
 #' @throws Error if the file cannot be loaded or `type` is invalid.
 #' @export
@@ -258,7 +193,8 @@ load_pd1_object <- function(file, object_name) {
 #' 
 combine_clins <- function(tumor_clin_file_path) {
         if (!file.exists(tumor_clin_file_path)) {
-                stop("The specified file does not exist: ", tumor_clin_file_path)
+                stop("The specified file does not exist: ", 
+                     tumor_clin_file_path)
         }
         clin_tumor <- load_clin_curated_tumor(tumor_clin_file_path)
         if (!"bcr_patient_barcode" %in% colnames(clin_tumor)) {
@@ -294,6 +230,25 @@ combine_clins <- function(tumor_clin_file_path) {
 
 
 
+#' Combine Information for Cancer Analysis
+#'
+#' Combines clinical data with various PD1-related data files and cluster 
+#' information for comprehensive cancer analysis.
+#'
+#' @param tumor_clin_file_path Character. Path to the clinical data file.
+#' @param pd1_links_file Character. Path to the PD1 links file (optional).
+#' @param pd1_net_file Character. Path to the PD1 network file (optional).
+#' @param pd1_scores_file Character. Path to the PD1 scores file (optional).
+#' @param pdl1_expression_file Character. Path to the PDL1 expression file 
+#'   (optional).
+#' @param cluster_file Character. Path to the cluster information file 
+#'   (optional).
+#'
+#' @return A list containing combined data with elements: clin, pd1_net, 
+#'   pd1_scores, pdl1_expression, and clusters (depending on which files are 
+#'   provided).
+#' @export
+#' 
 combine_info_for_cancer <- function(tumor_clin_file_path,
                                     pd1_links_file,
                                     pd1_net_file,
@@ -394,26 +349,6 @@ read_in_cluster_info <- function(cluster_file) {
         return(cluster_df)
 }
 
-#' Clean Cluster Information
-#'
-#' Filters cluster data for a specific tumor type.
-#'
-#' @param cluster_df Data frame with cluster information.
-#' @param tumor Tumor type to filter by.
-#' @return A cleaned data frame containing data for the specified tumor.
-#' @export
-#' 
-# clean_cluster_info <- function(cluster_df, tumor) {
-#         # Check input types
-#         if (!is.character(tumor) || length(tumor) != 1) {
-#                 stop("Input tumor should be a single character string.")
-#         }
-#         tumor <-  suppressWarnings(toupper(tumor))
-#         # Filter by tumor type
-#         cluster_df_clean <- cluster_df[cluster_df$cancer == tumor, ]
-
-#         return(cluster_df_clean)
-# }
 
 #' Rearrange Cluster Information
 #'
@@ -492,15 +427,18 @@ create_data_combined <- function(data, clin_data) {
 #' @param number_folds Number of folds for cross-validation. Defaults to 5.
 #' @param ntimes Number of iterations for stabilizing feature selection. 
 #'               Defaults to 10.
+#' @param alpha Numeric. Elastic net mixing parameter (default: 0.5).
 #' @return A data table of selected features and their nonzero coefficients.
-
+#' @export
+#'
 run_glmnet_cox_pd1 <- function(data_cox,
                                 number_folds = 5,
                                 ntimes = 10, alpha = 0.5){
         if (!all(c("ToF_death", "event") %in% colnames(data_cox))) {
             stop("`data_cox` must contain `ToF_death` and `event` columns.")
             }
-        X <- as.matrix(data_cox[, grep("CD274", colnames(data_cox)), with = FALSE])
+        X <- as.matrix(data_cox[, grep("CD274", colnames(data_cox)), 
+                               with = FALSE])
         if (ncol(X) == 0) {
             stop("No columns matching 'CD274' found in `data_cox`")
             }  
@@ -544,6 +482,28 @@ clean_data_cox <- function(data_cox) {
 
 
 
+#' Run LASSO Cox Regression Multiple Times
+#'
+#' Performs LASSO-regularized Cox regression multiple times on PD1 network data
+#' for feature selection stability. Analyzes both OS and PFI survival outcomes.
+#'
+#' @param tumor_clin_file_path Character. Path to the clinical data file.
+#' @param pd1_links_file Character. Path to the PD1 links file (required).
+#' @param pd1_net_file Character. Path to the PD1 network file (required).
+#' @param pd1_scores_file Character. Path to the PD1 scores file (optional).
+#' @param pdl1_expression_file Character. Path to the PDL1 expression file 
+#'   (optional).
+#' @param cluster_file Character. Path to the cluster file (optional).
+#' @param number_folds Integer. Number of folds for cross-validation 
+#'   (default: 5).
+#' @param ntimes Integer. Number of iterations for feature selection 
+#'   (default: 10).
+#' @param ncores Integer. Number of cores for parallel processing (default: 10).
+#' @param alpha Numeric. Elastic net mixing parameter (default: 1 for LASSO).
+#'
+#' @return A data frame with selected edges, coefficients, and survival type.
+#' @export
+#'
 run_glmnet_ntimes_pd1 <- function(
                         tumor_clin_file_path,
                         pd1_links_file,
@@ -591,6 +551,24 @@ run_glmnet_ntimes_pd1 <- function(
 }
 
 
+#' Run Univariate Cox Proportional Hazards Model
+#'
+#' Performs univariate Cox regression analysis on specified data types (PD1 scores
+#' or clusters) with optional covariates for both OS and PFI survival outcomes.
+#'
+#' @param tumor_clin_file_path Character. Path to the clinical data file.
+#' @param pd1_links_file Character. Path to the PD1 links file (optional).
+#' @param pd1_net_file Character. Path to the PD1 network file (optional).
+#' @param pd1_scores_file Character. Path to the PD1 scores file (required if datatype = "pd1_scores").
+#' @param pdl1_expression_file Character. Path to the PDL1 expression file (optional).
+#' @param cluster_file Character. Path to the cluster file (required if datatype = "clusters").
+#' @param covariates Character vector. Names of covariates to include in the model.
+#' @param datatype Character. Type of data to analyze: "pd1_scores" or "clusters".
+#' @param type_stat Character. Type of statistics to return: "full_stats" or "overall_pval".
+#'
+#' @return A list of Cox model objects for each feature in the specified datatype.
+#' @export
+#'
 run_univariate_coxph_model <- function(tumor_clin_file_path,
                                     pd1_links_file = NULL,
                                     pd1_net_file = NULL,
@@ -637,6 +615,19 @@ run_univariate_coxph_model <- function(tumor_clin_file_path,
 }
 
 
+#' Prepare Cox Regression Data with Covariates
+#'
+#' Prepares data for Cox regression by filtering for complete cases of covariates
+#' and removing covariates with no variation (single unique value).
+#'
+#' @param data_cox Data frame. The dataset containing survival data and covariates.
+#' @param covariates Character vector. Names of covariate columns to include.
+#'
+#' @return A list with two elements:
+#'   \item{data_cox}{Filtered dataset with complete covariate data.}
+#'   \item{covariates}{Updated covariate list excluding non-varying variables.}
+#' @export
+#'
 prepare_data_cox_covariates <- function(data_cox, covariates) {
         rownames(data_cox) <- data_cox$bcr_patient_barcode
 
@@ -668,16 +659,16 @@ prepare_data_cox_covariates <- function(data_cox, covariates) {
 #' Create Univariate Cox Proportional Hazards Model for a Given Feature
 #'
 #' @description Runs a Cox model for a feature with covariates and 
-#' survival data.
+#' survival data for both OS and PFI outcomes.
 #'
-#' @param feature Character; feature for which the Cox model is created.
-#' @param covariates Character; covariate(s) to include in the model.
-#' @param data_cox Data frame; contains time-to-event and covariate information.
+#' @param feature Character. Feature name for which the Cox model is created.
+#' @param covariates Character vector. Covariate(s) to include in the model.
+#' @param data_cox Data frame. Contains time-to-event and covariate information.
+#' @param type_stat Character. Type of statistics to return: "full_stats" or "overall_pval".
 #'
-#' @return List of Cox model summaries for OS (Overall Survival) 
-#'          and PFI (Progression-Free Interval).
-
-
+#' @return List of Cox model summaries and predicted risks for OS and PFI.
+#' @export
+#'
 create_univariate_cox_model <- function(feature,
                                         covariates,
                                         data_cox,
@@ -728,7 +719,7 @@ create_univariate_cox_model <- function(feature,
         return(coxph_model_list)
 }
 
-#' Unpack Summary of Cox Proportional Hazards Model
+##' Unpack Summary of Cox Proportional Hazards Model
 #'
 #' This function extracts key statistics from a fitted Cox Proportional Hazards 
 #' model (`coxph` model) and returns either the full statistics for each 
@@ -749,6 +740,7 @@ create_univariate_cox_model <- function(feature,
 #'         confidence bound) for each feature. If `type_stat` is 
 #'         `"overall_pval"`, the table contains a single column `pval`, which 
 #'         is the overall p-value for the model.
+#' @export
 #'
 unpack_summary_coxph <- function(coxph_model, 
                                  type_stat = c("full_stats", "overall_pval")) {
@@ -861,6 +853,16 @@ extract_gene_expression <- function(exp_file,
         return(gene_exp)
         }
 
+#' Extract Cox Regression Results from Cluster Analysis
+#'
+#' Extracts and combines Cox regression results from cluster-based analysis,
+#' adding cluster k information to each result.
+#'
+#' @param res A nested list containing Cox regression results organized by k values.
+#'
+#' @return A combined data frame with Cox regression results and k values.
+#' @export
+#'
 extract_coxph_results_clusters <- function(res){
         ks <- names(res)
         all_cox_res <- NULL
