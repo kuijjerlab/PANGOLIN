@@ -9,8 +9,8 @@
 #' suitable for downstream analysis.
 #'
 #' @param tumor Character. The tumor type.
-#' @param clin Data frame. The clinical data.
-#' @param pd1_dir Character. Directory path where PD-1 score data is stored.
+#' @param clin_cancer_file Character. Path to the clinical data file.
+#' @param pd1_scores_file Character. Path to the PD-1 scores file.
 #' @param na_threshold Numeric. Max allowed fraction of NAs in a column
 #'   (default: 0.4, i.e., at least 60% non-NA required).
 #'
@@ -54,8 +54,8 @@ prepare_data_for_clin_association <- function(tumor,
 #' features and PD-1 principal components for a given tumor type.
 #'
 #' @param tumor Character. The tumor type.
-#' @param clin Data frame. The clinical data.
-#' @param pd1_dir Character. Directory path where PD-1 score data is stored.
+#' @param clin_cancer_file Character. Path to the clinical data file.
+#' @param pd1_scores_file Character. Path to the PD-1 scores file.
 #' @param component Character vector. Principal components to analyze
 #'   (default: c("PC1", "PC2")).
 #' @param na_threshold Numeric. Max allowed fraction of NAs in a column
@@ -65,7 +65,7 @@ prepare_data_for_clin_association <- function(tumor,
 #'   features and PD-1 PC1/PC2 scores.
 #' @export
 #' @examples
-#' clin_association_groups_pd1("prad", clin, "data/pd1/", c("PC1", "PC2"))
+#' clin_association_groups_pd1("prad", "clinical.txt", "pd1_scores.RData", c("PC1", "PC2"))
 clin_association_groups_pd1 <- function(tumor,
                             clin_cancer_file,
                             pd1_scores_file,
@@ -87,8 +87,8 @@ clin_association_groups_pd1 <- function(tumor,
 #' features and PD-1 principal components for a given tumor type.
 #'
 #' @param tumor Character. The tumor type.
-#' @param clin Data frame. The clinical data.
-#' @param pd1_dir Character. Directory path where PD-1 score data is stored.
+#' @param clin_cancer_file Character. Path to the clinical data file.
+#' @param pd1_scores_file Character. Path to the PD-1 scores file.
 #' @param component Character vector. Principal components to analyze
 #'   (default: c("PC1", "PC2")).
 #' @param correlation_type Character. Correlation method to use, either
@@ -100,6 +100,7 @@ clin_association_groups_pd1 <- function(tumor,
 #'   features and PD-1 PC1/PC2 scores.
 #' @export
 #' @examples
+#' clin_association_numeric_pd1("prad", "clinical.txt", "pd1_scores.RData")
 
 clin_association_numeric_pd1 <- function(tumor,
                                 clin_cancer_file,
@@ -209,8 +210,9 @@ calculate_correlations_groups <- function(data,
 #' @param results_categorical Data frame with categorical association results.
 #' @param feature_to_plot Clinical feature to plot (character).
 #' @param component Principal component to plot (character).
-#' @param clin Clinical data frame.
-#' @param pd1_dir Directory for PD-1 data.
+#' @param clin_cancer_file Character. Path to the clinical data file.
+#' @param pd1_scores_file Character. Path to the PD-1 scores file.
+#' @param na_threshold Numeric. Max allowed fraction of NAs in a column (default: 0.4).
 #' @param outlier_size Numeric. Size of outlier points (default: 0.5).
 #' @param jitter_width Numeric. Jitter width (default: 0.2).
 #' @param text_size Numeric. Annotation text size (default: 2).
