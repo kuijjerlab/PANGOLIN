@@ -36,6 +36,7 @@ ENV_DIR = config["envs"]
 CANCER_TYPES = config["cancer_types"]
 BATCH_FILE = config["batch_file"]
 DATATYPES = config["datatypes"]
+BATCHES = config["batches"] 
 CLINICAL_FILE = config["clinical_file"]
 CLINICAL_FILE_RDATA = config["clinical_file_rdata"]
 CANCER_COLOR_FILE = config["cancer_color_file"]
@@ -68,6 +69,7 @@ MAX_K = config["max_k"]
 NCORES_PORCUPINE = config["ncores_porcupine"]
 
 
+
 ##############################################################################
 ### ZENODO RESOURCE DOWNLOAD PATHS                                        ###
 ###############################################################################
@@ -79,7 +81,11 @@ ZENODO_BATCH_FILENAME = config["zenodo_batch_analysis_filename"]
 ## Marker file to indicate successful download of Zenodo resources
 ZENODO_BATCH_DOWNLOAD_COMPLETE = ".zenodo_batch_download_complete"
 
-
+BATCH_FILES = expand(
+    os.path.join(OUTPUT_DIR_ALL_CANCERS, "batch_analysis", "TCGA-{cancer}", "{batch}", "ManyToMany/1.0/1.0/PCAAnnotations.tsv"),
+    cancer=CANCER_TYPES, 
+    batch=BATCHES
+)
 ###############################################################################
 ### DATA DOWNLOAD AND NORMALIZATION PIPELINE PATHS                        ###
 ###############################################################################
@@ -379,6 +385,10 @@ PRAD_IND_FILE = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "PRAD", "indegrees_n
 FIG_PRAD_SURVIVAL = os.path.join(FIG_DIR, "PRAD_clusters_survival.pdf")
 FIG_FGSEA_PRAD = os.path.join(FIG_DIR, "PRAD_clusters_fgsea.pdf")
 
+### PD1-pathway Analysis PATHS ###
+TUMOR_PD1_LINKS = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pd1_edges_norm_{cancer}.RData")
+TUMOR_PD1_NET = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pd1_net_norm_{cancer}.RData")
+TUMOR_PD1_SCORES = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "pd1_data", "pd1_individual_scores_norm_{cancer}.RData")
 
 ## Output Files for Univariate Cox on PD1-pathway based heterogeneity scores ##
 OUTPUT_CANCER_UNIVARIATE_COX_SUMMARY = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "cox", "{cancer}_PD1_pathway_cox_univariate_model_summary.txt")
@@ -388,8 +398,8 @@ UNIVARIATE_COX_SUMMARY_ALL_FILTERED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_
 UNIVARIATE_COX_PREDICTED_SCORES_ALL = os.path.join(OUTPUT_DIR_ALL_CANCERS, "cox_results_all", "PD1_pathway_cox_univariate_predited_risk_scores_all.txt")
 FIG_PC_PDL1_EXPRESSION = os.path.join(FIG_DIR, "PDL1_exp_PC_component_HR.pdf")
 FIG_PC_IMMUNE_CORRELATION = os.path.join(FIG_DIR, "PC_immune_correlations_cibersort.png")
-TUMOR_RESULTS_PD1_GROUPS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_categorical_results.txt")
-TUMOR_RESULTS_PD1_NUMERIC = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_numeric_results.txt")
+TUMOR_RESULTS_PD1_GROUPS_COMBINED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_categorical_results.txt")
+TUMOR_RESULTS_PD1_NUMERIC_COMBINED = os.path.join(OUTPUT_DIR_ALL_CANCERS, "clinical_associations_PD1", "pd1_pathway_numeric_results.txt")
 FIGURE_PC_CLIN_ASSOCIATIONS = os.path.join(FIG_DIR, "PC_all_features_clin_associations.pdf")
 FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS = os.path.join(FIG_DIR, "PC_individual_features_clin_associations.pdf")
 
@@ -411,8 +421,8 @@ SUMMARY_TABLE_PD1 = os.path.join("resources", "summary_table", "summary_table_PD
 #output
 OUTPUT_HTML_TABLE_PD1 = os.path.join(FIG_DIR, "summary_table_PD1.html")
 
-
-
+RESULTS_PD1_GROUPS_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}/clinical_associations/pd1_clinical_associations_groups_{cancer}.txt")
+RESULTS_PD1_NUMERIC_CANCER_SPECIFIC = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}/clinical_associations/pd1_clinical_associations_numeric_{cancer}.txt")
 
 # Always include all rule files (Snakemake will only execute needed rules)
 include: "workflow/rules/zenodo_download_resources.smk"
@@ -435,22 +445,22 @@ rule all:
         # Conditional inputs based on analysis type
         # ([ZENODO_BATCH_DOWNLOAD_COMPLETE] if ANALYSIS_TYPE == "precomputed" else []),
         # Full workflow specific outputs
-        ([expand(OUTPUT_GDC_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
-        ([OUTPUT_EXP_COMBINED_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
-        ([GROUP_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
-        ([FEATURE_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
-        ([PYSNAIL_NORMALIZED_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
-        ([expand(PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC, cancer = CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
-        ([expand(BATCH_DIR_CANCER, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
-        # ([BATCH_CORRECTED_EXPRESSION_FILE] if ANALYSIS_TYPE == "full_workflow" else []),       
-        # # # Shared outputs (both workflows can generate this)
-        # ([BATCH_EFFECT_PDF] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(OUTPUT_GDC_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([OUTPUT_EXP_COMBINED_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([GROUP_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([FEATURE_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([PYSNAIL_NORMALIZED_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([expand(PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC, cancer = CANCER_TYPES)] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([BATCH_FILES] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        ([BATCH_CORRECTED_EXPRESSION_FILE] if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+        # # Shared outputs (both workflows can generate this)
+        ([BATCH_EFFECT_PDF] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # # PANDA/LIONESS files (only for full workflow),
-        ([MOTIF_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([PPI_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([EXPRESSION_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([SAMPLES_PANDA_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([SAMPLES_WITH_CANCER_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([MOTIF_PANDA_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+        ([PPI_PANDA_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+        ([EXPRESSION_PANDA_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+        ([SAMPLES_PANDA_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+        ([SAMPLES_WITH_CANCER_FILE] if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
         ## Download indegree files and porcupine data from Zenodo 
         # ([expand(ZENODO_INDIVIDUAL_CANCERS_DIRECTORY)] if ANALYSIS_TYPE in ["precomputed"] else []) 
         # HERE IS PART TO RUN ONLY FOR FULL WORKFLOW
@@ -509,8 +519,10 @@ rule all:
         ([expand(OUTPUT_COMBINED_PATIENT_DATA_CANCER, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([FIG_PC_PDL1_EXPRESSION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([FIG_PC_IMMUNE_CORRELATION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([TUMOR_RESULTS_PD1_GROUPS] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([TUMOR_RESULTS_PD1_NUMERIC] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(RESULTS_PD1_GROUPS_CANCER_SPECIFIC, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([expand(RESULTS_PD1_NUMERIC_CANCER_SPECIFIC, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([TUMOR_RESULTS_PD1_GROUPS_COMBINED] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([TUMOR_RESULTS_PD1_NUMERIC_COMBINED] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([FIGURE_PC_CLIN_ASSOCIATIONS] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([FIGURE_PC_INDIVIDUAL_CLIN_ASSOCIATIONS] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([expand(OUTPUT_CANCER_COX, cancer = CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
