@@ -239,10 +239,10 @@ SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR,
 ## Primary output directory for PANDA aggregate and LIONESS sample-specific networks
 ## Contains individual .txt files for each sample's regulatory network
 NETWORKS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "networks")
-# LIONESS_NETWORKS = expand(os.path.join(NETWORKS_DIR, "lioness.{i}.txt"), i=range(1, N_SAMPLES+1))
+# LIONESS_NETWORKS = expand(os.path.join(NETWORKS_DIR, "lioness.{i}.txt"), i=range(1, 9778+1))
 
 ## Comprehensive mapping file linking LIONESS network files to sample metadata
-LIONESS_SAMPLE_MAPPING = os.path.join(NETWORKS_DIR, "information_networks_primary.txt")
+LIONESS_SAMPLE_MAPPING = os.path.join(OUTPUT_DIR_ALL_CANCERS, "network_additional_files", "information_networks_primary.txt")
 
 #------------------------------------------------------------------------------
 # Cancer-Specific Network Aggregation
@@ -261,18 +261,29 @@ OUTPUT_DIR_FINAL_MERGED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_n
 ## Files: net_norm_TCGA-BRCA.RData, net_norm_TCGA-LUAD.RData, etc.
 OUTPUT_DIR_NORMALIZED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_networks_normalized")
 
-ALL_MERGED_NETWORKS = glob.glob(os.path.join(OUTPUT_DIR_NORMALIZED_NETWORKS, "net_norm_*.RData"))
-
+ALL_MERGED_NETWORKS = glob.glob(os.path.join(OUTPUT_DIR_FINAL_MERGED_NETWORKS, "net_*.RData"))
 
 ###############################################################################
 PANDA_NETWORK_FILE = os.path.join(NETWORKS_DIR, "panda_net.txt") 
 NETWORK_EDGE_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "edges", "network_edges.txt")
-NETWORK_CANCER_MAPPING_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "edges", "network_cancer_mapping.txt")
+NETWORK_CANCER_MAPPING_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "network_additional_files", "network_cancer_mapping.txt")
+
+# Quantile-normalized network files
+CANCER_NETWORK_NORMALIZED_FILE = os.path.join(OUTPUT_DIR_NORMALIZED_NETWORKS, "net_norm_TCGA-{cancer}.RData")
+
 #------------------------------------------------------------------------------
 # Gene Indegree Calculation from Normalized Networks
 #------------------------------------------------------------------------------
 CANCER_INDEGREE_FILE  = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "indegrees_norm", "indegree_norm_{cancer}.RData")
 
+###############################################################################
+### RUNNING PORCUPINE FOR EACH CANCER TYPE                                  ###
+###############################################################################
+
+PORCUPINE_PATHWAYS_RESULTS = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "pathways_results_{cancer}.txt")
+PORCUPINE_RESULTS = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "pcp_results_with_variance_{cancer}.txt")
+INDIVIDUAL_SCORES = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "individual_scores_{cancer}.RData")
+PORCUPINE_PATHWAYS_RESULTS_RANDOM = os.path.join(OUTPUT_DIR_INDIVIDUAL_CANCERS, "{cancer}", "porcupine", "pathways_results_random_{cancer}.txt")
 ###############################################################################
 ### TSNE AND PORCUPINE ANALYSIS OUTPUTS                                     ###
 ###############################################################################
@@ -478,11 +489,13 @@ include: "workflow/rules/zenodo_download_batch_results.smk"
 include: "workflow/rules/zenodo_download_indegrees_porcupine_data.smk"
 include: "workflow/rules/download_normalize_expression_data.smk"
 
-# Expression data processing and batch correction
+# # Expression data processing and batch correction
 include: "workflow/rules/batch_effect_expression.smk"
 
 # Network inference and analysis
 include: "workflow/rules/prepare_data_for_PANDA.smk"
+include: "workflow/rules/run_networks.smk"
+include: "workflow/rules/run_PORCUPINE.smk"
 
 # Dimensionality reduction and pathway analysis
 include: "workflow/rules/tsne_and_porcupine_analysis.smk"
@@ -498,11 +511,12 @@ include: "workflow/rules/pd1_analysis.smk"
 include: "workflow/rules/prad_cluster_analysis.smk"
 
 include: "workflow/rules/session_info.smk"
+
+
+
 ###############################################################################
 ##                                MAIN RULE                                ##
 ###############################################################################
-
-
 
 rule all:
     input:
@@ -555,17 +569,25 @@ rule all:
          if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
         ([SAMPLES_WITH_CANCER_FILE] 
          if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
-        ## Download indegree files and porcupine data from Zenodo 
-        # ([expand(ZENODO_INDIVIDUAL_CANCERS_DIRECTORY)] if ANALYSIS_TYPE in ["precomputed"] else []) 
-        # HERE IS PART TO RUN ONLY FOR FULL WORKFLOW
-        # ([NETWORKS_DIR] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([LIONESS_SAMPLE_MAPPING] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([OUTPUT_DIR_FINAL_MERGED_NETWORKS] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([OUTPUT_DIR_NORMALIZED_NETWORKS] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([PANDA_NETWORK_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([NETWORK_EDGE_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        # ([expand(CANCER_INDEGREE_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else [])
-         # HERE IS PART TO RUN INDEPENDENTLY OF ANALYSIS TYPE
+        # Download indegree files and porcupine data from Zenodo 
+        ([expand(ZENODO_INDIVIDUAL_CANCERS_DIRECTORY)] if ANALYSIS_TYPE in ["precomputed"] else []) 
+        # =====================================================================
+        # NETWORK INFERENCE (ONLY IF FULL WORKFLOW)
+        # =====================================================================
+        ([NETWORKS_DIR] if in ANALYSIS_TYPE in ["full_workflow"] else []),   
+        ([LIONESS_SAMPLE_MAPPING] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([OUTPUT_DIR_FINAL_MERGED_NETWORKS] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([NETWORK_CANCER_MAPPING_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([expand(CANCER_NETWORK_NORMALIZED_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([NETWORK_EDGE_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([expand(CANCER_INDEGREE_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([expand(PORCUPINE_PATHWAYS_RESULTS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([expand(PORCUPINE_RESULTS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([expand(INDIVIDUAL_SCORES, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([expand(PORCUPINE_PATHWAYS_RESULTS_RANDOM, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([expand(TUMOR_PD1_LINKS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([expand(TUMOR_PD1_NET, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
+
         ([expand(OUTPUT_CANCER, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # TSNE Outputs
         ([TSNE_DATA_EXPRESSION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
