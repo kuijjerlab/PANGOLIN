@@ -20,7 +20,7 @@ option_list <- list(
         metavar = "character"
     ),
     optparse::make_option(
-        c("-n", "--network_dir"),
+        c("-n", "--network_file"),
         type = "character",
         default = NULL,
         help = "Path to directory containing quantile-normalized network RData files (e.g., net_norm_TCGA-BRCA.RData).",
@@ -48,13 +48,13 @@ opt <- optparse::parse_args(opt_parser)
 
 # Assign parsed arguments to variables
 TUMOR_TYPE <- opt$tumor_type
-NETWORK_DIR <- opt$network_dir
+NETWORK_FILE <- opt$network_file
 EDGE_FILE <- opt$edge_file
 OUTPUT_FILE <- opt$output_file
 
 cat("Starting indegree calculation...\n")
 cat(sprintf("Cancer type: %s\n", TUMOR_TYPE))
-cat(sprintf("Network directory: %s\n", NETWORK_DIR))
+cat(sprintf("Network file: %s\n", NETWORK_FILE))
 cat(sprintf("Edge file: %s\n", EDGE_FILE))
 cat(sprintf("Output file: %s\n", OUTPUT_FILE))
 
@@ -72,7 +72,7 @@ cat("Calculating normalized indegree for cancer type:", TUMOR_TYPE, "\n")
 # Calculate indegree using normalized networks
 # This function loads the normalized network for the specified cancer type
 # and calculates the indegree (number of incoming edges) for each gene
-ind <- calculate_indegree_norm(TUMOR_TYPE, NETWORK_DIR, EDGE_FILE)
+ind <- calculate_indegree_norm(NETWORK_FILE, EDGE_FILE)
 
 cat("Saving indegree results to:", OUTPUT_FILE, "\n")
 save(ind, file = OUTPUT_FILE)
