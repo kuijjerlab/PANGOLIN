@@ -239,6 +239,7 @@ SAMPLES_WITH_CANCER_FILE = os.path.join(OUTPUT_DIR,
 ## Primary output directory for PANDA aggregate and LIONESS sample-specific networks
 ## Contains individual .txt files for each sample's regulatory network
 NETWORKS_DIR = os.path.join(OUTPUT_DIR_ALL_CANCERS, "networks")
+# LIONESS_NETWORKS = expand(os.path.join(NETWORKS_DIR, "lioness.{i}.txt"), i=range(1, N_SAMPLES+1))
 
 ## Comprehensive mapping file linking LIONESS network files to sample metadata
 LIONESS_SAMPLE_MAPPING = os.path.join(NETWORKS_DIR, "information_networks_primary.txt")
@@ -478,7 +479,7 @@ include: "workflow/rules/download_normalize_expression_data.smk"
 include: "workflow/rules/batch_effect_expression.smk"
 
 # Network inference and analysis
-include: "workflow/rules/prepare_data_run_networks.smk"
+include: "workflow/rules/prepare_data_for_PANDA.smk"
 
 # Dimensionality reduction and pathway analysis
 include: "workflow/rules/tsne_and_porcupine_analysis.smk"
@@ -493,12 +494,20 @@ include: "workflow/rules/pd1_analysis.smk"
 # Cancer-specific analyses
 include: "workflow/rules/prad_cluster_analysis.smk"
 
+include: "workflow/rules/session_info.smk"
 ###############################################################################
 ##                                MAIN RULE                                ##
 ###############################################################################
 
+
+
 rule all:
     input:
+        # =====================================================================
+        # R SESSION LOGGING
+        # =====================================================================
+        os.path.join(OUTPUT_DIR_ALL_CANCERS, "logs", "R_session_info.txt"),
+        
         # =====================================================================
         # DATA DOWNLOAD AND PREPROCESSING OUTPUTS
         # =====================================================================
