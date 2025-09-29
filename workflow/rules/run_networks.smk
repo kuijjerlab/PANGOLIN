@@ -48,53 +48,53 @@
 
 # Create mapping file linking LIONESS networks to sample IDs
 
-rule create_lioness_mapping:
-    input:
-        samples_file = SAMPLES_WITH_CANCER_FILE,
-        networks_dir = NETWORKS_DIR
-    output:
-        mapping = LIONESS_SAMPLE_MAPPING
-    log:
-        "logs/create_lioness_sample_mapping.log"
-    message:
-        "Creating LIONESS sample mapping file"
-    params:
-        bin = config["bin"],
-    shell:
-        """
-        Rscript {params.bin}/create_lioness_sample_mapping_file.R \
-            --network_dir {input.networks_dir} \
-            --samples_panda_file {input.samples_file} \
-            --output_file {output.mapping} \
-            > {log} 2>&1
-        """
+# rule create_lioness_mapping:
+#     input:
+#         samples_file = SAMPLES_WITH_CANCER_FILE,
+#         networks_dir = NETWORKS_DIR
+#     output:
+#         mapping = LIONESS_SAMPLE_MAPPING
+#     log:
+#         "logs/create_lioness_sample_mapping.log"
+#     message:
+#         "Creating LIONESS sample mapping file"
+#     params:
+#         bin = config["bin"],
+#     shell:
+#         """
+#         Rscript {params.bin}/create_lioness_sample_mapping_file.R \
+#             --network_dir {input.networks_dir} \
+#             --samples_panda_file {input.samples_file} \
+#             --output_file {output.mapping} \
+#             > {log} 2>&1
+#         """
 
 
-# ## Save cancer-specific LIONESS networks
-rule save_cancer_specific_lioness_networks:
-    """
-    Save LIONESS sample-specific networks to cancer-specific RData files.
-    If the number of networks is large, split them into multiple files.
-    """
-    input:
-        network_dir = NETWORKS_DIR,
-        lioness_sample_mapping = LIONESS_SAMPLE_MAPPING
-    output:
-        output_dir = directory(OUTPUT_DIR_FINAL_MERGED_NETWORKS)
-    log:
-        "logs/save_cancer_specific_lioness_networks.log"
-    message:
-        "Saving LIONESS networks to cancer-specific Rdata files"
-    params:
-        bin = config["bin"]
-    shell:
-        """
-        Rscript {params.bin}/save_networks.R \
-            --network_dir {input.network_dir} \
-            --lioness_sample_mapping {input.lioness_sample_mapping} \
-            --output_dir {output.output_dir} \
-            > {log} 2>&1    
-        """
+# # ## Save cancer-specific LIONESS networks
+# rule save_cancer_specific_lioness_networks:
+#     """
+#     Save LIONESS sample-specific networks to cancer-specific RData files.
+#     If the number of networks is large, split them into multiple files.
+#     """
+#     input:
+#         network_dir = NETWORKS_DIR,
+#         lioness_sample_mapping = LIONESS_SAMPLE_MAPPING
+#     output:
+#         output_dir = directory(OUTPUT_DIR_FINAL_MERGED_NETWORKS)
+#     log:
+#         "logs/save_cancer_specific_lioness_networks.log"
+#     message:
+#         "Saving LIONESS networks to cancer-specific Rdata files"
+#     params:
+#         bin = config["bin"]
+#     shell:
+#         """
+#         Rscript {params.bin}/save_networks.R \
+#             --network_dir {input.network_dir} \
+#             --lioness_sample_mapping {input.lioness_sample_mapping} \
+#             --output_dir {output.output_dir} \
+#             > {log} 2>&1    
+#         """
 
 # rule create_network_mapping:
 #     """
@@ -118,30 +118,31 @@ rule save_cancer_specific_lioness_networks:
 #             > {log} 2>&1
 #         """
 
-# ## Apply quantile normalization on the networks
-# rule normalize_networks:
-#     """
-#     Apply quantile normalization to cancer-specific LIONESS networks.
-#     """
-#     input:
-#         network_files = ALL_MERGED_NETWORKS,
-#         sample_file = SAMPLES_WITH_CANCER_FILE
-#     output:
-#         output_dir = directory(OUTPUT_DIR_NORMALIZED_NETWORKS)
-#     log:
-#         "logs/quantile_normalize_networks.log"  
-#     message:
-#         "Applying quantile normalization to networks"
-#     params:
-#         bin = config["bin"]
-#     shell:
-#         """
-#         Rscript {params.bin}/quantile_normalize_networks.R \
-#             --network_files "{input.network_files}" \
-#             --output_dir {output.output_dir} \
-#             --sample_file {input.sample_file} \
-#             > {log} 2>&1    
-#         """
+## Apply quantile normalization on the networks
+rule normalize_networks:
+    """
+    Apply quantile normalization to cancer-specific LIONESS networks.
+    """
+    input:
+        network_files = ALL_MERGED_NETWORKS,
+        mapping_file = NETWORK_CANCER_MAPPING_FILE
+    output:
+        output_file = CANCER_NETWORK_NORMALIZED_FILE
+    log:
+        "logs/quantile_normalize_networks_{cancer}.log"  
+    message:
+        "Applying quantile normalization to networks for cancer type: {wildcards.cancer}"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/quantile_normalize_networks.R \
+            --network_files "{input.network_files}" \
+            --output_file {output.output_file} \
+            --cancer {wildcards.cancer} \
+            --mapping_file {input.mapping_file} \
+            > {log} 2>&1
+        """
 
 # ## Create a network edge file
 # rule create_network_edge_file:
