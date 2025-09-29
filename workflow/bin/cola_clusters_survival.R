@@ -24,10 +24,6 @@ option_list <- list(
                 default = NULL,
                 help = "Path to the clinical file for the tumor",
                 metavar = "character"),
-    make_option(c("-t", "--tumor_pd1_directory"), type = "character", 
-                default = NULL,
-                help = "Path to the PD1 directory for the tumor",
-                metavar = "character"),
     make_option(c("-c", "--cluster_file_expression"), type = "character", 
                 default = NULL,
                 help = "Path to the cluster file for expression data",
@@ -50,7 +46,6 @@ opt <- parse_args(opt_parser)
 CLUSTER_FILE_EXP <- opt$cluster_file_expression
 CLUSTER_FILE_IND <- opt$cluster_file_indegree
 TUMOR_CLIN_FILE <- opt$clinical_file_tumor
-TUMOR_PD1_DIR <- opt$tumor_pd1_directory
 OUTPUT_FILE <- opt$output_file
 
 ########################
@@ -73,7 +68,6 @@ COVARIATES_TO_USE <- c("gender", "age_at_initial_pathologic_diagnosis")
 # Run univariate Cox regression for expression clusters
 results_exp <- run_univariate_coxph_model(
     tumor_clin_file_path = TUMOR_CLIN_FILE,
-    tumor_pd1_dir = TUMOR_PD1_DIR,
     covariates = COVARIATES_TO_USE,
     cluster_file = CLUSTER_FILE_EXP,
     datatype = "clusters",
@@ -83,7 +77,6 @@ results_exp <- run_univariate_coxph_model(
 # Run univariate Cox regression for indegree clusters
 results_ind <- run_univariate_coxph_model(
     tumor_clin_file_path = TUMOR_CLIN_FILE,
-    tumor_pd1_dir = TUMOR_PD1_DIR,
     covariates = COVARIATES_TO_USE,
     cluster_file = CLUSTER_FILE_IND,
     datatype = "clusters",
