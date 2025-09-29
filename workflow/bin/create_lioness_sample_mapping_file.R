@@ -41,7 +41,6 @@ opt_parser <- optparse::OptionParser(option_list = option_list)
 opt <- optparse::parse_args(opt_parser)
 
 NETWORK_DIR <- opt$network_dir
-# NETWORK_FILES <- opt$network_files
 SAMPLES_PANDA_FILE <- opt$samples_panda_file
 OUTPUT_FILE <- opt$output_file
 
