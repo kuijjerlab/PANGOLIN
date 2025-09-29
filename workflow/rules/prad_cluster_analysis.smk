@@ -2,7 +2,6 @@
 rule plot_PRAD_clusters_survival:
     input:
         prad_clin_file = PRAD_CLIN_FILE,
-        prad_pd1_dir = PRAD_PD1_DIR,
         prad_cluster_file_ind = CLUSTER_INDEGREE_PRAD,
         prad_indegree_file = PRAD_IND_FILE,
         expression_file = EXPRESSION_PANDA_FILE,
@@ -21,7 +20,6 @@ rule plot_PRAD_clusters_survival:
         """
         Rscript {params.bin}/plot_prad_clusters_survival.R \
             --prad_clin_file_path {input.prad_clin_file} \
-            --prad_pd1_dir {input.prad_pd1_dir} \
             --prad_cluster_file_indegree {input.prad_cluster_file_ind} \
             --indegree_file {input.prad_indegree_file} \
             --exp_file {input.expression_file} \
