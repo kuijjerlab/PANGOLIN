@@ -21,7 +21,7 @@ option_list <- list(
         metavar = "character"
     ),
     optparse::make_option(
-        c("-n", "--network_dir"),
+        c("-n", "--network_file"),
         type = "character",
         default = NULL,
         help = "Path to directory containing quantile-normalized network RData files (e.g., net_norm_TCGA-BRCA.RData).",
@@ -49,10 +49,33 @@ option_list <- list(
         metavar = "numeric"
     ),
     optparse::make_option(
-        c("-o", "--output_directory"),
+        c("-o", "--porcupine_results"),
         type = "character",
         default = NULL,
-        help = "Path to output directory for PORCUPINE results.",
+        help = "Path to the PORCUPINE results.",
+        metavar = "character"
+    ),
+    optparse::make_option(
+        c("-r", "--pathways_results_random"),
+        type = "character",
+        default = NULL,
+        help = "Path to the directory containing randomization results.",
+        metavar = "character"
+    ),
+    
+    optparse::make_option(
+        c("-k", "--individual_scores"),
+        type = "character",
+        default = NULL,
+        help = "Path to the individual scores file.",
+        metavar = "character"
+    ),
+    
+    optparse::make_option(
+        c("-g", "--pathways_results"),
+        type = "character",
+        default = NULL,
+        help = "Path to the directory containing pathways results.",
         metavar = "character"
     )
 )
@@ -65,19 +88,25 @@ opt <- optparse::parse_args(opt_parser)
 
 # Assign parsed arguments to variables
 TUMOR_TYPE <- opt$tumor_type
-NETWORK_DIR <- opt$network_dir
+NETWORK_FILE <- opt$network_file
 EDGE_FILE <- opt$edge_file
 PATHWAY_FILE <- opt$pathway_file
 NCORES <- opt$ncores
-OUTPUT_DIRECTORY <- opt$output_directory
+PATHWAYS_RESULTS_FILE <- opt$pathways_results
+PATHWAYS_RESULTS_RANDOM_FILE <- opt$pathways_results_random
+PORCUPINE_RESULTS_FILE <- opt$porcupine_results
+INDIVIDUAL_SCORES_FILE <- opt$individual_scores
 
 cat("Starting PORCUPINE pathway analysis...\n")
 cat(sprintf("Cancer type: %s\n", TUMOR_TYPE))
-cat(sprintf("Network directory: %s\n", NETWORK_DIR))
+cat(sprintf("Network file: %s\n", NETWORK_FILE))
 cat(sprintf("Edge file: %s\n", EDGE_FILE))
 cat(sprintf("Pathway file: %s\n", PATHWAY_FILE))
 cat(sprintf("Number of cores: %s\n", NCORES))
-cat(sprintf("Output directory: %s\n", OUTPUT_DIRECTORY))
+cat(sprintf("Pathways results file: %s\n", PATHWAYS_RESULTS_FILE))
+cat(sprintf("Pathways random results file: %s\n", PATHWAYS_RESULTS_RANDOM_FILE))
+cat(sprintf("PORCUPINE results file: %s\n", PORCUPINE_RESULTS_FILE))
+cat(sprintf("Individual scores file: %s\n", INDIVIDUAL_SCORES_FILE))
 
 ####################
 ## Load functions ##
@@ -91,15 +120,18 @@ source("workflow/bin/utils_pcp_fn.R")
 cat("Running PORCUPINE pathway analysis for cancer type:", TUMOR_TYPE, "\n")
 
 # Run PORCUPINE analysis on normalized networks
-# This function performs pathway enrichment analysis using quantile-normalized
-# LIONESS networks to identify pathway-level regulatory changes
-runPORCUPINE_norm(TUMOR_TYPE,
-                  NETWORK_DIR, 
-                  EDGE_FILE,
-                  PATHWAY_FILE,
-                  OUTPUT_DIRECTORY,
-                  NCORES)
 
+runPORCUPINE_norm(cancer = TUMOR_TYPE,
+                  network_files = NETWORK_FILE, 
+                  edge_file = EDGE_FILE,
+                  pathway_file = PATHWAY_FILE,
+                  ncores_to_use = NCORES,
+                  pathways_results_file = PATHWAYS_RESULTS_FILE,
+                  pathways_results_random_file = PATHWAYS_RESULTS_RANDOM_FILE,
+                  porcupine_results_file = PORCUPINE_RESULTS_FILE,
+                  individual_scores_file = INDIVIDUAL_SCORES_FILE,
+                  minSize = 5,
+                  maxSize = 7)
 cat("PORCUPINE analysis completed successfully.\n")
 
 
