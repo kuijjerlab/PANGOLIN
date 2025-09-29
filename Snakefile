@@ -261,10 +261,13 @@ OUTPUT_DIR_FINAL_MERGED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_n
 ## Files: net_norm_TCGA-BRCA.RData, net_norm_TCGA-LUAD.RData, etc.
 OUTPUT_DIR_NORMALIZED_NETWORKS = os.path.join(OUTPUT_DIR_ALL_CANCERS, "final_networks_normalized")
 
+ALL_MERGED_NETWORKS = glob.glob(os.path.join(OUTPUT_DIR_NORMALIZED_NETWORKS, "net_norm_*.RData"))
+
+
 ###############################################################################
 PANDA_NETWORK_FILE = os.path.join(NETWORKS_DIR, "panda_net.txt") 
 NETWORK_EDGE_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "edges", "network_edges.txt")
-
+NETWORK_CANCER_MAPPING_FILE = os.path.join(OUTPUT_DIR_ALL_CANCERS, "edges", "network_cancer_mapping.txt")
 #------------------------------------------------------------------------------
 # Gene Indegree Calculation from Normalized Networks
 #------------------------------------------------------------------------------
