@@ -43,7 +43,7 @@ option_list <- list(
         help = "Path to the cancer color file",
         metavar = "character"),
     make_option(
-        c("-o", "--ouput_figure_file"),
+        c("-o", "--output_figure_file"),
         type = "character",
         default = NULL,
         help = "Path to the output figure file",
@@ -58,7 +58,7 @@ DATASETS_TO_PLOT_COLA_CLUSTERS_FILE <- opt$datasets_to_plot_cola_clusters
 CANCER_COLOR_FILE <- opt$cancer_color_file
 TNSE_EXPRESSION_FILE <- opt$tsne_data_expression
 TSNE_INDEGREE_FILE <-  opt$tsne_data_indegree
-OUTPUT_FIGURE_FILE <- opt$ouput_figure_file
+OUTPUT_FIGURE_FILE <- opt$output_figure_file
 
 ########################
 ## Load Helper Scripts ##
