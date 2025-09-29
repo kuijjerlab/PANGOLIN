@@ -51,8 +51,8 @@ dir.create(dirname(OUTPUT_PDF_FILE), recursive = TRUE, showWarnings = FALSE)
 
 COMBINED_PATIENT_DATA_FILES <- 
     unlist(strsplit(opt$combined_patient_data_files, " "))
-plot_list <- generate_pc_cd274_plots(combined_patient_data_files = COMBINED_PATIENT_DATA_FILES,
-                            cancer_dir = TUMOR_DIR_MAIN)
+plot_list <- generate_pc_cd274_plots(cox_results_file = COX_SUMMARY_ALL,
+                            combined_patient_data_files = COMBINED_PATIENT_DATA_FILES) 
 
 # Determine the number of plots per page and calculate number of pages needed
 plots_per_page <- 16
