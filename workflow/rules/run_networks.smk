@@ -71,31 +71,30 @@ rule create_lioness_mapping:
 
 
 # ## Save cancer-specific LIONESS networks
-# rule save_cancer_specific_lioness_networks:
-#     """
-#     Save LIONESS sample-specific networks to cancer-specific RData files.
-#     If the number of networks is large, split them into multiple files.
-#     """
-#     input:
-#         lioness_files = LIONESS_NETWORKS,
-#         lioness_sample_mapping = LIONESS_SAMPLE_MAPPING
-#     output:
-#         output_dir = directory(OUTPUT_DIR_FINAL_MERGED_NETWORKS)
-#     log:
-#         "logs/save_cancer_specific_lioness_networks_{cancer}.log"
-#     message:
-#         "Saving LIONESS networks for cancer type: {wildcards.cancer}"
-#     params:
-#         bin = config["bin"]
-#     shell:
-#         """
-#         Rscript {params.bin}/save_networks.R \
-#             --network_files "{input.lioness_files}" \
-#             --cancer_type {wildcards.cancer} \
-#             --lioness_sample_mapping {input.lioness_sample_mapping} \
-#             --output_dir {output.output_dir} \
-#             > {log} 2>&1    
-#         """
+rule save_cancer_specific_lioness_networks:
+    """
+    Save LIONESS sample-specific networks to cancer-specific RData files.
+    If the number of networks is large, split them into multiple files.
+    """
+    input:
+        network_dir = NETWORKS_DIR,
+        lioness_sample_mapping = LIONESS_SAMPLE_MAPPING
+    output:
+        output_dir = directory(OUTPUT_DIR_FINAL_MERGED_NETWORKS)
+    log:
+        "logs/save_cancer_specific_lioness_networks.log"
+    message:
+        "Saving LIONESS networks to cancer-specific Rdata files"
+    params:
+        bin = config["bin"]
+    shell:
+        """
+        Rscript {params.bin}/save_networks.R \
+            --network_dir {input.network_dir} \
+            --lioness_sample_mapping {input.lioness_sample_mapping} \
+            --output_dir {output.output_dir} \
+            > {log} 2>&1    
+        """
 
 # rule create_network_mapping:
 #     """
