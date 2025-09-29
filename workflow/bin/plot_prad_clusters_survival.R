@@ -27,12 +27,6 @@ option_list <- list(
         help = "Path to the clinical file (PRAD).",
         metavar = "character"),
     optparse::make_option(
-        c("-p", "--prad_pd1_dir"),
-        type = "character",
-        default = NULL,
-        help = "Path to the pd1 tumor directory (PRAD).",
-        metavar = "character"),
-    optparse::make_option(
         c("-m", "--prad_cluster_file_indegree"), 
         type = "character",
         default = NULL,
@@ -83,7 +77,6 @@ opt <- parse_args(opt_parser)
 # Assign parsed arguments to variables
 ## Initialize variable
 TUMOR_CLIN_FILE <- opt$prad_clin_file_path
-TUMOR_PD1_DIR <- opt$prad_pd1_dir
 CLUSTER_INDEGREE <- opt$prad_cluster_file_indegree
 INDEGREE_FILE <- opt$indegree_file
 EXP_FILE <- opt$exp_file
@@ -107,24 +100,23 @@ type_outcome <- c("PFI")
 cluster_id <- "k_4"
 
 pdf(OUTPUT_SURV_PLOT, width = 8, height = 8)
-plot_PRAD_cox_fit(TUMOR_CLIN_FILE,
-                              TUMOR_PD1_DIR,
-                              covariates,
-                              CLUSTER_INDEGREE,
-                              datatype,
-                              type_outcome,
-                              cluster_id)
+plot_PRAD_cox_fit(tumor_clin_file_path = TUMOR_CLIN_FILE,
+                              covariates = covariates,
+                              cluster_file= CLUSTER_INDEGREE,
+                              datatype = datatype,
+                              type_outcome = type_outcome,
+                              cluster_id = cluster_id)
+
 dev.off()
 
 ### Make a plot with fgsea results comparing cl1 to the other clusters
 
-res <- get_degs_drgs_PRAD(TUMOR_CLIN_FILE,
-                              TUMOR_PD1_DIR,
-                              covariates,
-                              CLUSTER_INDEGREE,
-                              datatype,
-                              type_outcome,
-                              cluster_id = "k_4",
+res <- get_degs_drgs_PRAD(tumor_clin_file_path = TUMOR_CLIN_FILE,
+                              covariates = covariates,
+                              cluster_file= CLUSTER_INDEGREE,
+                              datatype = datatype,
+                              type_outcome = type_outcome,
+                              cluster_id = cluster_id,
                               indegree_file = INDEGREE_FILE,
                               exp_file = EXP_FILE ,
                               samples_file = SAMPLES_FILE)
