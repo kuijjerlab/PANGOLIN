@@ -13,10 +13,10 @@ for (lib in required_libraries) {
 ####################
 option_list <- list(
     optparse::make_option(
-        c("-f", "--network_files"),
+        c("-f", "--network_dir"),
         type = "character",
         default = NULL,
-        help = "Space-separated list of LIONESS network TXT file paths.",
+        help = "Path to the directory containing LIONESS network TXT files.",
         metavar = "character"
     ),
     optparse::make_option(
@@ -40,14 +40,13 @@ option_list <- list(
 opt_parser <- optparse::OptionParser(option_list = option_list)
 opt <- optparse::parse_args(opt_parser)
 
-
-NETWORK_FILES <- opt$network_files
+NETWORK_DIR <- opt$network_dir
+# NETWORK_FILES <- opt$network_files
 SAMPLES_PANDA_FILE <- opt$samples_panda_file
 OUTPUT_FILE <- opt$output_file
 
 
 cat("Creating LIONESS sample mapping file...\n")
-cat(sprintf("Network files: %s\n", NETWORK_FILES))
 cat(sprintf("PANDA samples file: %s\n", SAMPLES_PANDA_FILE))
 cat(sprintf("Output file: %s\n", OUTPUT_FILE))
 
@@ -58,7 +57,8 @@ cat(sprintf("Output file: %s\n", OUTPUT_FILE))
 
 # Parse the comma-separated list of network files
 cat("Parsing LIONESS network file list...\n")
-filelist <- sapply(strsplit(NETWORK_FILES, " "))
+# filelist <- sapply(strsplit(NETWORK_FILES, " "))
+filelist <- list.files(NETWORK_DIR, pattern = "^lioness\\.[0-9]+\\.txt$", full.names = TRUE)
 
 if (length(filelist) == 0) {
     cat("Error: No LIONESS network files provided\n")
