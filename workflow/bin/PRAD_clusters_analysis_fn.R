@@ -15,16 +15,22 @@
 #' @return A data frame formatted for Cox regression analysis.
 
 create_data_cox_PRAD <- function(tumor_clin_file_path,
-                              tumor_pd1_dir,
-                              covariates,
-                              cluster_file,
-                              datatype = c("clusters"),
-                              type_outcome = c("PFI"),
-                              cluster_id = "k_4") {
+                                pd1_links_file = NULL,
+                                pd1_net_file = NULL,
+                                pd1_scores_file = NULL,
+                                pdl1_expression_file = NULL,
+                                covariates,
+                                cluster_file,
+                                datatype = c("clusters"),
+                                type_outcome = c("PFI"),
+                                cluster_id = "k_4") {
         # Combine clinical and cluster data
-        data <- combine_info_for_cancer(tumor_clin_file_path,
-                                        tumor_pd1_dir,
-                                        cluster_file)
+        data <- combine_info_for_cancer(tumor_clin_file_path, 
+                        pd1_links_file = pd1_links_file,
+                        pd1_net_file = pd1_net_file,
+                        pd1_scores_file = pd1_scores_file,
+                        pdl1_expression_file = pdl1_expression_file,
+                        cluster_file = cluster_file)
 
         # Create combined data and Cox regression data
         data_combined <- create_data_combined(data[[datatype]], data$clin)
@@ -58,16 +64,22 @@ create_data_cox_PRAD <- function(tumor_clin_file_path,
 #' showing the survival distribution by clusters, annotated with group sizes.
 
 plot_PRAD_cox_fit <- function(tumor_clin_file_path,
-                              tumor_pd1_dir,
-                              covariates,
-                              cluster_file,
-                              datatype = c("clusters"),
-                              type_outcome = c("PFI"),
-                              cluster_id = "k_4"){
+                        pd1_links_file = NULL,
+                        pd1_net_file = NULL,
+                        pd1_scores_file = NULL,
+                        pdl1_expression_file = NULL,
+                        covariates,
+                        cluster_file,
+                        datatype = c("clusters"),
+                        type_outcome = c("PFI"),
+                        cluster_id = "k_4"){
         data_cox <- create_data_cox_PRAD(tumor_clin_file_path,
-                            	tumor_pd1_dir,
-                                covariates,
-                                cluster_file,
+                                pd1_links_file = pd1_links_file,
+                                pd1_net_file = pd1_net_file,
+                                pd1_scores_file = pd1_scores_file,
+                                pdl1_expression_file = pdl1_expression_file,
+                                covariates = covariates,
+                                cluster_file = cluster_file,
                                 datatype = c("clusters"),
                                 type_outcome = c("PFI"),
                                 cluster_id = "k_4")
@@ -182,24 +194,28 @@ plot_survival_curve <- function(fit,
 #' @return A named list with limma results for indegree and expression data.
 #' @export
 get_degs_drgs_PRAD <- function(tumor_clin_file_path,
-                               tumor_pd1_dir,
-                               covariates,
-                               cluster_file,
-                               datatype = c("clusters"),
-                               type_outcome = c("PFI"),
-                               cluster_id = "k_4",
-                               indegree_file,
-                               exp_file,
-                               samples_file) {
-    data_cox <- create_data_cox_PRAD(
-        tumor_clin_file_path = tumor_clin_file_path,
-        tumor_pd1_dir = tumor_pd1_dir,
-        covariates = covariates,
-        cluster_file = cluster_file,
-        datatype = datatype,
-        type_outcome = type_outcome,
-        cluster_id = cluster_id
-    )
+                                pd1_links_file = NULL,
+                                pd1_net_file = NULL,
+                                pd1_scores_file = NULL,
+                                pdl1_expression_file = NULL,
+                                covariates,
+                                cluster_file,
+                                datatype = c("clusters"),
+                                type_outcome = c("PFI"),
+                                cluster_id = "k_4",
+                                indegree_file,
+                                exp_file,
+                                samples_file) {
+        data_cox <- create_data_cox_PRAD(tumor_clin_file_path,
+                                pd1_links_file = pd1_links_file,
+                                pd1_net_file = pd1_net_file,
+                                pd1_scores_file = pd1_scores_file,
+                                pdl1_expression_file = pdl1_expression_file,
+                                covariates = covariates,
+                                cluster_file = cluster_file,
+                                datatype = datatype,
+                                type_outcome = type_outcome,
+                                cluster_id = cluster_id)
     res <- perform_limma_PRAD(
         indegree_file = indegree_file,
         exp_file = exp_file,
