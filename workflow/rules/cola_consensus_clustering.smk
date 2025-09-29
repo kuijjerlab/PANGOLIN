@@ -149,7 +149,6 @@ rule save_final_cola_clusters_per_tumor:
 rule run_univariate_cox_cola_clusters:
     input:
         clin_file = TUMOR_CLIN_FILE,
-        tumor_pd1_dir = TUMOR_PD1_DIR,
         cluster_file_exp_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_EXP,
         cluster_file_ind_per_cancer = OUTPUT_CLUSTERS_PER_TUMOR_IND
     output:
@@ -164,7 +163,6 @@ rule run_univariate_cox_cola_clusters:
         """
         Rscript {params.bin}/cola_clusters_survival.R \
             --clinical_file_tumor {input.clin_file} \
-            --tumor_pd1_directory {input.tumor_pd1_dir} \
             --cluster_file_expression {input.cluster_file_exp_per_cancer} \
             --cluster_file_indegree {input.cluster_file_ind_per_cancer} \
             --output_file {output.out_file_summary} \
