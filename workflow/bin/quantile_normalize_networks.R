@@ -36,10 +36,10 @@ option_list <- list(
         metavar = "character"
     ),
     optparse::make_option(
-        c("-o", "--output_directory"),
+        c("-o", "--output_file"),
         type = "character",
         default = NULL,
-        help = "Path to output directory.",
+        help = "Path to output file.",
         metavar = "character"
     )
 )
@@ -60,7 +60,7 @@ NETWORK_FILES <- unlist(strsplit(NETWORK_FILES, " "))
 cat("Starting network quantile normalization...\n")
 cat(sprintf("Network files: %s\n", NETWORK_FILES))
 cat(sprintf("Mapping file: %s\n", MAPPING_FILE))
-cat(sprintf("Cancer type: %s\n", CANCER))
+cat(sprintf("Cancer type: %s\n", TUMOR))
 cat(sprintf("Output file: %s\n", OUTPUT_FILE))
 
 
@@ -78,6 +78,7 @@ if (!file.exists(MAPPING_FILE)) {
 mapping <- fread(MAPPING_FILE)
 
 # Get files for this specific cancer type
+TUMOR <- toupper(TUMOR)
 cancer_files <- mapping[mapping$cancer == TUMOR, ]$net_file
 
 if (length(cancer_files) == 0) {
@@ -104,7 +105,7 @@ for (net_file in cancer_files) {
 
 if (length(cancer_file_paths) == 0) {
     stop(sprintf("No input files match the required files for cancer %s",
-                 CANCER))
+                 TUMOR))
 }
 
 # Check if filtered files exist
@@ -115,7 +116,7 @@ if (length(missing_files) > 0) {
 }
 
 cat(sprintf("Selected %d network files for cancer type %s\n",
-            length(cancer_file_paths), CANCER))
+            length(cancer_file_paths), TUMOR))
 
 # Ensure output directory exists
 output_dir <- dirname(OUTPUT_FILE)
@@ -128,18 +129,15 @@ if (!dir.exists(output_dir)) {
 ## Process networks ##
 ####################
 
-cat(sprintf("Processing cancer type: %s\n", CANCER))
+cat(sprintf("Processing cancer type: %s\n", TUMOR))
 # Quantile normalize networks
 tryCatch({
         net_norm <- quantile_normalize_net(cancer_file_paths)
-        output_file <- file.path(OUTPUT_DIR,
-                                 paste0("net_norm_TCGA-",
-                                        toupper(cancer), ".RData"))
-        cat(sprintf("  Saving normalized network: %s\n", output_file))
-        save(net_norm, file = output_file)
-        cat(sprintf("  Successfully processed %s\n", cancer))
+        cat(sprintf("  Saving normalized network: %s\n", OUTPUT_FILE))
+        save(net_norm, file = OUTPUT_FILE)
+        cat(sprintf("  Successfully processed %s\n", TUMOR))
         rm(net_norm)
         gc()
     }, error = function(e) {
-        cat(sprintf("  Error processing %s: %s\n", cancer, e$message))
+        cat(sprintf("  Error processing %s: %s\n", TUMOR, e$message))
     })
