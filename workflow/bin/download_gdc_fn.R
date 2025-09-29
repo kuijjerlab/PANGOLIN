@@ -18,7 +18,7 @@
 #' @importFrom TCGAbiolinks GDCquery
 #' @importFrom TCGAbiolinks GDCdownload
 #' @importFrom TCGAbiolinks GDCprepare
-download_gdc_expression <- function(cancer, output_file) {
+download_gdc_expression <- function(cancer, output_file, files_per_chunk = 7) {
   mrna_query <- GDCquery(
     project = cancer,
     data.category = "Transcriptome Profiling",
@@ -26,8 +26,8 @@ download_gdc_expression <- function(cancer, output_file) {
     workflow.type = "STAR - Counts"
   )
   cat("downloading data", "\n")
-  GDCdownload(mrna_query, method = "api")
-  cat("downloading data")
+  GDCdownload(mrna_query, method = "api", files.per.chunk = files_per_chunk)
+  cat("downloading data", "\n")
   mrna_df <- GDCprepare(mrna_query)
   cat("saving expression data", "\n")
   save(mrna_df,
