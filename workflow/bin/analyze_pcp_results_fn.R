@@ -16,7 +16,7 @@
 #' 
 filter_pcp_results <- function(pcp_res_file,
         var_th = 25,
-        padjust_th = 0.01,
+        padjust_th = 0.001,
         es_quant = 0.95) {
 
         if (!file.exists(pcp_res_file)) {
