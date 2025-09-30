@@ -24,7 +24,7 @@ rule run_tsne:
     input:
         expression_file = EXPRESSION_PANDA_FILE,
         samples_file = SAMPLES_WITH_CANCER_FILE,
-        tumor_main_dir = OUTPUT_DIR
+        indegree_files = expand(CANCER_INDEGREE_FILE, cancer=CANCER_TYPES)
     output:
         out_file_expression = TSNE_DATA_EXPRESSION,
         out_file_indegree = TSNE_DATA_INDEGREE
@@ -39,7 +39,7 @@ rule run_tsne:
         Rscript {params.bin}/run_tsne.R \
             --exp_file {input.expression_file} \
             --samples_file {input.samples_file} \
-            --tumor_dir {input.tumor_main_dir} \
+            --indegree_files "{input.indegree_files}" \
             --output_file_expression {output.out_file_expression} \
             --output_file_indegree {output.out_file_indegree} \
             > {log} 2>&1
