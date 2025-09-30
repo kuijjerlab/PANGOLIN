@@ -11,7 +11,8 @@ rule run_panda_lioness:
         motif_file = MOTIF_PANDA_FILE, 
         ppi_file = PPI_PANDA_FILE 
     output:
-        network_dir = directory(NETWORKS_DIR)
+        network_dir = directory(NETWORKS_DIR),
+        panda_output = PANDA_NETWORK_FILE
     log:
         "logs/run_panda_lioness.log"
     params:
@@ -38,6 +39,7 @@ rule run_panda_lioness:
             --motif_file {input.motif_file} \
             --ppi_file {input.ppi_file} \
             --output_dir {output.network_dir} \
+            --panda_output {output.panda_output} \
             --start_sample {params.start_sample} \
             --end_sample {params.end_sample} \
             --computing {params.computing} \
