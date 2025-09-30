@@ -2,23 +2,23 @@
 
 ## Overview
 
-PANGOLIN is a comprehensive Snakemake pipeline for pan-cancer analysis of gene regulatory networks using TCGA data, with a specific focus on PD-1 pathway analysis. This pipeline reproduces all analyses and figures from our manuscript investigating gene regulatory landscapes across cancer types.
+PANGOLIN is a comprehensive Snakemake pipeline for pan-cancer analysis of gene regulatory networks using TCGA data, with a specific focus on PD-1 pathway analysis. This pipeline reproduces all analyses and figures from our manuscript investigating gene regulatory landscapes across 33 cancer types.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - **Snakemake** ≥ 7.23.1
-- **Conda/Mamba** for environment management
+- **Conda** for environment management
 - **R** ≥ 4.2.1 with Bioconductor packages
 - **Python** ≥ 3.8
-- **Sufficient disk space**: ~700GB for full workflow, ~50GB for precomputed analysis
+- **Sufficient disk space**: ~1TB for full workflow, ~100GB for precomputed analysis
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/[username]/PANGOLIN.git
+git clone https://github.com/tatianub/PANGOLIN.git
 cd PANGOLIN
 ```
 
@@ -26,27 +26,25 @@ cd PANGOLIN
 
 1. **Choose analysis type** in `config.yaml`:
    ```yaml
-   # For complete reproduction (takes several days/weeks due to the single-sample network reconstruction for over 9 000 samples
+   # For complete reproduction (takes several days/weeks due to the single-sample network reconstruction for over 9 000 samples)
    analysis_type: "full_workflow"
    
-   # For rapid figure reproduction using precomputed data (RECOMMENDED)
+   # For a more rapid analysis and figure reproduction using precomputed data (RECOMMENDED)
    analysis_type: "precomputed"
    ```
 
 2. **Set up Zenodo credentials** (for precomputed workflow):
    ```yaml
-   zenodo_record_id: "YOUR_ZENODO_RECORD_ID"
+   # This Zenodo ID contains precomputed network for PD1 pathway analysis
+   zenodo_record_id: "10.5281/zenodo.17232919"
    ```
 
 ### Execution
 
 ```bash
-# Load required modules (on HPC systems)
-module load snakemake/7.23.1-foss-2022a
-module load R-bundle-Bioconductor/3.15-foss-2022a-R-4.2.1
 
 # Dry run to check workflow
-snakemake --cores 1 -np
+snakemake --use-conda --conda-frontend conda --cores 1 -np
 
 # Execute pipeline
 snakemake --use-conda --conda-frontend conda --cores 1
@@ -57,9 +55,9 @@ snakemake --use-conda --conda-frontend conda --cores 1
 ### Data Processing Pipeline
 
 1. **📥 Data Acquisition**
-   - Downloads TCGA expression data for 33 cancer types
+   - Downloads TCGA expression data for 33 cancer types using TCGAbiolinks package
    - Retrieves clinical information
-   - Processes batch information and produces batch figures (this is rather time consuming step)
+   - Processes batch information and produces batch figure 
 
 2. **🔧 Expression Data Normalization**
    - Combines multi-cancer expression matrices
@@ -74,7 +72,7 @@ snakemake --use-conda --conda-frontend conda --cores 1
 4. **📈 Dimensionality Reduction & Pathway Analysis**
    - t-SNE analysis of expression and network features
    - PORCUPINE pathway heterogeneity analysis 
-   - Reactome pathway enrichment
+   - Reactome pathway enrichment 
 
 5. **🧬 PD-1 Pathway Analysis**
    - Extracts PD-1 pathway components and scores
@@ -91,35 +89,51 @@ snakemake --use-conda --conda-frontend conda --cores 1
 
 ```
 results/
-├── all_cancers/                    # Pan-cancer results
-│   ├── gdc_data/                  # Raw TCGA data
-│   ├── batch_analysis/            # Batch effect analysis
-│   ├── porcupine_results/         # Pathway analysis
-│   ├── clinical_associations_PD1/ # PD-1 clinical associations
-│   └── combined_gdc_data/         # Normalized expression
-├── individual_cancers/            # Cancer-specific results
-│   └── [CANCER]/
-│       ├── pd1_data/             # PD-1 scores and mappings
-│       ├── cox/                  # Survival analysis
-│       ├── clustering/           # Consensus clustering
-│       └── clinical_associations/ # Clinical correlations
-└── figures/                       # Publication-ready figures
-    ├── MBatch_DSC.pdf            # Batch effect summary
-    ├── TSNE_all_cancers*.pdf     # t-SNE visualizations
-    ├── PC_immune_correlations.png # Immune correlations
-    └── summary_table_PD1.html    # Results summary
+├── data_all/                              # Pan-cancer results
+│   ├── gdc_data/                            # Raw TCGA data
+│   ├── batch_analysis/                      # Batch effect analysis
+│   ├── batch_corrected_expression/          # Batch-corrected expression data
+│   ├── clinical_associations_PD1/           # PD-1 clinical associations
+│   ├── cola_consensus_clustering/           # all cancers consensus clustering
+│   ├── combined_gdc_data/                   # Combined normalized expression
+│   ├── cox_results_all/                     # survival analysis
+│   ├── porcupine/                           # PORCUPINE pathway analysis
+│   ├── pysnail_normalized_individual_cancer_expression/ # Normalized data per cancer
+│   ├── tsne_results/                        # t-SNE dimensionality reduction
+│   └── logs/                                # Processing logs
+├── data_individual_cancers/                 # Cancer-specific results
+│   └── [CANCER]/                            # Individual cancer directories
+│       ├── pd1_data/                          # PD-1 scores and mappings
+│       ├── cox/                               # Survival analysis
+│       ├── consensus_clustering/              # Cancer-specific clustering
+│       ├── final_clusters/                    # Final cluster assignments
+│       ├── clinical_associations/             # Clinical correlations
+│       ├── indegrees_norm/                    # Network in-degree features
+│       ├── porcupine/                         # Pathway analysis results
+│       └── clinical/                          # Clinical data processing
+├── panda_input/                           # PANDA network input files
+└── figs/                                  # Publication-ready figures
+    ├── MBatch_DSC.pdf                       # Batch effect summary
+    ├── TSNE_*.pdf                           # t-SNE visualizations
+    ├── PC_immune_correlations_cibersort.png # Immune correlations
+    ├── cox_results_final_clusters_*.pdf     # Survival analysis plots
+    ├── PRAD_clusters_*.pdf                  # PRAD-specific analyses
+    ├── pathways_intersection_pcp.pdf        # Pathway intersection analysis
+    ├── sankey_plot_indegree_expression.pdf  # Sankey diagrams
+    └── summary_table_PD1.html               # Results summary table
 ```
 
 ## 🎯 Key Features
 
 ### Analysis Types
 
-- **Full Workflow**: Complete analysis from raw data (~3-7 days runtime)
+- **Full Workflow**: Complete analysis from raw data (a very long runtime)
   - Downloads and processes all TCGA data
   - Constructs patient-specific regulatory networks
   - Performs all downstream analyses
 
-- **Precomputed Workflow**: Rapid reproduction using intermediate files (~2-4 hours)
+- **Precomputed Workflow**: Rapid reproduction using intermediate files (~4 hours)
+  - Downloads precomputed expression data from Zenodo
   - Downloads precomputed network features from Zenodo
   - Peforms most of the downstream analysis (exluding network generation)
   - Focuses on statistical analysis and figure generation
@@ -140,14 +154,7 @@ results/
 
 ## 📊 Generated Figures
 
-The pipeline generates all manuscript figures:
-
-1. **Figure 1**: Pan-cancer t-SNE analysis
-2. **Figure 2**: Batch effect analysis and correction
-3. **Figure 3**: PD-1 pathway activity across cancers
-4. **Figure 4**: Immune infiltration correlations
-5. **Figure 5**: Clinical association heatmaps
-6. **Supplementary Figures**: Additional analyses and validations
+The pipeline generates all manuscript figures
 
 ## 📚 Citation
 
@@ -155,7 +162,7 @@ If you use PANGOLIN in your research, please cite:
 
 ```bibtex
 @article{.....,
-  title={PPan-cancer analysis of patient-specific gene regulatory landscapes identifies recurrent PD-1 pathway dysregulation},
+  title={Pan-cancer analysis of patient-specific gene regulatory landscapes identifies recurrent PD-1 pathway dysregulation},
   author={Belova et al.},
   journal={Journal Name},
   year={2025},
