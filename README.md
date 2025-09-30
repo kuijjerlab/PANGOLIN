@@ -148,8 +148,8 @@ results/
 - Snakemake: 7.23.1
 - R: 4.2.1
 - Python: 3.8+
-- Key R packages: survival, dplyr, data.table, ComplexHeatmap
-- Key Python packages: pandas, numpy, scipy
+- Key R packages: check package_requirements.txt. Container is on the way...
+
 
 
 ## 📊 Generated Figures
