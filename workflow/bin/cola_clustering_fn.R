@@ -20,7 +20,7 @@ set.seed(1234)
 perform_cola_clustering <- function(cancer,
                             exp_file = NULL,
                             samples_file = NULL,
-                            indegree_dir = NULL,
+                            indegree_file = NULL,
                             datatype = c("indegree", "expression"),
                             n_cores = 1,
                             top_value_method = "ATC",
@@ -29,14 +29,14 @@ perform_cola_clustering <- function(cancer,
                             p_sampling = 0.8,
                             partition_repeat = 1000,
                             scale_rows = TRUE) {
-    datatype <- match.arg(datatype)
-    if (datatype == "indegree") {
-        if (is.null(indegree_dir)) {
-            stop("indegree directory must be provided.")
-        }
-        # List files and filter by cancer type
-        ind_file <- list.files(indegree_dir, full.names = TRUE) %>%
-            .[stringr::str_detect(., regex(cancer, ignore_case = TRUE))]
+#     datatype <- match.arg(datatype)
+#     if (datatype == "indegree") {
+#         if (is.null(indegree_dir)) {
+#             stop("indegree directory must be provided.")
+#         }
+#         # List files and filter by cancer type
+#         ind_file <- list.files(indegree_dir, full.names = TRUE) %>%
+#             .[stringr::str_detect(., regex(cancer, ignore_case = TRUE))]
 
         if (length(ind_file) == 0) {
             stop("No indegree file found")

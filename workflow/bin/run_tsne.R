@@ -19,10 +19,10 @@ option_list = list(
             help = "Path to the samples file",
             metavar = "character"),
     make_option(
-        c("-d", "--tumor_dir"),
+        c("-d", "--indgree_files"),
         type = "character",
         default = NULL,
-        help = "Path to the the main tumor directory.",
+        help = "Path to indegree files.",
         metavar = "character"),
     make_option(
         c("-o", "--output_file_expression"),
@@ -45,10 +45,10 @@ opt = parse_args(opt_parser)
 ## Initialize variable
 EXPRESSION_FILE <- opt$exp_file
 SAMPLES_FILE <- opt$samples_file
-TUMOR_DIR_MAIN <- opt$tumor_dir
+INDEGREE_FILES <- opt$indegree_files
 OUTPUT_FILE_EXPRESSION <- opt$output_file_expression
 OUTPUT_FILE_INDEGREE <- opt$output_file_indegree
-
+INDEGREE_FILES <- unlist(strsplit(INDEGREE_FILES, " "))
 
 source("workflow/bin/tsne_fn.R")
 
@@ -59,7 +59,7 @@ colnames(exp_all)[-1] <- samples$sample_id
 exp_all <- exp_all[,-1]
 
 # load and combine indegree data
-ind_all <- combine_indegree(TUMOR_DIR_MAIN) 
+ind_all <- combine_indegree(INDEGREE_FILES) 
 ind_all <- ind_all[,-1]
 
 # run TSNE

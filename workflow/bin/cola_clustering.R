@@ -23,8 +23,8 @@ option_list = list(
     make_option(c("--samples_file"), type = "character", default = NULL,
                 help = "Path to the samples file",
                 metavar = "character"),
-    make_option(c("--indegree_dir"), type = "character", default = NULL,
-                help = "Path to the indegree directory for a specific cancer",
+    make_option(c("--indegree_file"), type = "character", default = NULL,
+                help = "Path to the indegree file for a specific cancer",
                 metavar = "character"),
     make_option(c("--datatype"), type = "character", default = NULL,
                 help = "Either indegree or expression",
@@ -78,7 +78,7 @@ opt = parse_args(opt_parser)
 TUMOR <- opt$tumor
 EXPRESSION_FILE <- opt$exp_file
 SAMPLES_FILE <- opt$samples_file
-IND_DIR <- opt$indegree_dir
+INDEGREE_FILE <- opt$indegree_file
 DATATYPE <- opt$datatype
 N_CORES <- opt$number_cores
 TOP_VALUE_METHOD <- opt$top_value_method
@@ -99,7 +99,7 @@ source("workflow/bin/cola_clustering_fn.R")
 res <- perform_cola_clustering(cancer = TUMOR,
                                 samples_file = SAMPLES_FILE,
                                 exp_file = EXPRESSION_FILE,
-                                indegree_dir = IND_DIR,
+                                indegree_file = INDEGREE_FILE,
                                 datatype = DATATYPE,
                                 n_cores = N_CORES,
                                 top_value_method = TOP_VALUE_METHOD,

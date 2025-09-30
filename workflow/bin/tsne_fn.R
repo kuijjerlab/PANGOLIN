@@ -31,12 +31,7 @@ load_indegree <- function(indegree_file) {
 #' 
 #' @export
 
-combine_indegree <- function(tumor_dir) {
-        # Get list of relevant files
-        filenames <- list.files(
-            tumor_dir, recursive = TRUE,
-            pattern = "indegree_norm", full.names = TRUE
-        )
+combine_indegree <- function(filenames) {
         # Check if any files were found
         if (length(filenames) == 0) {
             stop("No files matching 'indegree_norm' 
