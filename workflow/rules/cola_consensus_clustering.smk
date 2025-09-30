@@ -3,7 +3,7 @@ rule run_cola_clustering:
     input:
         expression_file = EXPRESSION_PANDA_FILE,
         samples_file = SAMPLES_WITH_CANCER_FILE,
-        indegree_dir = INPUT_CANCER_INDEGREE_DIR
+        indegree_file = CANCER_INDEGREE_FILE
     output:
         best_k = BEST_K_COLA_OUTPUT_CANCER_DATATYPE,
         results = COLA_RESULTS_OUTPUT_CANCER_DATATYPE,
@@ -28,7 +28,7 @@ rule run_cola_clustering:
             --tumor {wildcards.cancer} \
             --exp_file {input.expression_file} \
             --samples_file {input.samples_file} \
-            --indegree_dir {input.indegree_dir} \
+            --indegree_file {input.indegree_file} \
             --datatype {wildcards.datatype} \
             --number_cores {params.number_cores_cola} \
             --top_value_method {params.top_value_method} \
