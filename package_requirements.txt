@@ -1,0 +1,107 @@
+# PANGOLIN Pipeline - R Package Requirements
+# This file lists all R packages used in the PANGOLIN workflow with exact versions
+# R version: 4.2.1 (2022-06-23)
+
+## Core Data Processing
+data.table==1.14.8
+dplyr==1.1.4
+tidyr==1.3.0
+tibble==3.2.1
+purrr==1.0.1
+readr==2.1.4
+readxl==1.4.2
+
+## Statistical Analysis & Machine Learning
+cola==2.4.0
+survival==3.5-5
+survminer==0.5.0
+limma==3.54.2
+edgeR==3.40.2
+clustree==0.4.4
+glmnet==4.1-4
+randomForest==4.7-1.1
+caret==6.0-92
+
+## Network Analysis & Gene Regulatory Networks
+PORCUPINE
+
+##ioinformatics & TCGA Data
+TCGAbiolinks==2.25.3
+TCGAbiolinksGUI.data==1.18.0
+Biobase==2.58.0
+BiocGenerics==0.44.0
+BiocManager==1.30.20
+
+## Visualization
+ggplot2==3.5.1
+ComplexHeatmap==2.14.0
+ggfortify==0.4.16
+scales==1.3.0
+RColorBrewer (included in base R)
+eulerr==7.0.0
+EnhancedVolcano==1.16.0
+pheatmap==1.0.12
+circlize==0.4.15
+corrplot==0.92
+cowplot==1.1.1
+VennDiagram==1.7.3
+
+## Pathway Analysis & Gene Set Enrichment
+GSVA==1.46.0
+GSVAdata==1.34.0
+fgsea==1.24.0
+gprofiler2==0.2.2
+decoupleR==2.4.0
+OmnipathR==3.5.25
+progeny==1.20.0
+
+## Batch Correction & Quality Control
+MBatch==2.1.0
+sva==3.35.2
+
+## Clustering & Ranking
+RankAggreg==0.6.6
+factoextra==1.0.7
+
+## Dependencies & Support Packages
+Matrix==1.6-5
+methods (base R)
+stats (base R)
+utils (base R)
+grDevices (base R)
+graphics (base R)
+grid (base R)
+parallel (base R)
+
+## Installation Instructions:
+# To install these packages, run the following in R:
+
+# Install BiocManager first
+# install.packages("BiocManager")
+
+# Install Bioconductor packages
+# BiocManager::install(c(
+#   "TCGAbiolinks", "limma", "edgeR", "GSVA", "GSVAdata", 
+#   "fgsea", "decoupleR", "progeny", "viper", "RTN", "minet",
+#   "ComplexHeatmap", "EnhancedVolcano", "Biobase", "BiocGenerics"
+# ))
+
+# Install CRAN packages
+# install.packages(c(
+#   "data.table", "dplyr", "tidyr", "tibble", "purrr", "readr", "readxl",
+#   "ggplot2", "scales", "survival", "survminer", "cola", "clustree",
+#   "factoextra", "eulerr", "gprofiler2", "OmnipathR", "networkD3",
+#   "RankAggreg", "MBatch", "sva", "ggfortify", "NGCHM", "NGCHMSupportFiles",
+#   "pheatmap", "circlize", "corrplot", "cowplot", "VennDiagram",
+#   "glmnet", "randomForest", "caret"
+# ))
+
+# Install from GitHub (development versions)
+# devtools::install_github("kuijjerlab/PORCUPINE")
+# devtools::install_github("kuijjerlab/lionessR")
+
+## Notes:
+# 1. PORCUPINE is a custom package developed by the Kuijjer lab
+# 2. Some packages may have different installation methods
+# 3. Version numbers reflect the exact versions used in the pipeline
+# 4. Some packages are dependencies and will be installed automatically
