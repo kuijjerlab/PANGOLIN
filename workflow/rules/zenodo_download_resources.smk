@@ -4,7 +4,7 @@ rule download_zenodo_resources:
     """
     output:
         download_complete = ZENODO_RESOURCES_DOWNLOAD_COMPLETE,
-        extracted_file = directory(ZENODO_RESOURCE_DIRECTORY_UNZIPPED) # The actual file you want
+        extracted_file = directory(ZENODO_RESOURCE_DIRECTORY_UNZIPPED) 
     log:
         "logs/download_zenodo_resources.log"
     message:
