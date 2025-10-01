@@ -71,8 +71,9 @@ LIST_PATHWAYS_FILE = config["list_of_pathways_file"]
 # Zenodo configuration
 ZENODO_RECORD_ID = config["zenodo_record_id"]
 ZENODO_RESOURCE_FILENAME = config["zenodo_resource_filename"]
-ZENODO_INDIVIDUAL_CANCERS_DIRECTORY = config["zenodo_individual_cancers_directory"]
-
+ZENODO_INDIVIDUAL_CANCERS_FILENAME = config["zenodo_individual_cancers_filename"]
+ZENODO_BATCH_FILENAME = config["zenodo_batch_analysis_filename"]
+ZENODO_GDC_FILENAME = config["zenodo_gdc_filename"]
 ###############################################################################
 ##                               PARAMETERS                                 ##
 ###############################################################################
@@ -104,10 +105,14 @@ NCORES_PORCUPINE = config["ncores_porcupine"]
 
 # Marker files to track successful downloads
 ZENODO_RESOURCES_DOWNLOAD_COMPLETE = ".zenodo_download_complete"
-ZENODO_BATCH_DOWNLOAD_COMPLETE = ".zenodo_batch_download_complete"
-
-# Zenodo resource files
-ZENODO_BATCH_FILENAME = config["zenodo_batch_analysis_filename"]
+ZENODO_BATCH_DOWNLOAD_COMPLETE = "logs/.zenodo_batch_download_complete"
+ZENODO_RESOURCE_DIRECTORY_UNZIPPED = "resources"
+ZENODO_BATCH_DOWNLOAD_COMPLETE = "logs/.zenodo_batch_download_complete"
+ZENODO_BATCH_DIRECTORY_UNZIPPED = "results/data_all/batch_analysis"
+ZENODO_PD1_DOWNLOAD_COMPLETE = "logs/.zenodo_pd1_download_complete"
+ZENODO_DATA_INDIV_DIRECTORY_UNZIPPED = "results/data_all/data_individual_cancers"
+ZENODO_GDC_DOWNLOAD_COMPLETE = "logs/.zenodo_gdc_download_complete"
+ZENODO_GDC_DIRECTORY_UNZIPPED = "results/data_all/combined_gdc_data"
 
 # Batch analysis files from Zenodo
 BATCH_FILES = expand(
@@ -485,8 +490,6 @@ OUTPUT_HTML_TABLE_PD1 = os.path.join(FIG_DIR, "summary_table_PD1.html")
 
 # Data acquisition and preprocessing
 include: "workflow/rules/zenodo_download_resources.smk"
-include: "workflow/rules/zenodo_download_batch_results.smk"
-include: "workflow/rules/zenodo_download_indegrees_porcupine_data.smk"
 include: "workflow/rules/download_normalize_expression_data.smk"
 
 # # Expression data processing and batch correction
@@ -513,10 +516,9 @@ include: "workflow/rules/prad_cluster_analysis.smk"
 include: "workflow/rules/session_info.smk"
 
 
-
-###############################################################################
-##                                MAIN RULE                                ##
-###############################################################################
+# ###############################################################################
+# ##                                MAIN RULE                                ##
+# ###############################################################################
 
 rule all:
     input:
@@ -526,19 +528,26 @@ rule all:
         os.path.join(OUTPUT_DIR_ALL_CANCERS, "logs", "R_session_info.txt"),
         
         # =====================================================================
+        # ZENODO FILES DOWNLOADS
+        # =====================================================================
+
+        ([ZENODO_RESOURCE_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([ZENODO_BATCH_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["precomputed"] else []),
+        ([ZENODO_GDC_DIRECTORY_UNZIPPED] if ANALYSIS_TYPE in ["precomputed"] else [])
+        # =====================================================================
         # DATA DOWNLOAD AND PREPROCESSING OUTPUTS
         # =====================================================================
         # Raw expression data downloads
         ([expand(OUTPUT_GDC_FILE, cancer=CANCER_TYPES)] 
-         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+         if ANALYSIS_TYPE == ["full_workflow"] else []),
         
         # Combined multi-cancer expression data
         ([OUTPUT_EXP_COMBINED_FILE] 
-         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+         if ANALYSIS_TYPE == ["full_workflow"] else []),
         ([GROUP_FILE] 
-         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+         if ANALYSIS_TYPE == ["full_workflow"] else []),
         ([FEATURE_FILE] 
-         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+         if ANALYSIS_TYPE == ["full_workflow"] else []),
         
         # Normalized expression data
         ([PYSNAIL_NORMALIZED_FILE] 
@@ -550,7 +559,7 @@ rule all:
         # BATCH EFFECT ANALYSIS OUTPUTS
         # =====================================================================
         ([BATCH_FILES] 
-         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+         if ANALYSIS_TYPE == ["full_workflow"] else []),
         ([BATCH_CORRECTED_EXPRESSION_FILE] 
          if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
         ([BATCH_EFFECT_PDF] 
@@ -569,8 +578,6 @@ rule all:
          if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
         ([SAMPLES_WITH_CANCER_FILE] 
          if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
-        # Download indegree files and porcupine data from Zenodo 
-        ([expand(ZENODO_INDIVIDUAL_CANCERS_DIRECTORY)] if ANALYSIS_TYPE in ["precomputed"] else []) 
         # =====================================================================
         # NETWORK INFERENCE (ONLY IF FULL WORKFLOW)
         # =====================================================================
@@ -587,7 +594,6 @@ rule all:
         ([expand(PORCUPINE_PATHWAYS_RESULTS_RANDOM, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
         ([expand(TUMOR_PD1_LINKS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
         ([expand(TUMOR_PD1_NET, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
-
         ([expand(OUTPUT_CANCER, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # TSNE Outputs
         ([TSNE_DATA_EXPRESSION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
