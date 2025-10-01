@@ -12,14 +12,14 @@ envs: "workflow/envs"
 ## - "precomputed": Downloads intermediate files from Zenodo 
 ##   Allows rapid reproduction of main manuscript figures without
 ##   lengthy network calculations
-analysis_type: "full_workflow"  # Change to "precomputed" for rapid analysis
+analysis_type: "precomputed"  # Change to "precomputed" for rapid analysis
 
 ## Zenodo
-zenodo_record_id: "10.5281/zenodo.17232919"  
-zenodo_resource_filename: "resources.tar.zip"  
+zenodo_record_id: "17235372"  
+zenodo_resource_filename: "resources.zip"  
 zenodo_batch_analysis_filename: "batch_analysis.zip"  
-zenodo_individual_cancers_directory: "data_individual_cancers.zip"  
-zenodo_gdc_directory: "combined_gdc_data.zip"
+zenodo_individual_cancers_filename: "data_individual_cancers.zip"  
+zenodo_gdc_filename: "combined_gdc_data.zip"
 ## Files that should be available in resources_dir
 ## clinical data
 clinical_file: "resources/clinical_curated/NIHMS978596-supplement-1.xlsx"
