@@ -8,11 +8,11 @@ workflow_dir: "workflow"
 envs: "workflow/envs"
 
 ## Analysis Type Configuration
-## - "full_workflow": Complete pipeline execution (takes several days)
+## - "full_workflow": Complete pipeline execution (takes several weeks)
 ## - "precomputed": Downloads intermediate files from Zenodo 
 ##   Allows rapid reproduction of main manuscript figures without
 ##   lengthy network calculations
-analysis_type: "precomputed"  # Change to "precomputed" for rapid analysis
+analysis_type: "precomputed"  # Change to "full_workflow" for entire analysis (will take weeks)
 
 ## Zenodo
 zenodo_record_id: "17235372"  
