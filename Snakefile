@@ -516,6 +516,8 @@ include: "workflow/rules/prad_cluster_analysis.smk"
 include: "workflow/rules/session_info.smk"
 
 
+
+
 # ###############################################################################
 # ##                                MAIN RULE                                ##
 # ###############################################################################
@@ -532,8 +534,20 @@ rule all:
         # =====================================================================
 
         ([ZENODO_RESOURCE_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([CLINICAL_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([CANCER_COLOR_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([PATHWAYS_HIERARCHY_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([PATHWAYS_HSA_ID_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([LIST_PATHWAYS_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([GMT_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([PPI_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([MOTIF_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([SAMPLES_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([IMMUNE_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([BATCH_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
+        ([ZENODO_DATA_INDIV_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["precomputed"] else []),
         ([ZENODO_BATCH_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["precomputed"] else []),
-        ([ZENODO_GDC_DIRECTORY_UNZIPPED] if ANALYSIS_TYPE in ["precomputed"] else [])
+        ([ZENODO_GDC_DIRECTORY_UNZIPPED] if ANALYSIS_TYPE in ["precomputed"] else []),
         # =====================================================================
         # DATA DOWNLOAD AND PREPROCESSING OUTPUTS
         # =====================================================================
@@ -581,7 +595,7 @@ rule all:
         # =====================================================================
         # NETWORK INFERENCE (ONLY IF FULL WORKFLOW)
         # =====================================================================
-        ([NETWORKS_DIR] if in ANALYSIS_TYPE in ["full_workflow"] else []),   
+        ([NETWORKS_DIR] if ANALYSIS_TYPE in ["full_workflow"] else []),   
         ([LIONESS_SAMPLE_MAPPING] if ANALYSIS_TYPE in ["full_workflow"] else []),
         ([OUTPUT_DIR_FINAL_MERGED_NETWORKS] if ANALYSIS_TYPE in ["full_workflow"] else []),
         ([NETWORK_CANCER_MAPPING_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
