@@ -77,18 +77,18 @@ rule download_zenodo_pd1_itermediate_files:
     shell:
         """
         # Create target directory if it doesn't exist
-        mkdir -p results/data_all >> {log} 2>&1
+        mkdir -p results/ >> {log} 2>&1
         
         # Download the zip file
         echo "Downloading: {params.file}"
         wget -O "{params.file}" "https://zenodo.org/records/{params.zenodo_record_id}/files/{params.file}?download=1" >> {log} 2>&1
         
         # Unzip the file directly to target directory, excluding __MACOSX folders
-        echo "Extracting: {params.file} to results/data_all/"
-        unzip -o "{params.file}" -d "results/data_all/" -x "__MACOSX/*" >> {log} 2>&1
+        echo "Extracting: {params.file} to results/"
+        unzip -o "{params.file}" -d "results/" -x "__MACOSX/*" >> {log} 2>&1
         
         # Remove any __MACOSX folders that might have been created anyway
-        find results/data_all/ -name "__MACOSX" -type d -exec rm -rf {{}} + 2>/dev/null || true
+        find results/ -name "__MACOSX" -type d -exec rm -rf {{}} + 2>/dev/null || true
         
         # Remove the zip file after extraction
         echo "Removing zip file: {params.file}"
