@@ -1,7 +1,7 @@
 # Rule ordering to resolve ambiguity between download and compute rules
 # For precomputed analysis, download rules should take precedence
 # For full workflow, compute rules should take precedence
-ruleorder: combine_all_expression_data > download_combined_gdc_data
+ruleorder: download_combined_gdc_data > combine_all_expression_data 
 
 rule download_zenodo_resources:
     """
@@ -107,6 +107,8 @@ rule download_zenodo_batch_analysis:
         touch {output.download_complete}
         """
 
+ruleorder: download_zenodo_pd1_itermediate_files > run_panda_lioness 
+
 
 rule download_zenodo_pd1_itermediate_files:
     """
@@ -115,9 +117,6 @@ rule download_zenodo_pd1_itermediate_files:
     output:
         download_complete = ZENODO_PD1_DOWNLOAD_COMPLETE,
         extracted_file = directory(ZENODO_DATA_INDIV_DIRECTORY_UNZIPPED),
-        pd1_links = expand(TUMOR_PD1_LINKS, cancer=CANCER_TYPES),
-        pd1_net = expand(TUMOR_PD1_NET, cancer=CANCER_TYPES),
-        indegree = expand(CANCER_INDEGREE_FILE, cancer = CANCER_TYPES)
     log:
         "logs/download_zenodo_pd1_itermediate_files.log"
     message:
@@ -152,11 +151,6 @@ rule download_zenodo_pd1_itermediate_files:
         # Mark as complete
         touch {output.download_complete}
         """
-
-# Rule ordering to resolve ambiguity between download and compute rules
-# For precomputed analysis, download rules should take precedence
-# For full workflow, compute rules should take precedence
-ruleorder: combine_all_expression_data > download_combined_gdc_data
 
 rule download_combined_gdc_data:
     """
