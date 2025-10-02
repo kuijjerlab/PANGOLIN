@@ -59,7 +59,6 @@ rule download_zenodo_pd1_itermediate_files:
         download_complete = ZENODO_PD1_DOWNLOAD_COMPLETE,
         # extracted_file = directory(ZENODO_DATA_INDIV_DIRECTORY_UNZIPPED),
         indegree_files = expand(CANCER_INDEGREE_FILE, cancer=CANCER_TYPES),
-        porcupine_pathways_results = expand(PORCUPINE_PATHWAYS_RESULTS, cancer=CANCER_TYPES),
         porcupine_results = expand(PORCUPINE_RESULTS, cancer=CANCER_TYPES),
         individual_scores = expand(INDIVIDUAL_SCORES, cancer=CANCER_TYPES),
         tumor_pd1_links = expand(TUMOR_PD1_LINKS, cancer=CANCER_TYPES),
