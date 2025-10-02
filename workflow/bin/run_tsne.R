@@ -19,7 +19,7 @@ option_list = list(
             help = "Path to the samples file",
             metavar = "character"),
     make_option(
-        c("-d", "--indgree_files"),
+        c("-d", "--indegree_files"),
         type = "character",
         default = NULL,
         help = "Path to indegree files.",
