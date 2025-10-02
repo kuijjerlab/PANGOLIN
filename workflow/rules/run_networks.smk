@@ -19,7 +19,7 @@ rule run_panda_lioness:
         bin = config["bin"],
         start_sample = 1,
         end_sample = 9778,  # adjust based on your sample count
-        computing = "gpu",  # change to "gpu" if you have GPU support
+        computing = "cpu",  # change to "gpu" if you have GPU support
         random_seed = 10,
         ncores = 10
     conda:
