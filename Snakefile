@@ -104,7 +104,7 @@ NCORES_PORCUPINE = config["ncores_porcupine"]
 ###############################################################################
 
 # Marker files to track successful downloads
-ZENODO_RESOURCES_DOWNLOAD_COMPLETE = ".zenodo_download_complete"
+ZENODO_RESOURCES_DOWNLOAD_COMPLETE = "logs/.zenodo_download_complete"
 ZENODO_BATCH_DOWNLOAD_COMPLETE = "logs/.zenodo_batch_download_complete"
 ZENODO_RESOURCE_DIRECTORY_UNZIPPED = "resources"
 ZENODO_BATCH_DOWNLOAD_COMPLETE = "logs/.zenodo_batch_download_complete"
@@ -553,29 +553,29 @@ rule all:
         # =====================================================================
         # Raw expression data downloads
         ([expand(OUTPUT_GDC_FILE, cancer=CANCER_TYPES)] 
-         if ANALYSIS_TYPE == ["full_workflow"] else []),
+         if ANALYSIS_TYPE == "full_workflow" else []),
         
         # Combined multi-cancer expression data
         ([OUTPUT_EXP_COMBINED_FILE] 
-         if ANALYSIS_TYPE == ["full_workflow"] else []),
+         if ANALYSIS_TYPE == "full_workflow" else []),
         ([GROUP_FILE] 
-         if ANALYSIS_TYPE == ["full_workflow"] else []),
+         if ANALYSIS_TYPE == "full_workflow" else []),
         ([FEATURE_FILE] 
-         if ANALYSIS_TYPE == ["full_workflow"] else []),
+         if ANALYSIS_TYPE == "full_workflow" else []),
         
         # Normalized expression data
         ([PYSNAIL_NORMALIZED_FILE] 
-         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+         if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([expand(PYSNAIL_NORMALIZED_FILE_CANCER_SPECIFIC, cancer=CANCER_TYPES)] 
-         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+         if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         
         # =====================================================================
         # BATCH EFFECT ANALYSIS OUTPUTS
         # =====================================================================
         ([BATCH_FILES] 
-         if ANALYSIS_TYPE == ["full_workflow"] else []),
+         if ANALYSIS_TYPE == "full_workflow" else []),
         ([BATCH_CORRECTED_EXPRESSION_FILE] 
-         if ANALYSIS_TYPE == ["full_workflow", "precomputed"] else []),
+         if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([BATCH_EFFECT_PDF] 
          if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         
@@ -583,31 +583,31 @@ rule all:
         # NETWORK INFERENCE INPUT PREPARATION
         # =====================================================================
         ([MOTIF_PANDA_FILE] 
-         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+         if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([PPI_PANDA_FILE] 
-         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+         if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([EXPRESSION_PANDA_FILE] 
-         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+         if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([SAMPLES_PANDA_FILE] 
-         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+         if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([SAMPLES_WITH_CANCER_FILE] 
-         if ANALYSIS_TYPE in [["full_workflow", "precomputed"]] else []),
+         if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # =====================================================================
         # NETWORK INFERENCE (ONLY IF FULL WORKFLOW)
         # =====================================================================
-        ([NETWORKS_DIR] if ANALYSIS_TYPE in ["full_workflow"] else []),   
-        ([LIONESS_SAMPLE_MAPPING] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([OUTPUT_DIR_FINAL_MERGED_NETWORKS] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([NETWORK_CANCER_MAPPING_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([expand(CANCER_NETWORK_NORMALIZED_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([NETWORK_EDGE_FILE] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([expand(CANCER_INDEGREE_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([expand(PORCUPINE_PATHWAYS_RESULTS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([expand(PORCUPINE_RESULTS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([expand(INDIVIDUAL_SCORES, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([expand(PORCUPINE_PATHWAYS_RESULTS_RANDOM, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([expand(TUMOR_PD1_LINKS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
-        ([expand(TUMOR_PD1_NET, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow"] else []),
+        ([NETWORKS_DIR] if ANALYSIS_TYPE == "full_workflow" else []),   
+        ([LIONESS_SAMPLE_MAPPING] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([OUTPUT_DIR_FINAL_MERGED_NETWORKS] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([NETWORK_CANCER_MAPPING_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(CANCER_NETWORK_NORMALIZED_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([NETWORK_EDGE_FILE] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(CANCER_INDEGREE_FILE, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(PORCUPINE_PATHWAYS_RESULTS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(PORCUPINE_RESULTS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(INDIVIDUAL_SCORES, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(PORCUPINE_PATHWAYS_RESULTS_RANDOM, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(TUMOR_PD1_LINKS, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
+        ([expand(TUMOR_PD1_NET, cancer=CANCER_TYPES)] if ANALYSIS_TYPE == "full_workflow" else []),
         ([expand(OUTPUT_CANCER, cancer=CANCER_TYPES)] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         # TSNE Outputs
         ([TSNE_DATA_EXPRESSION] if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
