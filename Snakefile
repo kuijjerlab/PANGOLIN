@@ -110,7 +110,7 @@ ZENODO_RESOURCE_DIRECTORY_UNZIPPED = "resources"
 ZENODO_BATCH_DOWNLOAD_COMPLETE = "logs/.zenodo_batch_download_complete"
 ZENODO_BATCH_DIRECTORY_UNZIPPED = "results/data_all/batch_analysis"
 ZENODO_PD1_DOWNLOAD_COMPLETE = "logs/.zenodo_pd1_download_complete"
-ZENODO_DATA_INDIV_DIRECTORY_UNZIPPED = "results/data_all/data_individual_cancers"
+ZENODO_DATA_INDIV_DIRECTORY_UNZIPPED = "results/data_individual_cancers"
 ZENODO_GDC_DOWNLOAD_COMPLETE = "logs/.zenodo_gdc_download_complete"
 ZENODO_GDC_DIRECTORY_UNZIPPED = "results/data_all/combined_gdc_data"
 
@@ -488,35 +488,41 @@ OUTPUT_HTML_TABLE_PD1 = os.path.join(FIG_DIR, "summary_table_PD1.html")
 
 # Note: Snakemake will only execute rules needed based on requested outputs
 
-# Data acquisition and preprocessing
-include: "workflow/rules/zenodo_download_resources.smk"
-include: "workflow/rules/download_normalize_expression_data.smk"
 
-# # Expression data processing and batch correction
-include: "workflow/rules/batch_effect_expression.smk"
-
-# Network inference and analysis
-include: "workflow/rules/prepare_data_for_PANDA.smk"
-include: "workflow/rules/run_networks.smk"
-include: "workflow/rules/run_PORCUPINE.smk"
-
-# Dimensionality reduction and pathway analysis
-include: "workflow/rules/tsne_and_porcupine_analysis.smk"
-
-# Clustering analysis
-include: "workflow/rules/cola_consensus_clustering.smk"
-
-# PD-1 pathway-specific analysis
-include: "workflow/rules/extract_pd1_data.smk"
-include: "workflow/rules/pd1_analysis.smk"
-
-# Cancer-specific analyses
-include: "workflow/rules/prad_cluster_analysis.smk"
-
-include: "workflow/rules/session_info.smk"
-
-
-
+# Conditional rule inclusion based on analysis type
+if ANALYSIS_TYPE == "full_workflow":
+    include: "workflow/rules/zenodo_download_resources.smk"
+    include: "workflow/rules/batch_effect_expression.smk"
+    include: "workflow/rules/qsmooth_normalization.smk"
+    include: "workflow/rules/run_networks.smk"
+    include: "workflow/rules/gdc_download_expression_data.smk"
+    include: "workflow/rules/run_PORCUPINE.smk"
+    include: "workflow/rules/analyze_batch_effect.smk"
+    include: "workflow/rules/prepare_data_for_PANDA.smk"
+    include: "workflow/rules/tsne_and_porcupine_analysis.smk"
+    # Clustering analysis
+    include: "workflow/rules/cola_consensus_clustering.smk"
+    # PD-1 pathway-specific analysis
+    include: "workflow/rules/extract_pd1_data.smk"
+    include: "workflow/rules/pd1_analysis.smk"
+    # Cancer-specific analyses
+    include: "workflow/rules/prad_cluster_analysis.smk"
+    include: "workflow/rules/session_info.smk" 
+else:
+    include: "workflow/rules/zenodo_download_resources.smk"
+    include: "workflow/rules/zenodo_download_exp_intermediate_files.smk"
+    include: "workflow/rules/qsmooth_normalization.smk"
+    include: "workflow/rules/batch_effect_expression.smk"
+    include: "workflow/rules/prepare_data_for_PANDA.smk"
+    include: "workflow/rules/tsne_and_porcupine_analysis.smk"
+    # Clustering analysis
+    include: "workflow/rules/cola_consensus_clustering.smk"
+    # PD-1 pathway-specific analysis
+    include: "workflow/rules/extract_pd1_data.smk"
+    include: "workflow/rules/pd1_analysis.smk"
+    # Cancer-specific analyses
+    include: "workflow/rules/prad_cluster_analysis.smk"
+    include: "workflow/rules/session_info.smk" 
 
 # ###############################################################################
 # ##                                MAIN RULE                                ##
@@ -545,7 +551,7 @@ rule all:
         ([SAMPLES_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([IMMUNE_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([BATCH_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        ([ZENODO_DATA_INDIV_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["precomputed"] else []),
+        # ([ZENODO_DATA_INDIV_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["precomputed"] else []),
         ([ZENODO_BATCH_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["precomputed"] else []),
         ([ZENODO_GDC_DIRECTORY_UNZIPPED] if ANALYSIS_TYPE in ["precomputed"] else []),
         # =====================================================================
