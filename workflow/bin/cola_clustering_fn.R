@@ -33,7 +33,7 @@ perform_cola_clustering <- function(cancer,
         if (datatype == "indegree") {
         # Load indegree data
         ind_data <- tryCatch({
-            load_indegree(ind_file)
+            load_indegree(indegree_file)
         }, error = function(e) {
             stop("Error loading indegree data: ", e$message)
         })
