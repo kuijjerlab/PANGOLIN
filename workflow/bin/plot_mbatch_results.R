@@ -40,6 +40,7 @@ source("workflow/bin/analyze_batch_fn.R")
 # combine and plot the MBatch results
 
 res <- combine_mbatch_results(BATCH_FILES)
+res <- res[-grep("Purity_singscore", res$batch), ]  # remove purity singscore results
 # Filter for DSC (1,2) annotations specifically
 res_all <- res[grep("1", res$Annotation), ]
 plot_mbatch_dsc(res_all, output_file = OUTPUT_FILE)
