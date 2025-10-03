@@ -551,7 +551,6 @@ rule all:
         ([SAMPLES_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([IMMUNE_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
         ([BATCH_FILE]  if ANALYSIS_TYPE in ["full_workflow", "precomputed"] else []),
-        # ([ZENODO_DATA_INDIV_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["precomputed"] else []),
         ([ZENODO_BATCH_DIRECTORY_UNZIPPED]  if ANALYSIS_TYPE in ["precomputed"] else []),
         ([ZENODO_GDC_DIRECTORY_UNZIPPED] if ANALYSIS_TYPE in ["precomputed"] else []),
         # =====================================================================
