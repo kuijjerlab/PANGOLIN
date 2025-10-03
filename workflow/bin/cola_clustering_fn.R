@@ -29,18 +29,8 @@ perform_cola_clustering <- function(cancer,
                             p_sampling = 0.8,
                             partition_repeat = 1000,
                             scale_rows = TRUE) {
-#     datatype <- match.arg(datatype)
-#     if (datatype == "indegree") {
-#         if (is.null(indegree_dir)) {
-#             stop("indegree directory must be provided.")
-#         }
-#         # List files and filter by cancer type
-#         ind_file <- list.files(indegree_dir, full.names = TRUE) %>%
-#             .[stringr::str_detect(., regex(cancer, ignore_case = TRUE))]
-
-        if (length(ind_file) == 0) {
-            stop("No indegree file found")
-        }
+        datatype <- match.arg(datatype)
+        if (datatype == "indegree") {
         # Load indegree data
         ind_data <- tryCatch({
             load_indegree(ind_file)
@@ -48,7 +38,7 @@ perform_cola_clustering <- function(cancer,
             stop("Error loading indegree data: ", e$message)
         })
         data <- ind_data[, -1]
-    } else if (datatype == "expression") {
+        } else if (datatype == "expression") {
         if (is.null(exp_file)) {
             stop("exp_file must be provided for expression data.")
         }
