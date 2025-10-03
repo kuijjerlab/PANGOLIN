@@ -12,13 +12,13 @@ PANGOLIN is a comprehensive Snakemake pipeline for pan-cancer analysis of gene r
 - **Conda** for environment management
 - **R** ≥ 4.2.1 with Bioconductor packages
 - **Python** ≥ 3.8
-- **Sufficient disk space**: ~1TB for full workflow, ~100GB for precomputed analysis
+- **Sufficient disk space**: ~1TB for full workflow, ~20GB for precomputed analysis
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/tatianub/PANGOLIN.git
+git clone https://github.com/kuijjerlab/PANGOLIN.git
 cd PANGOLIN
 ```
 
@@ -31,12 +31,6 @@ cd PANGOLIN
    
    # For a more rapid analysis and figure reproduction using precomputed data (RECOMMENDED)
    analysis_type: "precomputed"
-   ```
-
-2. **Set up Zenodo credentials** (for precomputed workflow):
-   ```yaml
-   # This Zenodo ID contains precomputed network for PD1 pathway analysis
-   zenodo_record_id: "10.5281/zenodo.17232919"
    ```
 
 ### Execution
