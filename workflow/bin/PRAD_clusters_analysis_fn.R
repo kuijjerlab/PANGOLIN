@@ -80,9 +80,9 @@ plot_PRAD_cox_fit <- function(tumor_clin_file_path,
                                 pdl1_expression_file = pdl1_expression_file,
                                 covariates = covariates,
                                 cluster_file = cluster_file,
-                                datatype = c("clusters"),
-                                type_outcome = c("PFI"),
-                                cluster_id = "k_4")
+                                datatype = datatype,
+                                type_outcome = type_outcome,
+                                cluster_id = cluster_id)
         data_cox <- data_cox$data_cox
         feature <- sprintf("`%s`", cluster_id)
         surv_formula <- as.formula(paste("Surv(ToF_death, event) ~", feature))
@@ -216,12 +216,13 @@ get_degs_drgs_PRAD <- function(tumor_clin_file_path,
                                 datatype = datatype,
                                 type_outcome = type_outcome,
                                 cluster_id = cluster_id)
-    res <- perform_limma_PRAD(
-        indegree_file = indegree_file,
-        exp_file = exp_file,
-        samples_file = samples_file,
-        data_cox = data_cox
-    )
+        res <- perform_limma_PRAD(
+                indegree_file = indegree_file,
+                exp_file = exp_file,
+                samples_file = samples_file,
+                data_cox = data_cox,
+                cluster_id = cluster_id
+        )
     return(res)
 }
 
@@ -231,19 +232,21 @@ get_degs_drgs_PRAD <- function(tumor_clin_file_path,
 #' @param exp_file Character. Path to the expression data file.
 #' @param samples_file Character. Path to the file with sample information.
 #' @param data_cox List. Contains Cox regression data and covariates.
+#' @param cluster_id Character. Identifier for cluster column (default: "k_4").
 #'
 #' @return A named list with limma results for indegree and expression data.
 #' @export
 perform_limma_PRAD <- function(indegree_file,
                                exp_file,
                                samples_file,
-                               data_cox) {
+                               data_cox,
+                               cluster_id = "k_4") {
     ind <- load_indegree(indegree_file)
     colnames(ind)[-1] <- make_bcr_code(colnames(ind)[-1])
     exp <- load_exp("PRAD", exp_file, samples_file)
     colnames(exp)[-1] <- make_bcr_code(colnames(exp)[-1])
-    drgs <- run_limma_PRAD(ind, data_cox)
-    degs <- run_limma_PRAD(exp, data_cox)
+    drgs <- run_limma_PRAD(ind, data_cox, cluster_id = cluster_id)
+    degs <- run_limma_PRAD(exp, data_cox, cluster_id = cluster_id)
     all_ranks <- list("indegree" = drgs, "expression" = degs)
     return(all_ranks)
 }
@@ -377,48 +380,92 @@ run_fgsea_PRAD <- function(res_all,
 }
 
 
-#' Plot FGSEA Results for Selected Cluster Comparisons
+#' Plot FGSEA Results for Cluster Comparisons
 #'
 #' Visualizes FGSEA results as bar plots of normalized enrichment scores (NES)
-#' for selected cluster comparisons.
+#' for cluster comparisons. Automatically handles pagination for large numbers
+#' of comparisons with 3 plots per page.
 #'
 #' @param fgseaRes_all Data frame with FGSEA results. Must contain columns
 #'   \code{pathway}, \code{cmp}, \code{NES}, and \code{padj}.
-#' @param sel_cmps Character vector of cluster comparisons to include
-#'   (default: c("cl_1_cl_2", "cl_1_cl_3", "cl_1_cl_4")).
-#' @param trunc_width Integer. Max width for pathway names (default: 70).
-#' @param nrow Integer. Number of facet rows (default: 3).
+#' @param sel_cmps Character vector of cluster comparisons to include.
+#'   If NULL (default), uses all unique comparisons from the data.
+#' @param max_plots_per_page Integer. Maximum number of plots per page (default: 3).
+#' @param nrow Integer. Number of facet rows per page (default: 3).
+#' @param axis_size Numeric. Size of axis text (default: 7).
 #'
-#' @return A ggplot object showing NES for selected comparisons, faceted by cmp.
+#' @return A list of ggplot objects (one per page) showing NES for comparisons.
 #' @export
 plot_fgsea_results <- function(
                         fgseaRes_all,
-                        sel_cmps = c("cl_1_cl_2", "cl_1_cl_3", "cl_1_cl_4"),
+                        sel_cmps = NULL,
+                        max_plots_per_page = 3,
                         nrow = 3,
                         axis_size = 7
                         ) {
+        # Clean up pathway names and comparison labels
         fgseaRes_all$pathway <- gsub("REACTOME_", "", fgseaRes_all$pathway)
         fgseaRes_all$cmp <- gsub("clcluster_", "cl_", fgseaRes_all$cmp)
+        
+        # Use all unique comparisons if sel_cmps is NULL
+        if (is.null(sel_cmps)) {
+                sel_cmps <- unique(fgseaRes_all$cmp)
+        }
+        
+        # Filter data
         fgseaRes_all <- fgseaRes_all[fgseaRes_all$cmp %in% sel_cmps, ]
+        
+        # Truncate pathway names
         fgseaRes_all$pathway <- stringr::str_trunc(
                 fgseaRes_all$pathway, width = 70, side = "right"
         )
         fgseaRes_all$log10padj <- -log10(fgseaRes_all$padj)
-        g <- fgseaRes_all %>%
-                group_by(cmp) %>%
-                ungroup() %>%
-                mutate(
-                cmp = as.factor(cmp),
-                pathway = reorder_within(pathway, NES, cmp)
-                ) %>%
-                ggplot(ggplot2::aes(pathway, NES)) +
-                geom_col(ggplot2::aes(fill = NES < 0)) +
-                coord_flip() +
-                scale_x_reordered() +
-                labs(x = "", y = "Normalized Enrichment Score") +
-                theme_minimal() +
-                theme(legend.position = "none",
-                axis.text.y = element_text(size = axis_size)) +
-                facet_wrap(~cmp, nrow = nrow, scales = "free")
-        return(g)
+        
+        # Calculate pagination
+        n_comparisons <- length(sel_cmps)
+        ncol <- 1  # Force single column layout
+        n_pages <- ceiling(n_comparisons / max_plots_per_page)
+        
+        # Create plots for each page
+        plot_list <- list()
+        
+        for (page in 1:n_pages) {
+                # Determine which comparisons go on this page
+                start_idx <- (page - 1) * max_plots_per_page + 1
+                end_idx <- min(page * max_plots_per_page, n_comparisons)
+                page_cmps <- sel_cmps[start_idx:end_idx]
+                
+                # Filter data for this page
+                page_data <- fgseaRes_all[fgseaRes_all$cmp %in% page_cmps, ]
+                
+                # Create plot for this page
+                # Adjust nrow for this specific page based on actual number of comparisons
+                actual_nrow <- min(nrow, length(page_cmps))
+                
+                g <- page_data %>%
+                        group_by(cmp) %>%
+                        ungroup() %>%
+                        mutate(
+                                cmp = as.factor(cmp),
+                                pathway = reorder_within(pathway, NES, cmp)
+                        ) %>%
+                        ggplot(ggplot2::aes(pathway, NES)) +
+                        geom_col(ggplot2::aes(fill = NES < 0)) +
+                        coord_flip() +
+                        scale_x_reordered() +
+                        labs(x = "", y = "Normalized Enrichment Score") +
+                        theme_minimal() +
+                        theme(legend.position = "none",
+                              axis.text.y = element_text(size = axis_size)) +
+                        facet_wrap(~cmp, nrow = actual_nrow, ncol = ncol, scales = "free")
+                
+                plot_list[[page]] <- g
         }
+        
+        # Return single plot if only one page, otherwise return list
+        if (n_pages == 1) {
+                return(plot_list[[1]])
+        } else {
+                return(plot_list)
+        }
+}
