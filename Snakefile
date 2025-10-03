@@ -5,12 +5,12 @@
 ###############################################################################
 
 ## HOW TO RUN THIS PIPELINE:
-## 1. Dry run (check workflow): snakemake --cores 1 -np
-## 2. Load required modules: 
+## 1. Load required modules: 
 ##    - module load snakemake/7.23.1-foss-2022a
 ##    - module load R-bundle-Bioconductor/3.15-foss-2022a-R-4.2.1
-## 3. Source conda: source ~/.bashrc  # conda version 24.1.2
-## 4. Clean conda cache: rm -rf .snakemake/conda
+## 2. Source conda: source ~/.bashrc  # conda version 24.1.2
+## 3. Clean conda cache: rm -rf .snakemake/conda
+## 4. Dry run (check workflow): snakemake --use-conda --conda-frontend conda --cores 1 -np
 ## 5. Execute pipeline: snakemake --use-conda --conda-frontend conda --cores 1
 
 ###############################################################################
