@@ -73,7 +73,7 @@ plot_intersection_heatmap <- function(
 #' @export
 preprocess_pathway_results <- function(res_all, 
                                     ptws_dat,
-                                    min_shared = 1, 
+                                    min_shared = 5, 
                                     cols = c(
                                         "#db4b83", "#5eb847", "#a95ccf", 
                                         "#b5b32e", "#5e6ed9", "#d9943c",
