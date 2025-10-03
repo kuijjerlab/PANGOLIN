@@ -99,15 +99,28 @@ covariates <- c("gender", "age_at_initial_pathologic_diagnosis")
 type_outcome <- c("PFI")
 cluster_id <- "k_4"
 
-pdf(OUTPUT_SURV_PLOT, width = 8, height = 8)
-plot_PRAD_cox_fit(tumor_clin_file_path = TUMOR_CLIN_FILE,
-                              covariates = covariates,
-                              cluster_file= CLUSTER_INDEGREE,
-                              datatype = datatype,
-                              type_outcome = type_outcome,
-                              cluster_id = cluster_id)
+cluster_indegree <- fread(CLUSTER_INDEGREE)
+cat("clusters avaiable through this COLA run:\n")
+unique(cluster_indegree$k)
+clusters <- unique(cluster_indegree$k)
+### Make a survival plot for the clusters
+cat("Making survival plot for clusters:\n",  clusters[1], "\n")
+if ("k_4" %in% clusters) {
+        CLUSTER_ID <- "k_4"
+    } else {
+        CLUSTER_ID <- clusters[1]
+    }
+# Create survival plot and save it
+survival_plot <- plot_PRAD_cox_fit(tumor_clin_file_path = TUMOR_CLIN_FILE,
+                            covariates = covariates,
+                            cluster_file = CLUSTER_INDEGREE,
+                            datatype = datatype,
+                            type_outcome = type_outcome,
+                            cluster_id = CLUSTER_ID)
 
-dev.off()
+# Save survival plot
+ggsave(OUTPUT_SURV_PLOT, survival_plot$plot, width = 10, height = 8, device = "pdf")
+cat("Saved survival plot to:", OUTPUT_SURV_PLOT, "\n")
 
 ### Make a plot with fgsea results comparing cl1 to the other clusters
 
@@ -116,12 +129,26 @@ res <- get_degs_drgs_PRAD(tumor_clin_file_path = TUMOR_CLIN_FILE,
                               cluster_file= CLUSTER_INDEGREE,
                               datatype = datatype,
                               type_outcome = type_outcome,
-                              cluster_id = cluster_id,
                               indegree_file = INDEGREE_FILE,
                               exp_file = EXP_FILE ,
-                              samples_file = SAMPLES_FILE)
+                              samples_file = SAMPLES_FILE,
+                              cluster_id =  CLUSTER_ID)
 
 indegree_res <- run_fgsea_PRAD(res$indegree, GMT_FILE)
-pdf(OUTPUT_FGSEA_PLOT, width = 8, height = 8)
-plot_fgsea_results(indegree_res)
-dev.off()
+plots <- plot_fgsea_results(indegree_res)
+
+# Handle single plot or multiple pages - but always create the expected output file
+if (is.list(plots)) {
+    # Multiple pages - save as multi-page PDF to the expected filename
+    pdf(OUTPUT_FGSEA_PLOT, width = 10, height = 12)
+    for (plot in plots) {
+        print(plot)
+    }
+    dev.off()
+    cat("Saved", length(plots), "pages to:", OUTPUT_FGSEA_PLOT, "\n")
+} else {
+    # Single plot
+    ggsave(OUTPUT_FGSEA_PLOT, plots, width = 10, height = 12, device = "pdf")
+    cat("Saved single plot to:", OUTPUT_FGSEA_PLOT, "\n")
+}
+
