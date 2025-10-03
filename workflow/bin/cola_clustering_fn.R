@@ -29,6 +29,7 @@ perform_cola_clustering <- function(cancer,
                             p_sampling = 0.8,
                             partition_repeat = 1000,
                             scale_rows = TRUE) {
+        set.seed(1234)
         datatype <- match.arg(datatype)
         if (datatype == "indegree") {
         # Load indegree data
